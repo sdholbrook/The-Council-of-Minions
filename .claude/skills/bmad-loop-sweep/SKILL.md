@@ -1,6 +1,6 @@
 ---
-name: bmad-auto-sweep
-description: 'Triage the deferred-work ledger for the bmad-auto orchestrator: verify every open entry against the actual codebase and return a machine-readable partition (bundles, already-resolved, blocked, skip, human decisions). Also migrates legacy pre-DW-format ledgers when invoked with --migrate. Automation-only — invoked by bmad-auto sweep runs, not by humans.'
+name: bmad-loop-sweep
+description: 'Triage the deferred-work ledger for the bmad-loop orchestrator: verify every open entry against the actual codebase and return a machine-readable partition (bundles, already-resolved, blocked, skip, human decisions). Also migrates legacy pre-DW-format ledgers when invoked with --migrate. Automation-only — invoked by bmad-loop sweep runs, not by humans.'
 ---
 
 # Deferred-Work Sweep Triage
@@ -9,7 +9,7 @@ description: 'Triage the deferred-work ledger for the bmad-auto orchestrator: ve
 into a machine-readable triage plan the orchestrator can validate and execute.
 
 This workflow is **read-only and automation-native**: it runs only inside a
-`bmad-auto` sweep session. You never edit the ledger, never edit code, never
+`bmad-loop` sweep session. You never edit the ledger, never edit code, never
 ask questions. Your sole output is the result file. (The one exception is
 migration mode, which edits exactly one file — the ledger.)
 
@@ -17,9 +17,9 @@ migration mode, which edits exactly one file — the ledger.)
 
 ### Step 0: Automation Check & Mode Dispatch
 
-Run: `echo "${BMAD_AUTO_MODE:-}"`
+Run: `echo "${BMAD_LOOP_MODE:-}"`
 
-If the output is not `1`, state that this skill only runs inside a bmad-auto
+If the output is not `1`, state that this skill only runs inside a bmad-loop
 sweep and end your turn. Otherwise read `./automation-mode.md` fully — its
 rules and result schema govern this entire run.
 

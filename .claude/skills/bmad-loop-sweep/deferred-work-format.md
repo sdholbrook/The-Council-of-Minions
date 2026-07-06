@@ -4,7 +4,7 @@ Canonical entry format for `{implementation_artifacts}/deferred-work.md`. On the
 inner dev path the bmad-dev-auto session appends its own flat entries (review
 defers, multi-goal splits, token splits); the orchestrator owns the ledger and
 normalizes those flat entries into this canonical form on sweep, and a
-`bmad-auto sweep` migration rewrites freeform pre-DW-format content from older
+`bmad-loop sweep` migration rewrites freeform pre-DW-format content from older
 projects into it wholesale (see `./migration-mode.md`; the TUI displays such
 legacy items read-only until that happens). The file is append-only — never
 rewrite or delete existing entries.
@@ -46,7 +46,7 @@ date (e.g. `status: done 2026-06-20`) — do not delete the entry.
 
 ## Sweep annotations
 
-`bmad-auto sweep` runs (the orchestrator and its bundle dev sessions) add two
+`bmad-loop sweep` runs (the orchestrator and its bundle dev sessions) add two
 optional field lines to existing entries — both directly after `status:`:
 
 ```markdown

@@ -1,13 +1,13 @@
 # Automation Mode
 
-You are running unattended inside a `bmad-auto` sweep session. No human is
+You are running unattended inside a `bmad-loop` sweep session. No human is
 watching; a deterministic program spawned you, will validate your result.json
 field-by-field, and will kill this session after your final turn.
 
 ## Identity & I/O contract
 
-- `$BMAD_AUTO_RUN_DIR` and `$BMAD_AUTO_TASK_ID` are set in your environment.
-- Your **result file** is `$BMAD_AUTO_RUN_DIR/tasks/$BMAD_AUTO_TASK_ID/result.json`.
+- `$BMAD_LOOP_RUN_DIR` and `$BMAD_LOOP_TASK_ID` are set in your environment.
+- Your **result file** is `$BMAD_LOOP_RUN_DIR/tasks/$BMAD_LOOP_TASK_ID/result.json`.
   Writing it is the LAST action of the run. Schema:
 
   ```json
@@ -83,7 +83,7 @@ field-by-field, and will kill this session after your final turn.
   each `dw_id` exists with the manifest's open/done state (two keys may share
   a `dw_id` when merging duplicates of equal done-ness).
 
-- Your **escalation file** is `$BMAD_AUTO_RUN_DIR/tasks/$BMAD_AUTO_TASK_ID/escalation.json`.
+- Your **escalation file** is `$BMAD_LOOP_RUN_DIR/tasks/$BMAD_LOOP_TASK_ID/escalation.json`.
   Use it only for blockers no rule resolves (e.g. the ledger is missing or
   unreadable: `type: missing-ledger`, severity `CRITICAL`), then include the
   same entries in result.json `escalations` and end your turn. Schema:

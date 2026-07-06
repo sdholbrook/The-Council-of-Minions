@@ -1,11 +1,11 @@
 ---
-name: bmad-auto-resolve
-description: 'Interactive escalation-resolution workflow for the bmad-auto orchestrator. A bmad-auto run paused on a CRITICAL escalation (a contradiction or gap a dev/review session could not safely resolve alone); you and the human disambiguate the frozen spec so the story can be re-driven. Invoked as /bmad-auto-resolve <story-key>. Unlike the automated dev/review sessions this session is interactive — a human is present and you SHOULD ask.'
+name: bmad-loop-resolve
+description: 'Interactive escalation-resolution workflow for the bmad-loop orchestrator. A bmad-loop run paused on a CRITICAL escalation (a contradiction or gap a dev/review session could not safely resolve alone); you and the human disambiguate the frozen spec so the story can be re-driven. Invoked as /bmad-loop-resolve <story-key>. Unlike the automated dev/review sessions this session is interactive — a human is present and you SHOULD ask.'
 ---
 
-# bmad-auto Escalation Resolution
+# bmad-loop Escalation Resolution
 
-A `bmad-auto` run drove a story through dev → review, a session raised a
+A `bmad-loop` run drove a story through dev → review, a session raised a
 **CRITICAL escalation** (work could not proceed safely — usually a contradiction
 or an unanswered question in the _frozen spec_), and the orchestrator paused the
 whole run for a human. The session that escalated is gone; you are a fresh
@@ -14,18 +14,18 @@ update the frozen spec**, so the orchestrator can re-arm the story and re-drive
 it against a corrected spec.
 
 This is **interactive**: a human IS present. Ask questions, present options,
-recommend — but the human makes the call. (`$BMAD_AUTO_MODE` is intentionally
+recommend — but the human makes the call. (`$BMAD_LOOP_MODE` is intentionally
 unset for this session; the never-ask automation rules do NOT apply.)
 
 ## Identity & I/O contract
 
 These environment variables are set:
 
-- `$BMAD_AUTO_RUN_DIR` — the paused run's directory.
-- `$BMAD_AUTO_STORY_KEY` — the escalated story key (also your invocation argument).
-- `$BMAD_AUTO_RESOLVE_CONTEXT` — path to a `context.json` written for you.
+- `$BMAD_LOOP_RUN_DIR` — the paused run's directory.
+- `$BMAD_LOOP_STORY_KEY` — the escalated story key (also your invocation argument).
+- `$BMAD_LOOP_RESOLVE_CONTEXT` — path to a `context.json` written for you.
 
-**Read `$BMAD_AUTO_RESOLVE_CONTEXT` FIRST.** Its schema:
+**Read `$BMAD_LOOP_RESOLVE_CONTEXT` FIRST.** Its schema:
 
 ```json
 {

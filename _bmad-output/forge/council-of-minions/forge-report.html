@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forge Report - Council of Minions</title>
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --paper: #fffaf2;
+      --ink: #1f1a17;
+      --muted: #6a5f57;
+      --accent: #7a1f1f;
+      --accent-soft: #d7b7a2;
+      --border: #c9b7a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, #efe3d1 0, transparent 28%),
+        radial-gradient(circle at bottom right, #ead7c0 0, transparent 30%),
+        var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 Georgia, "Times New Roman", serif;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 32px auto;
+      padding: 24px;
+    }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 14px 40px rgba(60, 36, 20, 0.12);
+      overflow: hidden;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.4fr 240px;
+      gap: 24px;
+      padding: 28px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(215, 183, 162, 0.22), rgba(255, 250, 242, 0));
+    }
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: 34px; line-height: 1.1; }
+    h2 { font-size: 22px; padding-top: 8px; }
+    p, li { margin-top: 0; }
+    .lede { color: var(--muted); max-width: 56ch; }
+    .stamp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stamp svg { width: 200px; height: 200px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      padding: 28px;
+    }
+    .section {
+      padding: 0 28px 28px;
+    }
+    .section + .section {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255,255,255,0.7);
+      margin-bottom: 10px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    ul { padding-left: 20px; }
+    .personas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .persona {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.6);
+    }
+    .persona strong { display: block; }
+    .small { color: var(--muted); font-size: 14px; }
+    @media (max-width: 860px) {
+      .hero, .grid, .personas { grid-template-columns: 1fr; }
+      .stamp { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="pill">Forge Outcome</div>
+          <h1>The Council of Minions</h1>
+          <p class="lede">
+            Hardened from a broad AI council concept into a focused Outlook-first system that reviews the full inbox,
+            surfaces a narrow high-priority queue, and prepares delegation decisions for judgment-heavy email.
+          </p>
+        </div>
+        <div class="stamp" aria-label="Hardened outcome seal">
+          <svg viewBox="0 0 240 240" role="img">
+            <defs>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#5a1717" flood-opacity="0.28"/>
+              </filter>
+            </defs>
+            <circle cx="120" cy="120" r="88" fill="#8f2828" filter="url(#shadow)"/>
+            <circle cx="120" cy="120" r="75" fill="none" stroke="#f6e3d6" stroke-width="4" stroke-dasharray="3 7"/>
+            <circle cx="120" cy="120" r="61" fill="none" stroke="#f6e3d6" stroke-width="2"/>
+            <path d="M120 70l12 25 27 4-19 19 4 27-24-13-24 13 4-27-19-19 27-4z" fill="#f6e3d6"/>
+            <text x="120" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#f6e3d6">HARDENED</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <h2>Outcome</h2>
+          <ul>
+            <li>Primary value is cleaner, faster delegation decisions from important email.</li>
+            <li>Missing important email remains a supporting constraint, not the north star.</li>
+            <li>The product is not a broad council or generic inbox copilot.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Core Shape</h2>
+          <ul>
+            <li>Review the full inbox.</li>
+            <li>Surface only a narrow high-priority queue plus lightweight secondary triage.</li>
+            <li>Keep Outlook as the main surface and the Minion Brief as a secondary view.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Locked Decisions</h2>
+        <ul>
+          <li>Important email means Doug-judgment email, especially relationship handling and priority/tradeoff decisions, plus legal/contract/finance exposure.</li>
+          <li>Default handling is delegation-first, with Doug approval over any outbound action.</li>
+          <li>Each flagged item must explain why it surfaced, the risk if ignored, the recommended action, personal-vs-delegable handling, and a draft reply when useful.</li>
+          <li>Delegation packages must include owner, owner rationale, stance or instruction, internal handoff draft, urgency, and external reply draft when needed.</li>
+          <li>Immediate interruption is reserved for same-day consequence, relationship damage risk, or worsening legal/contract/finance exposure.</li>
+          <li>If urgency and requested action are clear but owner confidence is only moderate, propose a best-guess owner with explicit confidence and rationale.</li>
+          <li>Doug-handles-this exceptions are role/relationship expectation, negotiation or concession, delegation-created risk, and tradeoff calls.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Rejected and Narrowed</h2>
+        <ul>
+          <li>Rejected the broad AI council framing as the primary product definition.</li>
+          <li>Rejected dashboard-first workflow in favor of Outlook-first adoption.</li>
+          <li>Rejected equal treatment across all email in favor of a narrow surfaced queue.</li>
+          <li>Rejected clean-but-risky under-flagging in favor of higher recall with stronger explanation.</li>
+          <li>Rejected interruption-by-default in favor of queue-first review with explicit interrupt triggers.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Weak Points That Survived</h2>
+        <ul>
+          <li>Owner selection can still be wrong when relationship context is thin.</li>
+          <li>Full-inbox review may create pressure to broaden Phase 1 beyond the sharp use case.</li>
+          <li>A high-recall system must keep explanations tight or the queue becomes unreviewable.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Pressure-Testers</h2>
+        <div class="personas">
+          <div class="persona">
+            <strong>John 📋</strong>
+            <div class="small">Product Manager</div>
+            <div>Kept forcing the idea to choose one product and one north star.</div>
+          </div>
+          <div class="persona">
+            <strong>Mary 📊</strong>
+            <div class="small">Business Analyst</div>
+            <div>Kept terms explicit and surfaced contradictions between pain, scope, and success metric.</div>
+          </div>
+          <div class="persona">
+            <strong>Winston 🏗️</strong>
+            <div class="small">System Architect</div>
+            <div>Pressed for sharp boundaries on scope, interrupts, surfaces, and exception handling.</div>
+          </div>
+          <div class="persona">
+            <strong>Rhea</strong>
+            <div class="small">Skeptical finance reviewer</div>
+            <div>Pushed for a single value promise and rejection of ornamental scope.</div>
+          </div>
+          <div class="persona">
+            <strong>Mara</strong>
+            <div class="small">Chief-of-staff lens</div>
+            <div>Forced the product to reduce executive friction, not just classify email.</div>
+          </div>
+          <div class="persona">
+            <strong>Helena</strong>
+            <div class="small">Counsel lens</div>
+            <div>Forced explicit non-delegable exceptions and risk boundaries.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
