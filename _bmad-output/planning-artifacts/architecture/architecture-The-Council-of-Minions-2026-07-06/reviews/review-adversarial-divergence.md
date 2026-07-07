@@ -2,7 +2,7 @@
 
 ## Verdict
 
-Pass. Two downstream teams could independently build source intake, queue, delegation support, Meaning Graph context, Skill Registry, receipts, and Minion Brief without choosing incompatible ownership or mutation paths, provided they follow AD-2 through AD-11.
+Pass after finish-plan updates. Two downstream teams could independently build source intake, queue, delegation support, Meaning Graph context, Skill Registry, receipts, and Minion Brief without choosing incompatible ownership or mutation paths, provided they follow AD-2 through AD-13 and the companion contracts.
 
 ## Divergence Tests
 
@@ -36,6 +36,18 @@ Potential divergence: one team builds a custom ontology/graph/memory substrate w
 
 Result: closed by AD-9, AD-10, and AD-11. The product contract stays storage-neutral, tenant behavior stays `VERIFY IN TENANT`, and custom substrate work must first document why Microsoft-native planes do not satisfy the Council contract.
 
+### Test 6: Dataverse semantic model team vs Fabric ontology team
+
+Potential divergence: one team edits Dataverse glossary terms while another creates Fabric IQ entities with different definitions.
+
+Result: closed by AD-12 and `semantic-contract.md`. Both platform artifacts project from the Council Semantic Contract, and platform-inferred changes are candidates until approved.
+
+### Test 7: Outlook team vs queue team
+
+Potential divergence: one team builds an Outlook-only triage assistant while another builds a generic Council dashboard.
+
+Result: closed by AD-13. MVP intake is Outlook-first plus manual capture; the first review and approval surface is Minion Brief plus Council Queue.
+
 ## Remaining Watch Item
 
-The first implementation story set must keep object contracts explicit enough that `Source Record`, `Work Item`, `Receipt`, `Memory Candidate`, and `Graph Entity` are not collapsed into a single generic row/document or hidden behind a Microsoft platform object too early. AD-2, AD-3, AD-5, AD-7, AD-9, and AD-11 give the rule, but story creation must preserve it.
+The first implementation story set must cite the companion contracts directly so `Source Record`, `Work Item`, `Receipt`, `Memory Candidate`, and `Graph Entity` are not collapsed into a single generic row/document or hidden behind a Microsoft platform object too early.

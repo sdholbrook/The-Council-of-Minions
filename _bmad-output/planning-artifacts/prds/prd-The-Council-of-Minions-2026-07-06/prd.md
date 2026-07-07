@@ -1,19 +1,20 @@
 ---
 title: "PRD: The-Council-of-Minions"
-status: draft
+status: architecture-ready
 created: 2026-07-06
-updated: 2026-07-06
+updated: 2026-07-07
 ---
 
 # PRD: The-Council-of-Minions
 
 ## 0. Discovery State
 
-This PRD is in discovery draft. The current draft synthesizes:
+This PRD is architecture-ready for the current BMAD planning pass. It synthesizes:
 
 - The active project context at `_bmad-output/project-context.md`.
 - The forged Council idea at `_bmad-output/forge/council-of-minions/forged-idea.md`.
 - The Open Engine / Open Skills / Open Brain / Knowledge Graph source synthesis in `addendum.md`.
+- The architecture spine and Microsoft platform research under `_bmad-output/planning-artifacts/architecture/architecture-The-Council-of-Minions-2026-07-06/`.
 
 The PRD should remain storage-neutral until architecture. Microsoft-native surfaces are product constraints and integration targets, not settled backend decisions.
 
@@ -110,11 +111,13 @@ The Council produces a brief that shows the priority queue, decisions needed, de
 
 - Work-item-first model with source records as inputs.
 - Outlook-first intake plus manual capture for non-email work.
+- Minion Brief plus Council Queue as the first review and approval surface.
 - Proposed work items with type, rationale, confidence, urgency, owner suggestion, and recommended next action.
 - Human approval gates for decision, delegation, risk, outbound action, sensitive handling, and authority expansion.
 - Lightweight Meaning Graph for routing, provenance, retrieval, explanation, and audit.
 - Receipt ledger for agent and human actions.
-- Minion Brief as the primary review artifact.
+- Brief-level relationship explanations and source/provenance links, without a graph editor.
+- Governed memory candidates with recall/use policy before promotion to approved instruction.
 - Storage-neutral contract before backend selection.
 
 ### 6.2 Out of Scope for MVP
@@ -124,30 +127,28 @@ The Council produces a brief that shows the priority queue, decisions needed, de
 - A complete enterprise ontology.
 - Generic all-purpose personal memory.
 - Treating the graph as a full workflow engine.
+- A graph editor or complete ontology workbench.
 - Automatic promotion of agent-written memory into binding instruction.
 - Backend-specific product commitments before architecture.
 
-## 7. Working Decisions and Assumptions
+## 7. Closed Architecture Decisions
 
 - Decision: The product model is work-item-first; email is one source, not the product boundary.
+- Decision: MVP intake is Outlook-first plus manual capture. Outlook remains the first source and entry point, but not the only product surface.
+- Decision: The first review surface is the Minion Brief plus Council Queue. Outlook links back to source messages and may host notifications or drafts, but review state belongs to the Council surface.
+- Decision: Human holds and approvals are product-level Council actions. Teams approvals, Outlook actionable messages, Power Apps agent feed, or model-driven app commands remain candidate implementations after tenant validation.
+- Decision: MVP is Doug-private first, with team-ready object contracts and authority boundaries.
 - Decision: Work items require source provenance and rationale.
 - Decision: Human-in-the-loop is mandatory for outbound action and sensitive handling.
 - Decision: The graph is lightly operational in MVP.
+- Decision: MVP graph visibility is brief-level relationship explanation and provenance, not graph editing.
+- Decision: Minimum durable memory is `Memory Candidate` plus `approved instruction`, with source, recall/use policy, and receipts before durable influence.
+- Decision: The Council owns one Semantic Contract. Dataverse semantic models, Fabric IQ ontology, Fabric Graph, Copilot Studio knowledge, Dataverse business skills, and future agent knowledge planes project from it.
 - Decision: Source projects contribute concepts, not implementation requirements.
 - Decision: The PRD will use Microsoft-first product language while avoiding premature backend architecture.
-- [ASSUMPTION: The first PRD should target Doug's private Council as the first operator, while preserving a path to team use.]
-- [ASSUMPTION: The first useful UX centers on the Minion Brief and queue explanations rather than a full graph editor.]
 
-## 8. Open Questions
+## 8. Implementation Follow-Ups
 
-1. Is the first PRD explicitly scoped to Doug's private Council, or should it name a team-ready path in v1?
-2. Which Microsoft work concept should anchor the first user-visible queue: tasks, brief items, Outlook follow-ups, Teams approvals, or a combined Council queue?
-3. Should human holds and approvals be framed around Teams, Outlook, the Minion Brief, or a combination?
-4. What is the minimum viable durable Council memory concept for MVP before architecture selects storage?
-5. How visible should the Meaning Graph be in the first user experience?
-6. Which Microsoft tenant constraints must be marked `VERIFY IN TENANT` before architecture?
-
-## 9. Assumptions Index
-
-- From Section 7: The first PRD targets Doug's private Council as first operator while preserving a path to team use.
-- From Section 7: The first useful UX centers on the Minion Brief and queue explanations rather than a full graph editor.
+1. Validate tenant availability, admin settings, DLP, sensitivity labels, retention boundaries, Copilot credits, Fabric capacity, and Power Platform environment strategy before live tenant work.
+2. Use the architecture fit matrix before selecting Dataverse, Power Apps, Copilot Studio, Power Automate, Work IQ, Fabric IQ / Graph, or custom services.
+3. Create epics and stories only after the Source Record, Work Item / Receipt, Semantic Contract, Auto-Creation Policy, and tenant-readiness contracts are reviewed.

@@ -179,7 +179,9 @@ MVP should not include:
 - Full workflow-engine behavior embedded in the graph.
 - Automatic conversion of agent-written memory into binding instruction.
 
-## Open Questions for PRD
+## Original PRD Questions Superseded By Architecture Decisions
+
+These questions were retained from source synthesis for traceability. The current PRD closes the architecture-blocking versions in `prd.md` Section 7 and `architecture-finish-decisions-2026-07-07.md`.
 
 1. Is the first PRD scoped to Doug's private Council only, or to a future team-ready pattern with Doug as first operator?
 2. Which Microsoft work concept should anchor the first user-visible queue: tasks, brief items, Outlook follow-ups, Teams approvals, or a combined Council queue?

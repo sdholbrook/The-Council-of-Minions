@@ -22,7 +22,15 @@ sources:
   - ../../../project-context.md
 companions:
   - .memlog.md
+  - architecture-finish-decisions-2026-07-07.md
   - microsoft-platform-research-2026-07-07.md
+  - microsoft-platform-fit-matrix-2026-07-07.md
+  - semantic-knowledge-placement-2026-07-07.md
+  - semantic-contract.md
+  - source-record-contract.md
+  - work-item-receipt-contract.md
+  - auto-creation-policy.md
+  - tenant-readiness-checklist.md
 ---
 
 # Architecture Spine - The Council of Minions
@@ -150,6 +158,18 @@ flowchart TB
 - **Prevents:** rebuilding custom semantic search, business-skill, memory, MCP-tool, human-review, ontology, or graph services before evaluating the Microsoft-native planes now designed for those roles.
 - **Rule:** Before selecting a custom implementation for work context, business data grounding, agent tools, human-in-loop review, ontology, graph, memory, or analytics, architecture must evaluate the relevant Microsoft plane first: Work IQ, Dataverse intelligence / Dataverse MCP, Power Apps MCP agent feed, Copilot Studio, Power Automate, Fabric IQ / Fabric Graph, and Fabric data agents. Custom services are allowed only for gaps recorded against Council contracts, tenant constraints, lifecycle maturity, licensing, cost, or governance.
 
+### AD-12 - Semantic contract projects into platform models [ADOPTED]
+
+- **Binds:** PRD 5.1, PRD 5.4, PRD 5.5, PRD 5.6, PRD 5.7
+- **Prevents:** Dataverse semantic models, Fabric IQ ontology, Fabric Graph, Copilot Studio knowledge, and Council docs each defining `Work Item`, `Source Record`, `Receipt`, `Memory Candidate`, or graph relationships differently.
+- **Rule:** The Council owns a platform-neutral Semantic Contract for domain nouns, definitions, identifiers, edge vocabulary, provenance, approval meaning, and receipt semantics. Dataverse semantic models, Fabric IQ ontology / Fabric Graph, Copilot Studio knowledge, Dataverse business skills, and any future agent knowledge plane are projections or bindings of that contract. Platform-inferred concepts, glossary edits, and Fabric ontology changes can propose updates back to the Council contract, but they do not silently become canonical.
+
+### AD-13 - Outlook-first intake, Council-first review [ADOPTED]
+
+- **Binds:** PRD 5.1, PRD 5.2, PRD 5.3, PRD 5.7
+- **Prevents:** one unit building an Outlook-only assistant, another building a generic dashboard, and another building a Teams / Power Apps approval app while all claim MVP compliance.
+- **Rule:** MVP intake is Outlook-first plus manual capture. The first review and approval surface is the Minion Brief plus Council Queue. Outlook provides source links, draft replies, and entry points; Teams approvals, Power Apps agent feed, model-driven apps, or other Microsoft surfaces remain candidate implementations after tenant validation.
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -163,6 +183,8 @@ flowchart TB
 | Confidence | Extraction, owner suggestion, work-item type, risk, urgency, and memory candidates must preserve confidence plus explanation. |
 | Memory | Evidence, candidate memory, and approved instruction are separate states. Do not collapse them into one note or prompt. |
 | Graph edges | Prefer a small explicit edge vocabulary. Free-form semantic links are not valid architecture defaults. |
+| Semantic ownership | Keep canonical definitions in the Council Semantic Contract. Platform-native semantic artifacts are projections, bindings, or candidate updates until approved. |
+| MVP surface | Treat Outlook as first intake and source context. Treat Minion Brief plus Council Queue as first review / approval surface. |
 | Microsoft services | Treat Microsoft services as candidate intelligence planes or product surfaces until a later architecture decision binds a verified implementation choice. Record tenant, preview, licensing, governance, and cost checks before adoption. |
 
 ## Structural Seed
@@ -184,6 +206,34 @@ erDiagram
   MINION_BRIEF }o--o{ RECEIPT : summarizes
 ```
 
+### Semantic Knowledge Placement
+
+```mermaid
+flowchart LR
+  Contract["Council Semantic Contract"]
+  DataverseMeta["Dataverse schema metadata, relationships, views, forms, descriptions"]
+  DataverseModel["Dataverse Semantic Model"]
+  FabricOntology["Fabric IQ Ontology"]
+  FabricGraph["Fabric Graph"]
+  Agents["Copilot and Agent Experiences"]
+
+  Contract --> DataverseMeta --> DataverseModel --> Agents
+  Contract --> FabricOntology --> FabricGraph --> Agents
+  DataverseModel -.candidate glossary or signal feedback.-> Contract
+  FabricOntology -.candidate concept or relationship feedback.-> Contract
+```
+
+### Contract Set
+
+The spine is enforced through companion contracts:
+
+- `semantic-contract.md` owns canonical meaning.
+- `source-record-contract.md` owns source identity and provenance capture.
+- `work-item-receipt-contract.md` owns execution state and audit receipts.
+- `auto-creation-policy.md` owns low-risk auto-creation boundaries.
+- `microsoft-platform-fit-matrix-2026-07-07.md` owns service-selection evidence.
+- `tenant-readiness-checklist.md` owns `VERIFY IN TENANT` gates.
+
 ### Minimal Source Tree Seed
 
 ```text
@@ -201,22 +251,23 @@ docs/
 
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
-| Source Intake and Extraction | Source Record Contract, Extraction Services | AD-1, AD-2, AD-6, AD-10, AD-11 |
-| Work Item Queue | Work Item Core, Queue and Brief Surfaces | AD-3, AD-4, AD-5, AD-9, AD-11 |
-| Delegation Decision Support | Work Item Core, Governance Boundary, Skill Registry | AD-3, AD-4, AD-7, AD-8, AD-11 |
-| Meaning Graph and Context | Meaning Graph, Memory Candidate flow | AD-2, AD-5, AD-6, AD-7, AD-9, AD-11 |
-| Skill Registry | Minion Skill Registry | AD-1, AD-4, AD-8, AD-11 |
-| Receipts and Audit | Receipt Ledger | AD-4, AD-5, AD-10, AD-11 |
-| Minion Brief | Queue and Brief Surfaces, Meaning Graph projection | AD-1, AD-3, AD-5, AD-6, AD-7, AD-11 |
+| Source Intake and Extraction | Source Record Contract, Extraction Services | AD-1, AD-2, AD-6, AD-10, AD-11, AD-12, AD-13 |
+| Work Item Queue | Work Item Core, Queue and Brief Surfaces | AD-3, AD-4, AD-5, AD-9, AD-11, AD-12, AD-13 |
+| Delegation Decision Support | Work Item Core, Governance Boundary, Skill Registry | AD-3, AD-4, AD-7, AD-8, AD-11, AD-12, AD-13 |
+| Meaning Graph and Context | Meaning Graph, Memory Candidate flow, Semantic Contract | AD-2, AD-5, AD-6, AD-7, AD-9, AD-11, AD-12 |
+| Skill Registry | Minion Skill Registry | AD-1, AD-4, AD-8, AD-11, AD-12 |
+| Receipts and Audit | Receipt Ledger | AD-4, AD-5, AD-10, AD-11, AD-12 |
+| Minion Brief | Queue and Brief Surfaces, Meaning Graph projection | AD-1, AD-3, AD-5, AD-6, AD-7, AD-11, AD-12, AD-13 |
 
 ## Deferred
 
 - **Backend store selection:** Deferred until the storage-neutral contract is reviewed. Dataverse, Planner / To Do patterns, SharePoint / Loop, Cosmos DB, Fabric, and graph sidecars remain candidates only.
 - **Concrete Microsoft service topology:** Deferred until `VERIFY IN TENANT` constraints are known, including which Microsoft intelligence plane owns each role.
-- **Microsoft platform fit matrix:** Deferred until solution architecture. Evaluate Work IQ, Dataverse intelligence / Dataverse MCP, Power Apps MCP agent feed, Copilot Studio, Power Automate, Fabric IQ / Fabric Graph, and Fabric data agents against Council contracts before selecting custom services.
+- **Microsoft platform selection:** Deferred until solution architecture. Use `microsoft-platform-fit-matrix-2026-07-07.md` to evaluate Work IQ, Dataverse intelligence / Dataverse MCP, Power Apps MCP agent feed, Copilot Studio, Power Automate, Fabric IQ / Fabric Graph, and Fabric data agents before selecting custom services.
 - **Preview, tenant, licensing, and cost gates:** Deferred until tenant validation. Dataverse intelligence, Dataverse MCP, Power Apps MCP agent feed, Work IQ APIs, Fabric IQ, Fabric Graph, and Fabric data agents must be checked for availability, admin settings, data boundaries, governance controls, capacity, and pricing before adoption.
-- **Exact queue surface:** Deferred to UX and architecture follow-up. The first visible queue may be task-like, brief-like, Outlook follow-up-like, Teams approval-like, or a combined Council queue.
+- **Detailed UX composition:** Deferred to UX. The architectural surface is fixed as Minion Brief plus Council Queue with Outlook source links; layout, notification behavior, and command placement remain UX decisions.
 - **Graph visibility:** Deferred to UX. MVP may expose graph explanations without a graph editor.
 - **Skill packaging:** Deferred. The product requires a Skill Registry concept; the implementation can later decide whether skills live in repo docs, Dataverse business skills, SharePoint / Loop, Copilot Studio knowledge, or another managed store.
 - **Ontology depth:** Deferred beyond the small operational vocabulary needed for routing, context, provenance, and audit.
+- **Semantic synchronization mechanics:** Deferred. The architecture requires one Council Semantic Contract, but the export/import mechanics for Dataverse glossary entries, Dataverse metadata, Fabric IQ ontology, Fabric Graph, Copilot Studio knowledge, and repo docs remain a solution-design decision.
 - **Automation runner:** Deferred. No scheduler, Power Automate flow, published agent, or live connector is implied by this spine.
