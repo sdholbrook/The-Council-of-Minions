@@ -266,6 +266,50 @@
         "Held Source Records",
         "Extracted Source Records",
         "Source Records With Drift Risk"
+      ],
+      "forms": [
+        {
+          "name": "Source Record Main",
+          "sections": [
+            {
+              "name": "Source identity",
+              "fields": [
+                "com_name",
+                "com_council_source_record_id",
+                "com_source_system",
+                "com_source_kind",
+                "com_source_object_ref",
+                "com_source_object_url",
+                "com_conversation_ref",
+                "com_parent_ref"
+              ]
+            },
+            {
+              "name": "Capture and data boundary",
+              "fields": [
+                "com_captured_at",
+                "com_captured_by",
+                "com_data_boundary_policy",
+                "com_content_snapshot_ref",
+                "com_content_hash",
+                "com_permission_snapshot",
+                "com_sensitivity_label",
+                "com_retention_or_hold_flags"
+              ]
+            },
+            {
+              "name": "Extraction review",
+              "fields": [
+                "com_extraction_status",
+                "com_extraction_confidence",
+                "com_source_to_work_item_rationale",
+                "com_observed_modified_at",
+                "com_source_version_ref",
+                "com_attachment_refs"
+              ]
+            }
+          ]
+        }
       ]
     },
     {

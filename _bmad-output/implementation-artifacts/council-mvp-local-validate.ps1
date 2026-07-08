@@ -44,6 +44,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Manual Source Record slice validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\manual-source-record-slice-validate.ps1"
+    if ($LASTEXITCODE -ne 0) {
+      throw "Manual Source Record slice validation failed."
+    }
+    $output | ForEach-Object { Write-Host $_ }
+    if (($output -join "`n") -notmatch "MANUAL_SOURCE_RECORD_SLICE_VALIDATE_OK") {
+      throw "Manual Source Record slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
