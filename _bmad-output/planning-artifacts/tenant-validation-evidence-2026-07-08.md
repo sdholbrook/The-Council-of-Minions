@@ -25,6 +25,7 @@ This file starts as a template. Fill it only with verified current-state evidenc
 | Azure CLI | Locally available | `az version` printed `azure-cli` `2.85.0` on 2026-07-08. |
 | Tenant decision packet | Pending decisions | `_bmad-output/implementation-artifacts/tenant-decision-packet.json` exists; `tenant-decision-packet-validate.ps1` passes in warning mode and fails with `-RequireComplete` until Doug supplies required decisions. |
 | Outlook Source Reference local slice | Mock/manual only | `_bmad-output/implementation-artifacts/outlook-source-reference-slice.json` exists; `outlook-source-reference-slice-validate.ps1` passes locally, but no live Outlook/Graph read has been authorized or performed. |
+| Proposed Work Item extraction local slice | Local JSON only | `_bmad-output/implementation-artifacts/proposed-work-item-extraction-slice.json` exists; `proposed-work-item-extraction-slice-validate.ps1` passes locally, but no Dataverse Work Item writes, receipts, or approvals have been authorized or performed. |
 | Environment identity | Not tested | Expected Environment ID: `ba9a96b2-f562-40f6-931d-6b55873954ee`; expected Organization ID: `0c0fa4db-8614-ef11-9f83-000d3a342d36`. |
 | Dataverse availability | Inferred, not verified | Web API endpoint provided: `https://sdhdev.api.crm.dynamics.com/api/data/v9.2`; must verify with `pac env who`. |
 | Dataverse search/indexing | Not tested | Awaiting `pac env list-settings` or admin portal evidence. |
@@ -83,6 +84,16 @@ Append entries as evidence is gathered.
 - Observed result: Local validator passes and proves message/thread source kinds, conversation reference, source object reference, data boundary policy, mock/manual evidence marking, and no Work Item creation on save.
 - Decision: live Outlook/Graph reads are still not authorized
 - Restrictions: no Graph calls performed; no tenant writes performed; mock/manual records are not verified tenant evidence
+- Follow-up owner: Doug
+
+### Entry 0.3 - Proposed Work Item Extraction Slice Initialized
+
+- Date/time: 2026-07-08T01:30:33-04:00
+- Command or source: `proposed-work-item-extraction-slice.json`, `proposed-work-item-extraction-slice-validate.ps1`
+- Capability: Local proposed Work Item extraction from Source Record samples
+- Observed result: Local validator passes and proves proposed Work Item shape, Council-level `CWI-*` identity, primary Source Record references, Work Item Source links, confidence/uncertainty fields, and proposal-only behavior.
+- Decision: live Dataverse Work Item writes are still not authorized
+- Restrictions: no tenant writes performed; no receipts created; no approvals executed; no outbound action performed
 - Follow-up owner: Doug
 
 ### Entry 1

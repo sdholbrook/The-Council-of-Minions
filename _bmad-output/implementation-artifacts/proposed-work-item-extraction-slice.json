@@ -1,0 +1,137 @@
+{
+  "artifactVersion": "2026-07-08",
+  "storyKey": "1-3-extract-proposed-work-items-from-source-records",
+  "status": "local-implemented-tenant-gated",
+  "purpose": "Define and validate proposed Work Item extraction from local Source Record samples without tenant writes, receipts, approval execution, or outbound action.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "noReceiptCreationInThisSlice": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true
+  },
+  "extractionRun": {
+    "runId": "EXTRACT-LOCAL-2026-07-08-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 1.3 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json"
+    ],
+    "decisionPolicy": {
+      "defaultStateGroup": "proposed",
+      "defaultAutoCreationPolicyResult": "proposal_only",
+      "decisionDelegationRiskRequiresApproval": true,
+      "lowRiskFollowUpStillNoExternalAction": true,
+      "receiptCreationDeferredToStory2": true
+    },
+    "proposedWorkItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-DECISION-001",
+        "com_title": "Decide whether the manual source needs follow-up",
+        "com_type": "decision",
+        "com_summary": "Review the manual summary source and decide whether it should become executable Council work.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.82,
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Extraction confidence 0.78; type confidence 0.84; owner confidence 0.82. Source is local sample evidence, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "The source explicitly says it can be reviewed later for zero, one, or many proposed Work Items. A decision item is proposed because human judgment is required before execution.",
+        "com_recommended_next_action": "Doug reviews the source rationale and either approves, holds, ignores, or asks for a more specific extraction.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; governance; no_outbound_action; local_sample_not_tenant_verified",
+        "extraction_rationale": "The source contains possible work context but not enough authority to execute. It should become a proposed decision only.",
+        "extraction_confidence": 0.78,
+        "type_confidence": 0.84,
+        "source_identification_confidence": 1.0,
+        "uncertainty": "The local sample does not include real tenant context or the full source body, so exact owner, urgency, and action should be reviewed."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-FOLLOWUP-001",
+        "com_title": "Follow up on mock Outlook message reference",
+        "com_type": "follow_up",
+        "com_summary": "Review the mock Outlook message reference and decide whether it represents a real follow-up once live reads are authorized.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.7,
+        "com_urgency": "unknown",
+        "com_risk_class": "unknown",
+        "com_confidence_summary": "Extraction confidence 0.72; type confidence 0.76; owner confidence 0.70. The source is explicitly mock/manual evidence.",
+        "com_primary_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_rationale": "The Outlook Source Record proves message/conversation reference shape, but live Graph reads are not authorized. The Work Item remains proposed and cannot trigger external action.",
+        "com_recommended_next_action": "After live-read approval, compare against a verified Outlook message and decide whether to keep, replace, or ignore the proposed follow-up.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "mock_manual_not_tenant_verified; human_approval_required; no_outbound_action; source_body_not_stored",
+        "extraction_rationale": "A follow-up is plausible from the Outlook reference shape, but the record is not tenant verified and has no authorized body content. It must remain proposed.",
+        "extraction_confidence": 0.72,
+        "type_confidence": 0.76,
+        "source_identification_confidence": 1.0,
+        "uncertainty": "The mock source lacks real body text, sensitivity labels, and tenant permission context; it may produce zero actionable Work Items after verification."
+      }
+    ],
+    "workItemSourceLinks": [
+      {
+        "com_name": "CWI-LOCAL-DECISION-001 primary source",
+        "com_work_item": "CWI-LOCAL-DECISION-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_source_role": "primary",
+        "com_rationale": "The manual summary sample is the sole evidence for the proposed decision.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-FOLLOWUP-001 primary source",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_source_role": "primary",
+        "com_rationale": "The mock Outlook message sample is the source reference being tested for proposed follow-up extraction.",
+        "com_confidence": 1.0
+      }
+    ],
+    "sourceUpdatesDeferred": [
+      {
+        "sourceRecord": "CSR-MANUAL-SUMMARY-001",
+        "deferredUpdate": "com_extraction_status may become extracted only after a receipt-backed mutation story is implemented."
+      },
+      {
+        "sourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "deferredUpdate": "com_extraction_status may remain new or held until live Outlook evidence exists."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "extractionRun.proposedWorkItems",
+        "extraction_rationale",
+        "extraction_confidence",
+        "type_confidence",
+        "owner_candidate_confidence",
+        "uncertainty",
+        "recommended_next_action"
+      ],
+      "tenantEvidenceRequired": "Tenant persistence of proposed Work Items after Dataverse write approval."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "com_primary_source_record",
+        "workItemSourceLinks",
+        "CWI-* Council Work Item IDs",
+        "Dataverse row IDs absent from product identity fields"
+      ],
+      "tenantEvidenceRequired": "Dataverse Work Item and Work Item Source records persisted after write approval."
+    }
+  ]
+}

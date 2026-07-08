@@ -19,7 +19,7 @@ This audit does not redefine "finished." It separates completed evidence from ga
 
 The MVP is **not complete**.
 
-The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. The local UX contract, runtime/setup baseline, tenant decision packet, Story 1.1 manual Source Record local slice, and Story 1.2 Outlook Source Reference local slice have since been created. Tenant validation, write approval, user acceptance of model-driven app surface, source body policy, publisher prefix, live Outlook/Graph read approval, and live MVP proof remain gated.
+The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. The local UX contract, runtime/setup baseline, tenant decision packet, Story 1.1 manual Source Record local slice, Story 1.2 Outlook Source Reference local slice, and Story 1.3 proposed Work Item extraction local slice have since been created. Tenant validation, write approval, user acceptance of model-driven app surface, source body policy, publisher prefix, live Outlook/Graph read approval, and live MVP proof remain gated.
 
 ## Completion Requirements and Evidence
 
@@ -37,7 +37,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 | Runtime/setup baseline exists | `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md` and `council-mvp-local-validate.ps1` define the runtime, validation command, and packaging boundary | Proven locally |
 | Tenant validation evidence exists | `tenant-validation-evidence-2026-07-08.md` exists with local CLI, decision-packet, and local Story 1.2 slice evidence; no Council-target `pac env who` evidence has been captured | Not complete |
 | Sprint tracking generated | `_bmad-output/implementation-artifacts/sprint-status.yaml` tracks 5 epics, 25 stories, and 5 retrospectives | Proven |
-| First MVP slice defined | `mvp-sprint-plan-2026-07-08.md` and `first-vertical-slice-work-orders-2026-07-08.md` define Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief; Story 1.1 and Story 1.2 have local Source Record slice artifacts and validators | Prepared, provisional |
+| First MVP slice defined | `mvp-sprint-plan-2026-07-08.md` and `first-vertical-slice-work-orders-2026-07-08.md` define Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief; Story 1.1, Story 1.2, and Story 1.3 have local Source Record / proposed Work Item slice artifacts and validators | Prepared, provisional |
 | Live MVP works in tenant | No authenticated `pac env who`, no Dataverse solution created, no model-driven app, no sample records | Not complete |
 | Git/PR state clean and updated | Branch `codex/update-bmad-harness-context`; PR #1 open and mergeable; current readiness/sprint updates are pending commit at the time of this audit update | Pending commit |
 
@@ -47,8 +47,8 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 
 1. `bmad-check-implementation-readiness` is complete.
 2. `bmad-sprint-planning` generated `sprint-status.yaml`.
-3. Story 1.1 and Story 1.2 are in progress with local non-tenant contract slices implemented and tenant-dependent app configuration still open.
-4. Next formal story-cycle gate is Story 1.3, extracting proposed Work Items from Source Records, unless Doug first resolves tenant gates.
+3. Story 1.1, Story 1.2, and Story 1.3 are in progress with local non-tenant contract slices implemented and tenant-dependent app configuration still open.
+4. Next formal story-cycle gate is Story 1.4, zero-item and multi-item extraction handling, unless Doug first resolves tenant gates.
 5. Tenant validation and write approval remain incomplete.
 
 ### Tenant Gates
@@ -96,14 +96,15 @@ The current branch has completed all reasonable local planning/prep work that do
 16. Tenant decision packet and validator created; hard mode blocks write approval until Doug supplies required decisions.
 17. Story 1.1 local manual Source Record slice created and validated without tenant writes.
 18. Story 1.2 local Outlook Source Reference slice created and validated without live Graph reads or tenant writes.
-19. PR #1 updated before this audit update; new changes need commit/push/PR refresh.
+19. Story 1.3 local proposed Work Item extraction slice created and validated without tenant writes, receipts, or outbound actions.
+20. PR #1 updated before this audit update; new changes need commit/push/PR refresh.
 
 ## Next Actions After Doug Replies
 
 Next BMAD action:
 
 1. Resolve remaining readiness gates: tenant validation, write approvals, source body policy, publisher prefix, model-driven app acceptance, and governance carry-forward.
-2. Continue the local story cycle with Story 1.3 if tenant gates remain unresolved.
+2. Continue the local story cycle with Story 1.4 if tenant gates remain unresolved.
 3. Do not start live tenant auth, Graph reads, or writes yet.
 
 If Doug replies with the full before-bed packet:

@@ -77,6 +77,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Proposed Work Item extraction slice validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\proposed-work-item-extraction-slice-validate.ps1"
+    if ($LASTEXITCODE -ne 0) {
+      throw "Proposed Work Item extraction slice validation failed."
+    }
+    $output | ForEach-Object { Write-Host $_ }
+    if (($output -join "`n") -notmatch "PROPOSED_WORK_ITEM_EXTRACTION_SLICE_VALIDATE_OK") {
+      throw "Proposed Work Item extraction slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
