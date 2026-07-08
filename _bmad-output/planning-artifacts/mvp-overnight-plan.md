@@ -5,8 +5,8 @@ status: active
 created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
-current_gate: awaiting_bmad_epics_step_1_confirmation
-primary_blocker: "The bmad-create-epics-and-stories workflow requires Doug to confirm extracted requirements with C before Step 2 can be loaded."
+current_gate: awaiting_bmad_epics_step_2_approval
+primary_blocker: "The bmad-create-epics-and-stories workflow requires Doug to approve the proposed epic structure before Step 3 story creation can be loaded."
 ---
 
 # MVP Overnight Plan
@@ -35,7 +35,7 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Dataverse manifest validator: `_bmad-output/implementation-artifacts/dataverse-manifest-validate.ps1`
 - Dataverse read-only preflight script: `_bmad-output/implementation-artifacts/dataverse-preflight-readonly.ps1`
 - Dataverse dry-run deployment plan script: `_bmad-output/implementation-artifacts/dataverse-deployment-plan.ps1`
-- Current BMAD workflow state: `bmad-create-epics-and-stories` Step 1 requirements extracted, waiting for Doug confirmation
+- Current BMAD workflow state: `bmad-create-epics-and-stories` Step 2 epic design in progress, waiting for Doug approval before story creation
 - No target application runtime exists yet in the repo
 - Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
 - No tenant validation evidence exists yet
@@ -54,7 +54,7 @@ There are three possible completion levels. The overnight default is Level 1 plu
 
 ### Required Now
 
-1. Reply `C` to confirm the extracted requirements in `_bmad-output/planning-artifacts/epics.md` and allow the BMAD epics workflow to continue.
+1. Approve the proposed Step 2 epic structure with `C` so the BMAD epics workflow can proceed to story creation.
 
 ### Required Before Any Live Microsoft Work
 
@@ -98,7 +98,7 @@ Goal: Complete the current BMAD epics/stories workflow after confirmation.
 
 Tasks:
 
-1. Continue `bmad-create-epics-and-stories` Step 2 after Doug sends `C`.
+1. Complete `bmad-create-epics-and-stories` Step 2 after Doug approves the proposed epic structure.
 2. Design epics around user-value slices, not implementation silos.
 3. Generate stories with acceptance criteria and contract citations.
 4. Fill the FR/NFR/additional-requirement coverage map.
@@ -221,7 +221,7 @@ Exit evidence:
 
 ## Overnight Execution Order
 
-1. Wait for or receive Doug's `C` confirmation.
+1. Wait for or receive Doug's Step 2 epic-structure approval.
 2. Finish BMAD epics/stories workflow.
 3. Run story-set reviews.
 4. Run implementation-readiness review.
@@ -250,7 +250,7 @@ Exit evidence:
 
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
-| Requirement confirmation | Waiting for `C` | Required by BMAD Step 1. |
+| Epic structure approval | Waiting for `C` | Required by BMAD Step 2 before story creation. |
 | MVP finish level | Level 1 planning complete plus Level 2 prep | Level 3 requires tenant evidence. |
 | Storage candidate | Dataverse proposed as MVP operational system of record; awaiting Doug approval | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
 | Runtime | Undecided | No app manifest exists and stories are not complete. |
