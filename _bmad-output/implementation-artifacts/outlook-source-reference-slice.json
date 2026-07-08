@@ -1,0 +1,154 @@
+{
+  "artifactVersion": "2026-07-08",
+  "storyKey": "1-2-capture-outlook-source-references",
+  "status": "local-implemented-tenant-gated",
+  "purpose": "Define and validate Outlook message/thread Source Record references without performing live Microsoft Graph reads or tenant writes.",
+  "guards": {
+    "liveOutlookGraphReadsApproved": false,
+    "liveTenantWritesApproved": false,
+    "requiresReadOnlyPreflightBeforeWrite": true,
+    "requiresTenantDecisionPacketBeforeLiveReads": true,
+    "requiresPublisherPrefixBeforeWrite": true,
+    "requiresSourceBodyPolicyBeforeSampleData": true,
+    "noWorkItemCreatedOnSourceSave": true,
+    "noOutboundAction": true,
+    "noFlowPublish": true,
+    "noAgentPublish": true,
+    "noAppRegistration": true,
+    "noFabricMutation": true
+  },
+  "outlookCapture": {
+    "dataverseTable": "com_councilsourcerecord",
+    "modelDrivenApp": "com_CouncilQueue",
+    "navigationGroup": "Intake",
+    "defaultSourceSystem": "outlook",
+    "allowedSourceKinds": [
+      "message",
+      "thread"
+    ],
+    "defaultExtractionStatus": "new",
+    "defaultDataBoundaryPolicy": "link_only",
+    "workItemCreationOnSave": false,
+    "requiresExplicitExtractionStep": true,
+    "graphIdPolicy": {
+      "resource": "microsoft.graph.message",
+      "version": "v1.0",
+      "requiredPreferHeader": "Prefer: IdType=\"ImmutableId\"",
+      "sourceObjectRefFormat": "graph:message:{immutable-message-id}",
+      "conversationRefSource": "message.conversationId",
+      "sourceVersionRefSource": "message.changeKey plus message.lastModifiedDateTime; internetMessageId when available",
+      "sourceObjectUrlSource": "message.webLink when safe to store"
+    },
+    "requiredFields": [
+      "com_council_source_record_id",
+      "com_source_system",
+      "com_source_kind",
+      "com_source_object_ref",
+      "com_source_object_url",
+      "com_conversation_ref",
+      "com_captured_at",
+      "com_captured_by",
+      "com_observed_modified_at",
+      "com_source_version_ref",
+      "com_permission_snapshot",
+      "com_sensitivity_label",
+      "com_retention_or_hold_flags",
+      "com_extraction_status",
+      "com_source_to_work_item_rationale",
+      "com_data_boundary_policy"
+    ],
+    "visibleFormFields": [
+      "com_name",
+      "com_council_source_record_id",
+      "com_source_system",
+      "com_source_kind",
+      "com_source_object_ref",
+      "com_source_object_url",
+      "com_conversation_ref",
+      "com_parent_ref",
+      "com_captured_at",
+      "com_captured_by",
+      "com_observed_modified_at",
+      "com_source_version_ref",
+      "com_attachment_refs",
+      "com_permission_snapshot",
+      "com_sensitivity_label",
+      "com_retention_or_hold_flags",
+      "com_extraction_status",
+      "com_source_to_work_item_rationale",
+      "com_data_boundary_policy"
+    ],
+    "requiredViews": [
+      "New Source Records",
+      "Outlook Source Records",
+      "Mock Outlook Source Records"
+    ],
+    "sampleRecords": [
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Mock Outlook source - message link only",
+        "com_council_source_record_id": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_source_system": "outlook",
+        "com_source_kind": "message",
+        "com_source_object_ref": "mock-outlook-message:2026-07-08:message-001",
+        "com_source_object_url": "https://example.invalid/outlook/mock-message-001",
+        "com_conversation_ref": "mock-outlook-conversation:2026-07-08:conversation-001",
+        "com_parent_ref": "mock-outlook-folder:inbox",
+        "com_captured_at": "2026-07-08T01:20:40-04:00",
+        "com_captured_by": "Doug",
+        "com_observed_modified_at": "2026-07-08T01:20:40-04:00",
+        "com_source_version_ref": "mock-change-key:message-001; mock-internet-message-id:<message-001@example.invalid>",
+        "com_attachment_refs": "none",
+        "com_permission_snapshot": "mock/manual evidence, not tenant verified",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "new",
+        "com_source_to_work_item_rationale": "Mock Outlook message reference captured to prove link and conversation shape; no Work Item created on save.",
+        "com_data_boundary_policy": "link_only"
+      },
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Mock Outlook source - thread hash only",
+        "com_council_source_record_id": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_source_system": "outlook",
+        "com_source_kind": "thread",
+        "com_source_object_ref": "mock-outlook-thread:2026-07-08:conversation-001",
+        "com_conversation_ref": "mock-outlook-conversation:2026-07-08:conversation-001",
+        "com_parent_ref": "mock-outlook-message:2026-07-08:message-001",
+        "com_captured_at": "2026-07-08T01:20:40-04:00",
+        "com_captured_by": "Doug",
+        "com_observed_modified_at": "2026-07-08T01:20:40-04:00",
+        "com_source_version_ref": "mock-thread-version:conversation-001",
+        "com_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "com_attachment_refs": "mock/manual attachment metadata only, not tenant verified",
+        "com_permission_snapshot": "mock/manual evidence, not tenant verified",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "held",
+        "com_source_to_work_item_rationale": "Mock Outlook thread reference captured without body text until live reads and source body policy are approved.",
+        "com_data_boundary_policy": "hash_only"
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "outlookCapture.requiredFields",
+        "outlookCapture.graphIdPolicy",
+        "outlookCapture.workItemCreationOnSave=false",
+        "outlookCapture.requiresExplicitExtractionStep=true"
+      ],
+      "tenantEvidenceRequired": "Authorized Microsoft Graph read that captures a message or thread reference after Doug approves live reads."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "outlookCapture.sampleRecords",
+        "evidenceStatus=mock_manual_not_tenant_verified",
+        "permission snapshot visibly marks mock/manual records as not tenant verified"
+      ],
+      "tenantEvidenceRequired": "None for mock fallback; tenant evidence remains required before claiming verified Outlook capture."
+    }
+  ]
+}

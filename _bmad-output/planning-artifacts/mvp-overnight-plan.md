@@ -39,6 +39,8 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Tenant decision packet: `_bmad-output/implementation-artifacts/tenant-decision-packet.json`
 - Tenant decision validator: `_bmad-output/implementation-artifacts/tenant-decision-packet-validate.ps1`
 - Tenant local prerequisite guard: `_bmad-output/implementation-artifacts/tenant-prereq-local-check.ps1`
+- Story 1.1 local manual Source Record slice: `_bmad-output/implementation-artifacts/manual-source-record-slice.json`
+- Story 1.2 local Outlook Source Reference slice: `_bmad-output/implementation-artifacts/outlook-source-reference-slice.json`
 - Sprint status tracking: `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - UX contract: `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md`
 - Runtime/setup baseline: `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md`
@@ -46,9 +48,10 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Current BMAD workflow state: `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness`, and `bmad-sprint-planning` are complete; next formal story-cycle gate is `bmad-create-story`
 - No custom application runtime manifest exists yet in the repo; the practical MVP runtime is documented as Dataverse/model-driven app pending Doug approval
 - Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
-- No tenant validation evidence exists yet
+- No Council-target tenant validation evidence exists yet
 - Local CLI prerequisite evidence exists; active PAC auth is not currently pointed at the Council target environment
 - Required Doug decisions are now captured in a machine-readable packet, but remain pending
+- Story 1.1 and Story 1.2 are in progress with local non-tenant slice validators passing; live Dataverse configuration and live Outlook/Graph reads remain gated
 
 ## Meaning of "MVP Finished"
 
@@ -261,6 +264,7 @@ Exit evidence:
 | UX surface | Minion Brief plus Council Queue in model-driven app pattern | UX spines exist; Doug acceptance of model-driven app surface still required. |
 | Tenant work | Read-only preflight only after interactive login; no writes | Architecture requires `VERIFY IN TENANT` and Doug approval before mutation. |
 | Tenant decision packet | Pending | Must pass `tenant-decision-packet-validate.ps1 -RequireComplete` before write approval. |
+| Local story slices | Story 1.1 and Story 1.2 in progress | Manual Source Record and Outlook Source Reference contracts are locally validated; tenant app configuration remains open. |
 
 ## Completion Criteria For This Goal
 

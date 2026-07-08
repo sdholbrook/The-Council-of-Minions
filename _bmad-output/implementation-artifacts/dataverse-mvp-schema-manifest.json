@@ -263,6 +263,8 @@
       ],
       "views": [
         "New Source Records",
+        "Outlook Source Records",
+        "Mock Outlook Source Records",
         "Held Source Records",
         "Extracted Source Records",
         "Source Records With Drift Risk"

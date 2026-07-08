@@ -66,6 +66,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Outlook Source Reference slice validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\outlook-source-reference-slice-validate.ps1"
+    if ($LASTEXITCODE -ne 0) {
+      throw "Outlook Source Reference slice validation failed."
+    }
+    $output | ForEach-Object { Write-Host $_ }
+    if (($output -join "`n") -notmatch "OUTLOOK_SOURCE_REFERENCE_SLICE_VALIDATE_OK") {
+      throw "Outlook Source Reference slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
