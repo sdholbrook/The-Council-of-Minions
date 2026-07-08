@@ -5,8 +5,8 @@ status: active
 created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
-current_gate: sprint_tracking_generated_implementation_gated
-primary_blocker: "Implementation readiness is complete with NEEDS WORK; live implementation remains blocked by UX contract, runtime setup, tenant validation, and explicit write approvals."
+current_gate: local_readiness_gaps_addressed_tenant_gated
+primary_blocker: "UX contract and runtime setup now have local artifacts; live implementation remains blocked by tenant validation, source/write approvals, publisher prefix, and model-driven app acceptance."
 ---
 
 # MVP Overnight Plan
@@ -37,8 +37,11 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Dataverse read-only preflight script: `_bmad-output/implementation-artifacts/dataverse-preflight-readonly.ps1`
 - Dataverse dry-run deployment plan script: `_bmad-output/implementation-artifacts/dataverse-deployment-plan.ps1`
 - Sprint status tracking: `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- UX contract: `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md`
+- Runtime/setup baseline: `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md`
+- Local validation script: `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1`
 - Current BMAD workflow state: `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness`, and `bmad-sprint-planning` are complete; next formal story-cycle gate is `bmad-create-story`
-- No target application runtime exists yet in the repo
+- No custom application runtime manifest exists yet in the repo; the practical MVP runtime is documented as Dataverse/model-driven app pending Doug approval
 - Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
 - No tenant validation evidence exists yet
 
@@ -49,14 +52,14 @@ There are three possible completion levels. The overnight default is Level 1 plu
 | Level | Meaning | Can complete overnight without more input? | Notes |
 | --- | --- | --- | --- |
 | Level 1 | BMAD planning finished | Complete | Includes epics, stories, coverage, readiness report, and sprint-status tracking. |
-| Level 2 | Implementation-ready MVP slice | Partially | Story set, solution decision packet, local validation plan, and first vertical-slice work orders exist; runtime setup and UX contract remain open. |
+| Level 2 | Implementation-ready MVP slice | Partially | Story set, solution decision packet, local validation plan, runtime/setup baseline, UX contract, and first vertical-slice work orders exist; tenant validation and approvals remain open. |
 | Level 3 | Live Microsoft tenant MVP | No | Requires tenant identity, permissions, licensing, DLP/security evidence, admin settings, and explicit authorization for live Microsoft work. |
 
 ## Required From Doug Before Overnight Work Can Fully Run
 
 ### Required Now
 
-1. Resolve implementation-readiness gaps before Phase 4 work: focused UX contract, runtime/setup baseline, tenant validation, and explicit write/publisher approvals.
+1. Resolve remaining implementation-readiness gates before live Phase 4 work: tenant validation, source/write boundaries, publisher prefix, model-driven app acceptance, and explicit write approval.
 
 ### Required Before Any Live Microsoft Work
 
@@ -102,7 +105,7 @@ Tasks:
 
 1. `bmad-create-epics-and-stories` completed.
 2. `bmad-check-implementation-readiness` completed with `NEEDS WORK`.
-3. Correct readiness gaps before implementation.
+3. Correct tenant/write readiness gaps before implementation.
 
 Actual epic shape:
 
@@ -222,7 +225,7 @@ Exit evidence:
 2. Run implementation-readiness review. Complete, status `NEEDS WORK`.
 3. Produce sprint/backlog sequencing. Complete, including `sprint-status.yaml`.
 4. Produce solution decision packet and tenant evidence backlog. Prepared, tenant evidence still empty.
-5. Prepare first implementation story. Pending readiness gap resolution.
+5. Prepare first implementation story. Pending tenant/write boundary decision.
 6. Validate files with `git diff --check` and BMAD config resolver.
 7. Commit and push artifacts if the packet is coherent.
 8. Update PR #1.
@@ -245,11 +248,11 @@ Exit evidence:
 
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
-| Implementation readiness | Complete with `NEEDS WORK` | UX contract, runtime setup, tenant validation, and write approvals remain open. |
+| Implementation readiness | Complete with local follow-up artifacts | UX contract and runtime setup exist; tenant validation and write approvals remain open. |
 | MVP finish level | Level 1 planning complete plus Level 2 prep | Level 3 requires tenant evidence. |
 | Storage candidate | Dataverse proposed as MVP operational system of record; awaiting Doug approval | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
-| Runtime | Undecided | No app manifest exists and stories are not complete. |
-| UX surface | Minion Brief plus Council Queue concept; implementation open | Architecture fixed product surface but deferred concrete UX. |
+| Runtime | Dataverse/model-driven app proposed as practical MVP runtime | Runtime/setup baseline exists; Doug approval and tenant validation still required. |
+| UX surface | Minion Brief plus Council Queue in model-driven app pattern | UX spines exist; Doug acceptance of model-driven app surface still required. |
 | Tenant work | Read-only preflight only after interactive login; no writes | Architecture requires `VERIFY IN TENANT` and Doug approval before mutation. |
 
 ## Completion Criteria For This Goal

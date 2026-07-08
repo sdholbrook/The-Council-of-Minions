@@ -1,7 +1,7 @@
 ---
 title: "First Vertical Slice Work Orders"
 project: "The-Council-of-Minions"
-status: readiness-reviewed-needs-ux-runtime-tenant-approval
+status: ux-runtime-addressed-needs-tenant-approval
 created: 2026-07-08
 source_plan: mvp-sprint-plan-2026-07-08.md
 ---
@@ -12,7 +12,7 @@ source_plan: mvp-sprint-plan-2026-07-08.md
 
 Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed, readiness gaps are handled, and tenant write approval is granted.
 
-These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. They remain blocked by runtime/setup, focused UX, tenant validation, and Dataverse write approval.
+These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. Runtime/setup and focused UX now have local artifacts. Tenant validation, Dataverse write approval, publisher prefix, source body policy, and model-driven app acceptance remain open before live tenant execution.
 
 ## Slice Goal
 
@@ -61,6 +61,9 @@ So that the MVP is built in the right environment with no accidental live action
 ### Evidence
 
 - `tenant-validation-evidence-2026-07-08.md` updated with auth/environment proof.
+- `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md` records the runtime and validation boundary.
+- `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md` record the focused UX contract.
+- `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1` passes before tenant work.
 - No Dataverse write commands run before approval.
 
 ## Work Order 1 - Create Council Dataverse Solution
@@ -348,7 +351,7 @@ Power Apps MCP agent feed evaluation tonight: yes/no
 Publisher prefix: <prefix>
 ```
 
-Also resolve before development:
+Also resolve before tenant development:
 
-- Runtime path: Dataverse/model-driven app only, local prototype first, or another explicit runtime.
-- UX path: focused model-driven app UX spec now, or accepted limited admin-style MVP surface.
+- Runtime path acceptance: Dataverse/model-driven app only, local prototype first, or another explicit runtime.
+- UX path acceptance: focused model-driven app UX spec now, or accepted limited admin-style MVP surface.

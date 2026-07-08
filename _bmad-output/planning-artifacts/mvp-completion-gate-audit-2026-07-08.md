@@ -19,7 +19,7 @@ This audit does not redefine "finished." It separates completed evidence from ga
 
 The MVP is **not complete**.
 
-The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. Tenant validation, write approval, runtime setup, UX contract, and live MVP proof remain gated.
+The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. The local UX contract and runtime/setup baseline have since been created. Tenant validation, write approval, user acceptance of model-driven app surface, source body policy, publisher prefix, and live MVP proof remain gated.
 
 ## Completion Requirements and Evidence
 
@@ -33,6 +33,8 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 | Required user inputs identified | `mvp-overnight-plan.md`, `live-tenant-kickoff-2026-07-08.md`, `live-tenant-validation-runbook-2026-07-08.md`, `first-vertical-slice-work-orders-2026-07-08.md` | Proven |
 | Storage direction prepared | `storage-decision-record-2026-07-08.md` proposes Dataverse as MVP operational store and Fabric IQ / Fabric Graph as phase 2 projection | Prepared, awaiting Doug approval |
 | Dataverse implementation prep exists | `dataverse-mvp-schema-plan-2026-07-08.md`, `dataverse-mvp-schema-manifest.json`, `dataverse-manifest-validate.ps1`, `dataverse-deployment-plan.ps1`, `dataverse-preflight-readonly.ps1` | Proven for dry-run prep |
+| UX contract exists | `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md` define the model-driven Council Queue / Minion Brief UX contract | Proven locally, awaiting Doug acceptance |
+| Runtime/setup baseline exists | `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md` and `council-mvp-local-validate.ps1` define the runtime, validation command, and packaging boundary | Proven locally |
 | Tenant validation evidence exists | `tenant-validation-evidence-2026-07-08.md` exists as a template; no `pac` evidence has been captured | Not complete |
 | Sprint tracking generated | `_bmad-output/implementation-artifacts/sprint-status.yaml` tracks 5 epics, 25 stories, and 5 retrospectives | Proven |
 | First MVP slice defined | `mvp-sprint-plan-2026-07-08.md` and `first-vertical-slice-work-orders-2026-07-08.md` define Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief | Prepared, provisional |
@@ -45,7 +47,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 
 1. `bmad-check-implementation-readiness` is complete.
 2. `bmad-sprint-planning` generated `sprint-status.yaml`.
-3. Next formal story-cycle gate is `bmad-create-story`, but implementation should not start until readiness gaps are handled.
+3. Next formal story-cycle gate is `bmad-create-story`, using the runtime baseline and UX spines as implementation inputs.
 4. Tenant validation and write approval remain incomplete.
 
 ### Tenant Gates
@@ -65,7 +67,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 
 ### Product/Implementation Gates
 
-1. No target application runtime manifest exists.
+1. No custom application runtime manifest exists; Dataverse/model-driven app is documented as the proposed practical MVP runtime.
 2. No Dataverse solution export exists.
 3. No model-driven app exists in the tenant.
 4. No live Source Record, Work Item, Receipt, Graph Entity/Edge, or Minion Brief exists.
@@ -88,14 +90,16 @@ The current branch has completed all reasonable local planning/prep work that do
 11. Sprint plan and vertical-slice work orders created.
 12. Implementation-readiness assessment completed with `NEEDS WORK` before Phase 4.
 13. Sprint status tracking generated.
-14. PR #1 updated before this audit update; new changes need commit/push/PR refresh.
+14. UX contract created for Council Queue and Minion Brief.
+15. Runtime/setup baseline and local validation command created.
+16. PR #1 updated before this audit update; new changes need commit/push/PR refresh.
 
 ## Next Actions After Doug Replies
 
 Next BMAD action:
 
-1. Resolve readiness gaps: UX contract, runtime/setup baseline, tenant validation, write approvals, and governance carry-forward.
-2. Prepare the first story with `bmad-create-story` only after the intended first slice is confirmed.
+1. Resolve remaining readiness gates: tenant validation, write approvals, source body policy, publisher prefix, model-driven app acceptance, and governance carry-forward.
+2. Prepare the first story with `bmad-create-story` using the runtime baseline and UX spines.
 3. Do not start live tenant auth or writes yet.
 
 If Doug replies with the full before-bed packet:
@@ -131,7 +135,7 @@ Publisher prefix: <prefix>
 
 The work is materially advanced and locally validated, but the MVP cannot be marked finished until:
 
-1. The readiness gaps are addressed or explicitly accepted for a scoped first slice.
+1. The remaining tenant/write readiness gates are addressed or explicitly accepted for a scoped first slice.
 2. First story execution begins through the BMAD story cycle.
 3. Tenant validation evidence proves the target environment.
 4. Doug approves the storage/write/source-body/review-surface boundaries.

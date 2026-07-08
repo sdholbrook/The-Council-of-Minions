@@ -522,3 +522,23 @@ The following issues must be addressed before starting live implementation:
 This assessment identified 5 actionable issues across 4 categories: UX readiness, greenfield implementation setup, tenant/write gating, and governance carry-forward. The PRD, architecture, and epics are coherent and traceable. The next risk is not missing product intent; it is starting implementation before the first runnable slice, UX surface, and tenant gates are nailed down.
 
 Assessment completed on 2026-07-08 by Codex using the `bmad-check-implementation-readiness` workflow.
+
+## Post-Assessment Follow-Up
+
+After this readiness assessment, two local gaps were addressed without crossing tenant-write boundaries:
+
+1. Focused UX contract created:
+   - `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md`
+   - `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md`
+2. Runtime/setup baseline created:
+   - `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md`
+   - `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1`
+
+Remaining blockers before live Phase 4 implementation:
+
+- Tenant validation evidence.
+- Doug approval of Dataverse as MVP operational store.
+- Doug acceptance of model-driven app as first Council Queue / Minion Brief surface or an explicit alternate surface.
+- Source body policy.
+- Publisher prefix.
+- Explicit Dataverse sandbox write approval.

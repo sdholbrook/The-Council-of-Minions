@@ -83,3 +83,25 @@ development_status:
   5-5-validate-dataverse-mvp-operational-store-readiness: backlog
   5-6-manage-phase-2-knowledge-and-analytics-projections: backlog
   epic-5-retrospective: optional
+
+action_items:
+  - id: s0-0-runtime-setup-baseline
+    status: done
+    owner: Codex
+    evidence: "_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md"
+  - id: s0-7-focused-ux-contract
+    status: done
+    owner: Codex
+    evidence: "_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md"
+  - id: tenant-validation
+    status: open
+    owner: Doug
+    evidence: "_bmad-output/planning-artifacts/tenant-validation-evidence-2026-07-08.md"
+  - id: dataverse-write-approval
+    status: open
+    owner: Doug
+    evidence: "_bmad-output/planning-artifacts/live-tenant-validation-runbook-2026-07-08.md"
+  - id: model-driven-app-acceptance
+    status: open
+    owner: Doug
+    evidence: "_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md"

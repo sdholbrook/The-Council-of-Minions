@@ -1,13 +1,16 @@
 ---
 title: "MVP Sprint Plan"
 project: "The-Council-of-Minions"
-status: sprint-status-generated-needs-readiness-gap-resolution
+status: local-readiness-gaps-addressed-tenant-approval-required
 created: 2026-07-08
 depends_on:
   - epics.md
   - dataverse-mvp-schema-plan-2026-07-08.md
   - live-tenant-validation-runbook-2026-07-08.md
   - tenant-validation-evidence-2026-07-08.md
+  - ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md
+  - ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md
+  - ../implementation-artifacts/runtime-setup-baseline-2026-07-08.md
 ---
 
 # MVP Sprint Plan - 2026-07-08
@@ -16,7 +19,7 @@ depends_on:
 
 Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories, passed final validation, and `bmad-check-implementation-readiness` has completed.
 
-This plan is implementation preparation, not authorization for live tenant work. The readiness report marks the project as `NEEDS WORK` before Phase 4 implementation because UX contract, runtime/setup baseline, tenant validation, and write approvals remain open.
+This plan is implementation preparation, not authorization for live tenant work. The readiness report originally marked the project as `NEEDS WORK` before Phase 4 implementation because UX contract, runtime/setup baseline, tenant validation, and write approvals were open. The local UX and runtime/setup gaps now have artifacts; tenant validation, write approvals, source body policy, publisher prefix, and model-driven app acceptance remain open.
 
 ## Planning Boundary
 
@@ -26,10 +29,11 @@ This plan is implementation preparation, not authorization for live tenant work.
 - Dataverse live writes are not approved yet.
 - Source body policy is not supplied yet.
 - Publisher prefix is not supplied yet.
-- No runtime manifest exists in the repo.
-- No focused UX contract exists for the Council Queue / Minion Brief surface.
+- No custom app runtime manifest exists in the repo; the runtime baseline selects Dataverse/model-driven app as the practical MVP runtime pending Doug approval.
+- Focused UX contract exists for the Council Queue / Minion Brief surface, with open questions around model-driven app acceptance and source body policy.
 - No live tenant changes have been made.
 - Sprint status tracking exists at `_bmad-output/implementation-artifacts/sprint-status.yaml`.
+- Local validation command exists at `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1`.
 
 ## MVP Outcome
 
@@ -54,14 +58,14 @@ Stories:
 
 | ID | Story | Depends on | Done when |
 | --- | --- | --- | --- |
-| S0.0 | Establish runtime and validation baseline | Readiness report | Selected runtime, local run command, validation command, packaging path, and minimal CI/check baseline are documented. |
+| S0.0 | Establish runtime and validation baseline | Readiness report | Done locally: `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md` and `council-mvp-local-validate.ps1`. |
 | S0.1 | Confirm BMAD planning gates | Completed BMAD solutioning gates | Epics, readiness report, and `sprint-status.yaml` exist. |
 | S0.2 | Approve storage decision | Doug approves Dataverse/Fabric split | Storage decision status can move from proposed to accepted. |
 | S0.3 | Authenticate to Power Platform | Doug completes `pac auth create` | `pac env who` proves expected environment/org IDs. |
 | S0.4 | Record tenant evidence | S0.3 | `tenant-validation-evidence-2026-07-08.md` has command evidence. |
 | S0.5 | Confirm live boundaries | Doug answers live reads/writes/source policy | Runbook allows or forbids next phases clearly. |
 | S0.6 | Confirm publisher prefix and solution naming | Doug supplies prefix | Schema write plan is tenant-ready. |
-| S0.7 | Define focused UX contract | Readiness report | Council Queue and Minion Brief forms, views, commands, filters, approval actions, source/provenance panels, graph explanation panel, empty/error states, and accessibility expectations are documented. |
+| S0.7 | Define focused UX contract | Readiness report | Done locally: `ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md`; Doug still needs to accept model-driven app surface. |
 
 Validation:
 
@@ -70,6 +74,7 @@ Validation:
 - `pac env list-settings`
 - `git diff --check`
 - BMAD config resolver
+- `powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\council-mvp-local-validate.ps1`
 
 ### Sprint 1 - Dataverse Operational Foundation
 
@@ -200,12 +205,12 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 
 | Story range | Ready now? | Blocker |
 | --- | --- | --- |
-| S0.0 | No | Needs implementation/runtime decision. |
+| S0.0 | Yes locally | Runtime/setup baseline exists; tenant execution still needs Doug approval. |
 | S0.1 | Yes | Epics/stories, readiness report, and sprint status have been generated. |
 | S0.2 | No | Needs storage approval. |
 | S0.3-S0.4 | No | Needs interactive `pac` sign-in and tenant/domain if needed. |
 | S0.5-S0.6 | No | Needs live boundary, source policy, publisher prefix. |
-| S0.7 | No | Needs focused UX pass. |
+| S0.7 | Yes locally | UX spines exist; model-driven app acceptance remains a user decision. |
 | S1.x | No | Needs S0 complete and Dataverse write approval. |
 | S2.x | Partially | Can design mock flow now; live/sample writes need S1 and source policy. |
 | S3.x | No | Needs Dataverse app components. |
@@ -217,6 +222,7 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 Local:
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\council-mvp-local-validate.ps1
 git diff --check
 $env:PYTHONIOENCODING='utf-8'; uv run --python 3.11 _bmad/scripts/resolve_config.py --project-root C:\repo\The-Council-of-Minions
 ```
@@ -236,8 +242,8 @@ Tenant write commands are intentionally not listed here because they require Dou
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Runtime/setup gap | Product stories cannot be executed in a runnable app | Complete S0.0 before first implementation story. |
-| UX contract gap | Compatible data model could still produce a poor review surface | Complete S0.7 before or alongside the first model-driven app/UI story. |
+| Runtime/setup gap | Product stories cannot be executed in a runnable app | Locally addressed by runtime/setup baseline; tenant execution still gated. |
+| UX contract gap | Compatible data model could still produce a poor review surface | Locally addressed by UX spines; Doug still needs to accept model-driven app as the first surface. |
 | Wrong tenant/environment | Live changes in wrong place | Require `pac env who` match before any write. |
 | Source body policy unclear | Sensitive data capture risk | Default to link-only until Doug approves otherwise. |
 | Receipt append-only not technically enforced | Audit drift | Restrict roles and add plugin/flow validation before broader users. |
@@ -249,7 +255,7 @@ Tenant write commands are intentionally not listed here because they require Dou
 After Doug supplies the missing approvals:
 
 1. Keep `sprint-status.yaml` as the formal BMAD sprint tracker.
-2. Create the first story through `bmad-create-story`, starting with S0.0 or the closest BMAD story/work-order equivalent.
+2. Create the first story through `bmad-create-story`, using the runtime baseline and UX spines as implementation inputs.
 3. Run tenant validation when Doug is present.
 4. Update tenant evidence.
 5. Begin S1 only after explicit Dataverse write approval.
