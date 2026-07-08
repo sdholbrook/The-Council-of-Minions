@@ -5,8 +5,8 @@ status: active
 created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
-current_gate: awaiting_bmad_epics_workflow_complete_confirmation
-primary_blocker: "The bmad-create-epics-and-stories workflow requires Doug to select C from the Step 4 final menu to complete the workflow."
+current_gate: sprint_tracking_generated_implementation_gated
+primary_blocker: "Implementation readiness is complete with NEEDS WORK; live implementation remains blocked by UX contract, runtime setup, tenant validation, and explicit write approvals."
 ---
 
 # MVP Overnight Plan
@@ -31,11 +31,13 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Tenant evidence template: `_bmad-output/planning-artifacts/tenant-validation-evidence-2026-07-08.md`
 - MVP sprint plan: `_bmad-output/planning-artifacts/mvp-sprint-plan-2026-07-08.md`
 - First vertical-slice work orders: `_bmad-output/planning-artifacts/first-vertical-slice-work-orders-2026-07-08.md`
+- Implementation readiness report: `_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-08.md`
 - Dataverse schema manifest: `_bmad-output/implementation-artifacts/dataverse-mvp-schema-manifest.json`
 - Dataverse manifest validator: `_bmad-output/implementation-artifacts/dataverse-manifest-validate.ps1`
 - Dataverse read-only preflight script: `_bmad-output/implementation-artifacts/dataverse-preflight-readonly.ps1`
 - Dataverse dry-run deployment plan script: `_bmad-output/implementation-artifacts/dataverse-deployment-plan.ps1`
-- Current BMAD workflow state: `bmad-create-epics-and-stories` Step 4 final validation complete, waiting for Doug's final menu selection to complete workflow
+- Sprint status tracking: `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- Current BMAD workflow state: `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness`, and `bmad-sprint-planning` are complete; next formal story-cycle gate is `bmad-create-story`
 - No target application runtime exists yet in the repo
 - Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
 - No tenant validation evidence exists yet
@@ -46,15 +48,15 @@ There are three possible completion levels. The overnight default is Level 1 plu
 
 | Level | Meaning | Can complete overnight without more input? | Notes |
 | --- | --- | --- | --- |
-| Level 1 | BMAD planning finished | Yes, after Doug sends `C` for the Step 1 requirement confirmation | Includes epics, stories, coverage, reviews, readiness report, and sprint sequencing. |
-| Level 2 | Implementation-ready MVP slice | Mostly | Requires story set, solution decision packet, local validation plan, and first vertical-slice work orders. Backend and runtime can remain mocked or undecided if explicitly scoped. |
+| Level 1 | BMAD planning finished | Complete | Includes epics, stories, coverage, readiness report, and sprint-status tracking. |
+| Level 2 | Implementation-ready MVP slice | Partially | Story set, solution decision packet, local validation plan, and first vertical-slice work orders exist; runtime setup and UX contract remain open. |
 | Level 3 | Live Microsoft tenant MVP | No | Requires tenant identity, permissions, licensing, DLP/security evidence, admin settings, and explicit authorization for live Microsoft work. |
 
 ## Required From Doug Before Overnight Work Can Fully Run
 
 ### Required Now
 
-1. Select `C` from the Step 4 final menu so the BMAD epics workflow can complete.
+1. Resolve implementation-readiness gaps before Phase 4 work: focused UX contract, runtime/setup baseline, tenant validation, and explicit write/publisher approvals.
 
 ### Required Before Any Live Microsoft Work
 
@@ -82,10 +84,10 @@ Goal: Keep the work aligned with the architecture packet and avoid accidental li
 Tasks:
 
 1. Keep `epics.md` as the active BMAD epics artifact.
-2. Do not load `bmad-create-epics-and-stories` Step 2 until Doug sends `C`.
-3. Keep all live Microsoft work marked `VERIFY IN TENANT`.
-4. Keep BMAD in the harness layer only.
-5. Preserve `Source Record`, `Work Item`, `Receipt`, `Memory Candidate`, `Graph Entity`, `Skill`, `Minion`, and `Minion Brief` as distinct concepts.
+2. Keep all live Microsoft work marked `VERIFY IN TENANT`.
+3. Keep BMAD in the harness layer only.
+4. Preserve `Source Record`, `Work Item`, `Receipt`, `Memory Candidate`, `Graph Entity`, `Skill`, `Minion`, and `Minion Brief` as distinct concepts.
+5. Do not begin live tenant writes or implementation story execution until readiness gaps are explicitly handled.
 
 Exit evidence:
 
@@ -98,25 +100,22 @@ Goal: Complete the current BMAD epics/stories workflow after confirmation.
 
 Tasks:
 
-1. Complete `bmad-create-epics-and-stories` after Doug selects `C` from the final menu.
-2. Invoke `bmad-help` per workflow completion instruction.
-3. Proceed to implementation-readiness review.
+1. `bmad-create-epics-and-stories` completed.
+2. `bmad-check-implementation-readiness` completed with `NEEDS WORK`.
+3. Correct readiness gaps before implementation.
 
-Expected epic shape:
+Actual epic shape:
 
-1. Source Intake and Provenance.
-2. Work Item Core and Council Queue.
-3. Receipt Ledger and Governance Boundary.
-4. Minion Brief and Delegation Support.
-5. Semantic Contract, Meaning Graph, and Memory Candidates.
-6. Skill Registry and Authority Controls.
-7. Microsoft Platform Evaluation and Tenant Readiness.
-8. MVP Implementation Foundation and Validation.
+1. Source Intake and Proposed Work Items.
+2. Council Queue, Approval, and Receipt Ledger.
+3. Minion Brief and Delegation Support.
+4. Meaning Graph and Memory Governance.
+5. Skill Authority and Microsoft Platform Governance.
 
 Exit evidence:
 
 - `_bmad-output/planning-artifacts/epics.md` has no placeholder sections.
-- Frontmatter records completed workflow steps through final validation.
+- Frontmatter records the completed epics workflow.
 - Requirements coverage maps all FR/NFR/AR items to epics or stories.
 
 ### Track 2 - Adversarial Review and Readiness
@@ -219,16 +218,14 @@ Exit evidence:
 
 ## Overnight Execution Order
 
-1. Wait for or receive Doug's final workflow completion selection.
-2. Invoke BMAD completion handoff.
-3. Run story-set reviews.
-4. Run implementation-readiness review.
-5. Produce sprint/backlog sequencing.
-6. Produce solution decision packet and tenant evidence backlog.
-7. Prepare first implementation story.
-8. Validate files with `git diff --check` and BMAD config resolver.
-9. Commit and push artifacts if the packet is coherent.
-10. Update PR #1.
+1. Invoke BMAD completion handoff. Complete.
+2. Run implementation-readiness review. Complete, status `NEEDS WORK`.
+3. Produce sprint/backlog sequencing. Complete, including `sprint-status.yaml`.
+4. Produce solution decision packet and tenant evidence backlog. Prepared, tenant evidence still empty.
+5. Prepare first implementation story. Pending readiness gap resolution.
+6. Validate files with `git diff --check` and BMAD config resolver.
+7. Commit and push artifacts if the packet is coherent.
+8. Update PR #1.
 
 ## Explicit Non-Goals Overnight
 
@@ -248,7 +245,7 @@ Exit evidence:
 
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
-| Epics workflow completion | Waiting for `C` | Required by BMAD Step 4 final menu. |
+| Implementation readiness | Complete with `NEEDS WORK` | UX contract, runtime setup, tenant validation, and write approvals remain open. |
 | MVP finish level | Level 1 planning complete plus Level 2 prep | Level 3 requires tenant evidence. |
 | Storage candidate | Dataverse proposed as MVP operational system of record; awaiting Doug approval | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
 | Runtime | Undecided | No app manifest exists and stories are not complete. |
@@ -262,7 +259,7 @@ The active MVP goal can be marked complete only when current evidence proves:
 1. BMAD epics/stories are complete and reviewed.
 2. Requirements coverage is complete.
 3. Implementation-readiness status is documented.
-4. Sprint/backlog sequencing exists.
+4. Sprint/backlog sequencing and `sprint-status.yaml` exist.
 5. First implementable MVP slice is defined.
 6. Required Doug inputs and tenant gates are listed.
 7. Git/PR state is clean and updated.

@@ -506,4 +506,4 @@ Before claiming the tenant MVP schema is ready:
 
 ## BMAD Alignment
 
-This schema plan supports the active BMAD track but does not replace the paused `bmad-create-epics-and-stories` workflow. After Doug sends `C`, stories should cite this schema plan as implementation preparation while still treating the PRD and architecture companion contracts as authoritative.
+This schema plan supports the active BMAD track but does not replace the completed `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness`, or `bmad-sprint-planning` artifacts. Implementation stories should cite this schema plan as preparation while still treating the PRD and architecture companion contracts as authoritative.

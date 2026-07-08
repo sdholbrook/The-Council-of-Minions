@@ -1,7 +1,7 @@
 ---
 title: "MVP Sprint Plan"
 project: "The-Council-of-Minions"
-status: provisional-aligned-to-validated-stories-pending-workflow-completion
+status: sprint-status-generated-needs-readiness-gap-resolution
 created: 2026-07-08
 depends_on:
   - epics.md
@@ -14,9 +14,9 @@ depends_on:
 
 ## Purpose
 
-Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories and passed final validation.
+Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories, passed final validation, and `bmad-check-implementation-readiness` has completed.
 
-This plan is implementation preparation, not the final readiness decision. The generated BMAD stories should either adopt this sequencing or explicitly supersede it during implementation-readiness review.
+This plan is implementation preparation, not authorization for live tenant work. The readiness report marks the project as `NEEDS WORK` before Phase 4 implementation because UX contract, runtime/setup baseline, tenant validation, and write approvals remain open.
 
 ## Planning Boundary
 
@@ -27,7 +27,9 @@ This plan is implementation preparation, not the final readiness decision. The g
 - Source body policy is not supplied yet.
 - Publisher prefix is not supplied yet.
 - No runtime manifest exists in the repo.
+- No focused UX contract exists for the Council Queue / Minion Brief surface.
 - No live tenant changes have been made.
+- Sprint status tracking exists at `_bmad-output/implementation-artifacts/sprint-status.yaml`.
 
 ## MVP Outcome
 
@@ -46,18 +48,20 @@ The MVP is done when a user can:
 
 ### Sprint 0 - Tenant Readiness and Decision Closure
 
-Goal: close the minimum decisions and authenticate to the provided Dataverse environment without making schema changes.
+Goal: close the minimum readiness decisions, establish the first runnable implementation boundary, and authenticate to the provided Dataverse environment without making schema changes.
 
 Stories:
 
 | ID | Story | Depends on | Done when |
 | --- | --- | --- | --- |
-| S0.1 | Confirm BMAD requirement extraction | Doug replies `C` | Formal BMAD Step 2 can begin. |
+| S0.0 | Establish runtime and validation baseline | Readiness report | Selected runtime, local run command, validation command, packaging path, and minimal CI/check baseline are documented. |
+| S0.1 | Confirm BMAD planning gates | Completed BMAD solutioning gates | Epics, readiness report, and `sprint-status.yaml` exist. |
 | S0.2 | Approve storage decision | Doug approves Dataverse/Fabric split | Storage decision status can move from proposed to accepted. |
 | S0.3 | Authenticate to Power Platform | Doug completes `pac auth create` | `pac env who` proves expected environment/org IDs. |
 | S0.4 | Record tenant evidence | S0.3 | `tenant-validation-evidence-2026-07-08.md` has command evidence. |
 | S0.5 | Confirm live boundaries | Doug answers live reads/writes/source policy | Runbook allows or forbids next phases clearly. |
 | S0.6 | Confirm publisher prefix and solution naming | Doug supplies prefix | Schema write plan is tenant-ready. |
+| S0.7 | Define focused UX contract | Readiness report | Council Queue and Minion Brief forms, views, commands, filters, approval actions, source/provenance panels, graph explanation panel, empty/error states, and accessibility expectations are documented. |
 
 Validation:
 
@@ -196,10 +200,12 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 
 | Story range | Ready now? | Blocker |
 | --- | --- | --- |
-| S0.1 | Partially | Epics/stories generated and final validation passed; final workflow completion menu still needs Doug's `C`. |
+| S0.0 | No | Needs implementation/runtime decision. |
+| S0.1 | Yes | Epics/stories, readiness report, and sprint status have been generated. |
 | S0.2 | No | Needs storage approval. |
 | S0.3-S0.4 | No | Needs interactive `pac` sign-in and tenant/domain if needed. |
 | S0.5-S0.6 | No | Needs live boundary, source policy, publisher prefix. |
+| S0.7 | No | Needs focused UX pass. |
 | S1.x | No | Needs S0 complete and Dataverse write approval. |
 | S2.x | Partially | Can design mock flow now; live/sample writes need S1 and source policy. |
 | S3.x | No | Needs Dataverse app components. |
@@ -230,7 +236,8 @@ Tenant write commands are intentionally not listed here because they require Dou
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Formal BMAD epics not confirmed | Final story set cannot be generated | Keep this plan provisional and wait for `C`. |
+| Runtime/setup gap | Product stories cannot be executed in a runnable app | Complete S0.0 before first implementation story. |
+| UX contract gap | Compatible data model could still produce a poor review surface | Complete S0.7 before or alongside the first model-driven app/UI story. |
 | Wrong tenant/environment | Live changes in wrong place | Require `pac env who` match before any write. |
 | Source body policy unclear | Sensitive data capture risk | Default to link-only until Doug approves otherwise. |
 | Receipt append-only not technically enforced | Audit drift | Restrict roles and add plugin/flow validation before broader users. |
@@ -241,8 +248,8 @@ Tenant write commands are intentionally not listed here because they require Dou
 
 After Doug supplies the missing approvals:
 
-1. Resume BMAD epics workflow with Step 2.
-2. Convert this provisional sprint plan into formal epics/stories or reference it as implementation sequencing.
-3. Run tenant validation.
+1. Keep `sprint-status.yaml` as the formal BMAD sprint tracker.
+2. Create the first story through `bmad-create-story`, starting with S0.0 or the closest BMAD story/work-order equivalent.
+3. Run tenant validation when Doug is present.
 4. Update tenant evidence.
 5. Begin S1 only after explicit Dataverse write approval.

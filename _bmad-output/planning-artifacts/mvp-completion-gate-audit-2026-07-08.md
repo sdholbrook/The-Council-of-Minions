@@ -1,7 +1,7 @@
 ---
 title: "MVP Completion Gate Audit"
 project: "The-Council-of-Minions"
-status: not-complete-workflow-completion-gated
+status: not-complete-implementation-and-tenant-gated
 created: 2026-07-08
 branch: codex/update-bmad-harness-context
 pr: https://github.com/sdholbrook/The-Council-of-Minions/pull/1
@@ -19,32 +19,34 @@ This audit does not redefine "finished." It separates completed evidence from ga
 
 The MVP is **not complete**.
 
-The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements and epic structure with `C`, formal BMAD stories have been generated, and BMAD final validation passed. Workflow completion, implementation readiness analysis, tenant validation, write approval, and live MVP proof remain gated.
+The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. Tenant validation, write approval, runtime setup, UX contract, and live MVP proof remain gated.
 
 ## Completion Requirements and Evidence
 
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
 | BMAD approach used as delivery harness | `_bmad-output/project-context.md`; PRD, architecture, epics extraction, readiness discovery, sprint/work-order artifacts under `_bmad-output/`; PR #1 updated | Proven for planning/prep |
-| BMAD epics/stories completed | `_bmad-output/planning-artifacts/epics.md` contains five approved epics and 25 generated stories; Step 4 validation passed | Proven, pending final workflow completion |
+| BMAD epics/stories completed | `_bmad-output/planning-artifacts/epics.md` contains five approved epics and 25 generated stories; Step 4 validation passed and workflow completion was confirmed | Proven |
 | Requirements coverage complete | `epics.md` maps all FR1-FR30 to approved epics and story-level requirement references exist for all 25 stories | Proven |
-| Implementation readiness assessed | `_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-08.md` exists but is paused at document discovery | Not complete |
+| Implementation readiness assessed | `_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-08.md` is complete and reports `NEEDS WORK` before Phase 4 implementation | Proven, with open gaps |
 | Overnight preplan exists | `_bmad-output/planning-artifacts/mvp-overnight-plan.md` | Proven |
 | Required user inputs identified | `mvp-overnight-plan.md`, `live-tenant-kickoff-2026-07-08.md`, `live-tenant-validation-runbook-2026-07-08.md`, `first-vertical-slice-work-orders-2026-07-08.md` | Proven |
 | Storage direction prepared | `storage-decision-record-2026-07-08.md` proposes Dataverse as MVP operational store and Fabric IQ / Fabric Graph as phase 2 projection | Prepared, awaiting Doug approval |
 | Dataverse implementation prep exists | `dataverse-mvp-schema-plan-2026-07-08.md`, `dataverse-mvp-schema-manifest.json`, `dataverse-manifest-validate.ps1`, `dataverse-deployment-plan.ps1`, `dataverse-preflight-readonly.ps1` | Proven for dry-run prep |
 | Tenant validation evidence exists | `tenant-validation-evidence-2026-07-08.md` exists as a template; no `pac` evidence has been captured | Not complete |
+| Sprint tracking generated | `_bmad-output/implementation-artifacts/sprint-status.yaml` tracks 5 epics, 25 stories, and 5 retrospectives | Proven |
 | First MVP slice defined | `mvp-sprint-plan-2026-07-08.md` and `first-vertical-slice-work-orders-2026-07-08.md` define Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief | Prepared, provisional |
 | Live MVP works in tenant | No authenticated `pac env who`, no Dataverse solution created, no model-driven app, no sample records | Not complete |
-| Git/PR state clean and updated | Branch `codex/update-bmad-harness-context`; PR #1 open and mergeable; latest pushed commit `c391368` before this audit | Proven before this audit |
+| Git/PR state clean and updated | Branch `codex/update-bmad-harness-context`; PR #1 open and mergeable; current readiness/sprint updates are pending commit at the time of this audit update | Pending commit |
 
 ## Active Gates
 
 ### BMAD Gates
 
-1. `bmad-create-epics-and-stories` Step 4 final validation is waiting for Doug to select `C` from the final menu to complete the workflow.
-2. `bmad-check-implementation-readiness` Step 1 document discovery was confirmed by Doug's `C`; readiness analysis can begin after the epics workflow completion handoff.
-3. Formal implementation readiness remains incomplete until that review is performed.
+1. `bmad-check-implementation-readiness` is complete.
+2. `bmad-sprint-planning` generated `sprint-status.yaml`.
+3. Next formal story-cycle gate is `bmad-create-story`, but implementation should not start until readiness gaps are handled.
+4. Tenant validation and write approval remain incomplete.
 
 ### Tenant Gates
 
@@ -84,42 +86,34 @@ The current branch has completed all reasonable local planning/prep work that do
 9. Dry-run deployment plan created and refusing writes.
 10. Read-only preflight script created for future authenticated tenant validation.
 11. Sprint plan and vertical-slice work orders created.
-12. Implementation-readiness document discovery completed and paused at BMAD confirmation.
-13. PR #1 updated.
+12. Implementation-readiness assessment completed with `NEEDS WORK` before Phase 4.
+13. Sprint status tracking generated.
+14. PR #1 updated before this audit update; new changes need commit/push/PR refresh.
 
 ## Next Actions After Doug Replies
 
-If Doug replies only `C` to the Step 4 final menu:
+Next BMAD action:
 
-1. Complete the `bmad-create-epics-and-stories` workflow.
-2. Invoke `bmad-help` per the completion instruction.
+1. Resolve readiness gaps: UX contract, runtime/setup baseline, tenant validation, write approvals, and governance carry-forward.
+2. Prepare the first story with `bmad-create-story` only after the intended first slice is confirmed.
 3. Do not start live tenant auth or writes yet.
 
 If Doug replies with the full before-bed packet:
 
-1. Complete BMAD epics workflow handoff.
-2. Complete implementation-readiness analysis.
-3. Run local dry-run checks:
+1. Run local dry-run checks:
    - `dataverse-manifest-validate.ps1`
    - `dataverse-deployment-plan.ps1`
-4. When Doug is present, run:
+2. When Doug is present, run:
    - `pac auth create --url https://sdhdev.crm.dynamics.com --name Council-SDH-Dev`
    - `pac auth who`
    - `pac env who`
    - `pac env list-settings`
-5. Append tenant evidence.
-6. Stop before writes unless Dataverse sandbox writes and publisher prefix are explicitly approved.
-
-## Minimal Reply Needed To Continue Formal BMAD
-
-```text
-C
-```
+3. Append tenant evidence.
+4. Stop before writes unless Dataverse sandbox writes and publisher prefix are explicitly approved.
 
 ## Full Reply Needed For Live Tenant MVP Work
 
 ```text
-C
 Dataverse approved as MVP operational store.
 Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics.
 Environment: https://sdhdev.crm.dynamics.com
@@ -137,8 +131,8 @@ Publisher prefix: <prefix>
 
 The work is materially advanced and locally validated, but the MVP cannot be marked finished until:
 
-1. BMAD epics/stories are complete.
-2. Implementation readiness analysis completes.
+1. The readiness gaps are addressed or explicitly accepted for a scoped first slice.
+2. First story execution begins through the BMAD story cycle.
 3. Tenant validation evidence proves the target environment.
 4. Doug approves the storage/write/source-body/review-surface boundaries.
 5. The first Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief slice exists and is verified.

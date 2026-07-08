@@ -1,7 +1,7 @@
 ---
 title: "First Vertical Slice Work Orders"
 project: "The-Council-of-Minions"
-status: provisional-aligned-to-validated-stories-pending-workflow-completion
+status: readiness-reviewed-needs-ux-runtime-tenant-approval
 created: 2026-07-08
 source_plan: mvp-sprint-plan-2026-07-08.md
 ---
@@ -10,9 +10,9 @@ source_plan: mvp-sprint-plan-2026-07-08.md
 
 ## Purpose
 
-Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed and tenant write approval is granted.
+Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed, readiness gaps are handled, and tenant write approval is granted.
 
-These are provisional work orders aligned to the validated BMAD stories. They should be reconciled after `bmad-create-epics-and-stories` workflow completion.
+These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. They remain blocked by runtime/setup, focused UX, tenant validation, and Dataverse write approval.
 
 ## Slice Goal
 
@@ -39,6 +39,15 @@ I want the live tenant and implementation boundary confirmed,
 So that the MVP is built in the right environment with no accidental live action.
 
 ### Acceptance Criteria
+
+**Given** no runtime manifest exists in the repo
+**When** implementation work begins
+**Then** the selected runtime, local run command, validation command, packaging path, and minimal CI/check baseline must be documented
+**And** product stories must not proceed against an accidental or implicit runtime.
+
+**Given** the first review surface is user-facing
+**When** the Council Queue / Minion Brief surface is implemented
+**Then** forms, views, commands, filters, approval actions, source/provenance panels, graph explanation panel, empty/error states, and accessibility expectations must be defined before claiming UX readiness.
 
 **Given** the target Dataverse environment details in `storage-decision-record-2026-07-08.md`
 **When** `pac auth create`, `pac auth who`, and `pac env who` are run
@@ -327,7 +336,6 @@ So that the MVP work is reproducible and reviewable.
 Wait for Doug to supply:
 
 ```text
-C
 Dataverse approved as MVP operational store.
 Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics.
 Tenant/domain: <tenant domain or tenant ID>
@@ -339,3 +347,8 @@ Model-driven app is acceptable as first Council Queue / Minion Brief surface: ye
 Power Apps MCP agent feed evaluation tonight: yes/no
 Publisher prefix: <prefix>
 ```
+
+Also resolve before development:
+
+- Runtime path: Dataverse/model-driven app only, local prototype first, or another explicit runtime.
+- UX path: focused model-driven app UX spec now, or accepted limited admin-style MVP surface.
