@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-  [string]$ProjectRoot
+  [string]$ProjectRoot,
+  [switch]$RequireScreenEvidence
 )
 
 $ErrorActionPreference = "Stop"
@@ -160,6 +161,39 @@ try {
       }
     }
     Write-Host "UX spines OK."
+  }
+
+  Invoke-ValidationStep "Model-driven app screen gate harness check" {
+    $screenRunner = "_bmad-output\implementation-artifacts\council-model-driven-screen-test.ps1"
+    $screenReadme = "_bmad-output\test-artifacts\model-driven-screen\README.md"
+    $screenJs = "_bmad-output\test-artifacts\model-driven-screen\council-model-driven-screen-test.js"
+    foreach ($path in @($screenRunner, $screenReadme, $screenJs)) {
+      if (-not (Test-Path $path)) {
+        throw "Missing model-driven app screen gate artifact: $path"
+      }
+    }
+
+    $readmeText = Get-Content -Raw $screenReadme
+    foreach ($marker in @("Council Queue", "screenshots", "Playwright trace", 'Do not mark the MVP screen surface complete from `ValidateApp` alone')) {
+      if ($readmeText -notmatch [regex]::Escape($marker)) {
+        throw "Screen gate README missing marker: $marker"
+      }
+    }
+
+    Write-Host "Model-driven app screen gate harness exists."
+  }
+
+  if ($RequireScreenEvidence) {
+    Invoke-ValidationStep "Model-driven app screen evidence" {
+      $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\council-model-driven-screen-test.ps1"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Model-driven app screen evidence failed. Run the same script with -InteractiveLogin -Headed if browser authentication is required."
+      }
+      $output | ForEach-Object { Write-Host $_ }
+      if (($output -join "`n") -notmatch "COUNCIL_MODEL_DRIVEN_SCREEN_TEST_PASSED") {
+        throw "Model-driven app screen evidence did not print success marker."
+      }
+    }
   }
 
   Invoke-ValidationStep "Stale BMAD gate reference check" {

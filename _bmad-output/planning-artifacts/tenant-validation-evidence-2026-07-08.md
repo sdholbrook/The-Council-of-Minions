@@ -32,12 +32,12 @@ This file contains verified current-state evidence from live commands, admin set
 | Dataverse intelligence / semantic model | Not tested | Awaiting environment settings/admin evidence. |
 | Dataverse MCP availability | Not tested | No Dataverse MCP exposed in Codex thread; tenant capability must be checked separately. |
 | Power Apps MCP agent feed | Not tested | Tenant/app capability; not a local Codex plugin. |
-| Model-driven app feasibility | Valid table-backed app created | Published model-driven app `Council Queue` exists with 12 Council table components. `ValidateApp` returns success with only form/view selection warnings. |
+| Model-driven app feasibility | Screen-verified table-backed app | Published model-driven app `Council Queue` exists with 12 Council table components. `ValidateApp` returns success with only form/view selection warnings. Browser screen gate initially reproduced Dynamics error `0x80050016`; after manifest-driven sitemap update, screen run `2026-07-08T23-22-40-976Z` passed with seeded row visibility. |
 | Outlook/Graph reads | Not authorized | Awaiting Doug's live-read boundary. |
 | Teams reads | Not authorized | Awaiting Doug's live-read boundary and target team/channel if needed. |
 | SharePoint/OneDrive reads | Not authorized | Awaiting Doug's live-read boundary and target source if needed. |
 | Fabric IQ / Graph | Deferred | Proposed phase 2 graph/analytics projection; not MVP workflow state owner. |
-| Live writes | Authorized and completed | Doug authorized removing the tenant write restriction. Guarded script created Dataverse solution, choices, tables, relationships, a validated table-backed model-driven app, deterministic receipt-backed demo rows, graph provenance, and a Minion Brief in `sdhdev`. |
+| Live writes | Authorized and completed | Doug authorized removing the tenant write restriction. Guarded script created Dataverse solution, choices, tables, relationships, manifest-driven model-driven app sitemap, deterministic receipt-backed demo rows, graph provenance, and a Minion Brief in `sdhdev`. |
 | Source body policy | Link-only | Sample Source Records use `link_only` policy. |
 | Human approval owner | Doug | Doug is the approval owner for MVP tenant writes and approval-gated actions. |
 | Rollback path | Solution scoped | Delete unmanaged solution `CouncilOfMinionsMVP` and published app `Council Queue` if rollback is required. |
@@ -106,6 +106,16 @@ Append entries as evidence is gathered.
 - Restrictions: no outbound action, no flow publish, no agent publish, no app registration, and no Fabric mutation performed
 - Follow-up owner: Doug / Codex
 
+### Entry 2 - Model-Driven App Screen Gate Red/Green
+
+- Date/time: 2026-07-08T23:22:40Z
+- Command or source: `council-model-driven-screen-test.ps1`
+- Capability: Actual browser validation of the rendered `Council Queue` model-driven app
+- Observed result: First strict browser run reproduced the user-visible Dynamics error `0x80050016` with message that the user lacked permissions for records or the site map was wrong. The app sitemap XML only had an Area and no Groups/SubAreas. `dataverse-apply-mvp-schema.ps1` was updated to generate the sitemap from manifest navigation groups and publish it. Follow-up screen run `2026-07-08T23-22-40-976Z` passed and captured screenshots/trace for app home, Source Records, proposed Work Items, Receipts, and Briefs. The rendered grids showed seeded row markers: `Manual sample source record`, `Review the first Council source record`, `CR-DEMO-PROPOSED-001`, and `Demo Minion Brief`.
+- Decision: model-driven app screen access is now proven for the scoped MVP slice; `ValidateApp` alone is no longer treated as sufficient evidence.
+- Restrictions: screen gate still records platform console/page/telemetry noise for review; curated forms/views remain open.
+- Follow-up owner: Codex
+
 ## Minimum MVP Gate
 
 Before the scoped live tenant slice can be considered valid, evidence must show:
@@ -123,6 +133,22 @@ Before the scoped live tenant slice can be considered valid, evidence must show:
 
 No Dataverse MVP write decisions remain pending. Outlook/Graph live reads remain not allowed, and Fabric IQ / Fabric Graph remain deferred to phase 2.
 ### Preflight Evidence - 2026-07-08T10:26:09.1351802-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-08T18:59:21.0047022-04:00
 
 - Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
 - Expected environment URL: https://sdhdev.crm.dynamics.com

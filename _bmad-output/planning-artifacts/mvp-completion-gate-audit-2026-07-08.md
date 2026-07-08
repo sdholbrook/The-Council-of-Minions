@@ -19,7 +19,7 @@ This audit does not redefine "finished." It separates completed evidence from ga
 
 The MVP is **not complete**.
 
-The repo now has a coherent BMAD planning and Dataverse implementation packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. The local UX contract, runtime/setup baseline, tenant decision packet, Story 1.1 manual Source Record local slice, Story 1.2 Outlook Source Reference local slice, and Story 1.3 proposed Work Item extraction local slice have since been created. Tenant validation, scoped Dataverse write approval, user acceptance of the model-driven app surface, source body policy `link_only`, publisher prefix `com`, and deterministic live Dataverse demo seed are now complete for `sdhdev`. Live Outlook/Graph read approval, curated Council Queue forms/views, state transitions, ALM/export evidence, and full MVP proof remain open.
+The repo now has a coherent BMAD planning and Dataverse implementation packet. Doug confirmed extracted requirements, epic structure, and workflow completion with `C`; formal BMAD stories have been generated and final validation passed. Implementation readiness is complete and found `NEEDS WORK` before Phase 4 implementation. The local UX contract, runtime/setup baseline, tenant decision packet, Story 1.1 manual Source Record local slice, Story 1.2 Outlook Source Reference local slice, and Story 1.3 proposed Work Item extraction local slice have since been created. Tenant validation, scoped Dataverse write approval, user acceptance of the model-driven app surface, source body policy `link_only`, publisher prefix `com`, deterministic live Dataverse demo seed, manifest-driven sitemap, and browser screen gate are now complete for `sdhdev`. Live Outlook/Graph read approval, curated Council Queue forms/views, state transitions, ALM/export evidence, and full MVP proof remain open.
 
 ## Completion Requirements and Evidence
 
@@ -38,7 +38,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation packet. D
 | Tenant validation evidence exists | `tenant-validation-evidence-2026-07-08.md` exists with local CLI, decision-packet, Story 1.2 slice evidence, target environment/org validation, scoped write evidence, model-driven app validation, and deterministic demo seed verification | Proven for scoped `sdhdev` slice |
 | Sprint tracking generated | `_bmad-output/implementation-artifacts/sprint-status.yaml` tracks 5 epics, 25 stories, and 5 retrospectives | Proven |
 | First MVP slice defined | `mvp-sprint-plan-2026-07-08.md` and `first-vertical-slice-work-orders-2026-07-08.md` define Source Record -> Work Item -> Receipt -> review -> graph explanation -> Minion Brief; Story 1.1, Story 1.2, and Story 1.3 have local Source Record / proposed Work Item slice artifacts and validators | Prepared, provisional |
-| Live MVP works in tenant | Dataverse solution/schema, `Council Queue` model-driven app table components, and deterministic Source Record -> proposed Work Item -> Receipt -> graph -> Brief sample rows exist in `sdhdev`; curated app forms/views, state transitions, and export/ALM evidence remain open | Partial |
+| Live MVP works in tenant | Dataverse solution/schema, `Council Queue` model-driven app table components, manifest-driven sitemap, and deterministic Source Record -> proposed Work Item -> Receipt -> graph -> Brief sample rows exist in `sdhdev`; screen gate `2026-07-08T23-22-40-976Z` proves browser-visible Source Records, Work Items, Receipts, and Briefs. Curated app forms/views, state transitions, and export/ALM evidence remain open | Partial, screen-proven |
 | Git/PR state clean and updated | Branch `codex/update-bmad-harness-context`; PR #1 open and mergeable; current readiness/sprint updates are pending commit at the time of this audit update | Pending commit |
 
 ## Active Gates
@@ -47,7 +47,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation packet. D
 
 1. `bmad-check-implementation-readiness` is complete.
 2. `bmad-sprint-planning` generated `sprint-status.yaml`.
-3. Story 1.1, Story 1.2, and Story 1.3 are in progress with local contract slices implemented, scoped Dataverse persistence proven, and curated app forms/views still open.
+3. Story 1.1, Story 1.2, and Story 1.3 are in progress with local contract slices implemented, scoped Dataverse persistence proven, browser-visible model-driven app rows proven, and curated app forms/views still open.
 4. Next formal story-cycle gate is Story 1.4, zero-item and multi-item extraction handling, after the live foundation is committed.
 5. Tenant validation and scoped Dataverse write approval are complete for `sdhdev`; live Outlook/Graph reads and broader tenant mutations remain gated.
 
@@ -70,7 +70,7 @@ The repo now has a coherent BMAD planning and Dataverse implementation packet. D
 
 1. No custom application runtime manifest exists; Dataverse/model-driven app is the practical MVP runtime.
 2. No Dataverse solution export exists yet.
-3. The `Council Queue` model-driven app exists and validates with table components, but curated forms/views are not pinned.
+3. The `Council Queue` model-driven app exists, validates with table components, has a manifest-driven sitemap, and passes the screen gate; curated forms/views are not pinned.
 4. Live Source Record, Work Item, Receipt, Graph Entity/Edge, and Minion Brief demo rows exist.
 5. No tenant evidence proves Dataverse search, semantic model, Power Apps MCP agent feed, DLP, auditing, or licensing availability.
 

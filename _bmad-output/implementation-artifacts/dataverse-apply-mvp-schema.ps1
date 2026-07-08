@@ -688,6 +688,83 @@ function Ensure-AppTableComponents {
   }
 }
 
+function Format-XmlAttribute {
+  param([AllowNull()][string]$Value)
+
+  if ($null -eq $Value) {
+    return ""
+  }
+
+  return [System.Security.SecurityElement]::Escape($Value)
+}
+
+function ConvertTo-SitemapId {
+  param([Parameter(Mandatory = $true)][string]$Value)
+
+  ($Value -replace '[^a-zA-Z0-9_]+', '_').Trim('_').ToLowerInvariant()
+}
+
+function New-AppSitemapXml {
+  if ($script:Manifest.modelDrivenApp -eq $null) {
+    return $null
+  }
+
+  $appName = Format-XmlAttribute -Value ([string]$script:Manifest.modelDrivenApp.displayName)
+  $xml = [System.Text.StringBuilder]::new()
+  [void]$xml.Append('<SiteMap IntroducedVersion="7.0.0.0">')
+  [void]$xml.Append('<Area Id="area_council_queue" ShowGroups="true" IntroducedVersion="7.0.0.0">')
+  [void]$xml.Append('<Titles>')
+  [void]$xml.Append("<Title Title=""$appName"" LCID=""1033"" />")
+  [void]$xml.Append('</Titles>')
+
+  foreach ($group in $script:Manifest.modelDrivenApp.navigationGroups) {
+    $groupName = [string]$group.name
+    $groupTitle = Format-XmlAttribute -Value $groupName
+    $groupId = Format-XmlAttribute -Value ("group_" + (ConvertTo-SitemapId -Value $groupName))
+    [void]$xml.Append("<Group Id=""$groupId"" IntroducedVersion=""7.0.0.0"">")
+    [void]$xml.Append('<Titles>')
+    [void]$xml.Append("<Title Title=""$groupTitle"" LCID=""1033"" />")
+    [void]$xml.Append('</Titles>')
+
+    foreach ($tableLogicalName in @($group.tables)) {
+      $tableName = [string]$tableLogicalName
+      $subAreaId = Format-XmlAttribute -Value ("subarea_" + (ConvertTo-SitemapId -Value $tableName))
+      $entityName = Format-XmlAttribute -Value $tableName
+      [void]$xml.Append("<SubArea Id=""$subAreaId"" Entity=""$entityName"" AvailableOffline=""false"" />")
+    }
+
+    [void]$xml.Append('</Group>')
+  }
+
+  [void]$xml.Append('</Area>')
+  [void]$xml.Append('</SiteMap>')
+  return $xml.ToString()
+}
+
+function Ensure-AppSitemap {
+  $app = Get-AppModule
+  if (-not $app) {
+    throw "Model-driven app must exist before sitemap update."
+  }
+
+  $components = Get-AppComponents -AppId ([string]$app.appmoduleid)
+  $sitemapComponent = $components | Where-Object { $_.componenttype -eq 62 } | Select-Object -First 1
+  if (-not $sitemapComponent) {
+    throw "Model-driven app has no sitemap component to update."
+  }
+
+  $sitemapId = [string]$sitemapComponent.objectid
+  $desiredXml = New-AppSitemapXml
+  $current = Invoke-DataverseRequest -Method GET -Path "sitemaps($sitemapId)?`$select=sitemapid,sitemapname,sitemapxml"
+  if ([string]$current.sitemapxml -eq $desiredXml) {
+    Write-Host "App sitemap already matches manifest navigation."
+    return
+  }
+
+  Write-Host "Updating app sitemap from manifest navigation groups"
+  Invoke-DataverseRequest -Method PATCH -Path "sitemaps($sitemapId)" -Body @{ sitemapxml = $desiredXml } -IncludeSolutionHeader | Out-Null
+}
+
 function Test-ModelDrivenApp {
   $app = Get-AppModule
   if (-not $app) {
@@ -928,6 +1005,7 @@ Ensure-Relationships
 Invoke-PublishAll
 Ensure-ModelDrivenApp
 Ensure-AppTableComponents
+Ensure-AppSitemap
 Invoke-PublishAll
 Test-ModelDrivenApp
 

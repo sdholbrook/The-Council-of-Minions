@@ -17,6 +17,7 @@ Live writes completed:
 - Published Dataverse customizations.
 - Created and published model-driven app `Council Queue`.
 - Added 12 Council table components to `Council Queue`.
+- Replaced the generated empty app sitemap with manifest-driven Intake, Work, Brief, Knowledge, and Governance groups.
 - `ValidateApp` returned success; remaining warnings only state that specific forms/views are not pinned, so app users see all forms/views for each Council table.
 - Seeded Source Record row `manual-sample-20260708-095226`.
 - Seeded proposed Work Item row `work-sample-20260708-095227`.
@@ -27,7 +28,8 @@ Live writes completed:
 - Ensured Work Item Source and Receipt Source provenance links for the deterministic demo.
 - Ensured graph provenance rows `GE-DEMO-SOURCE-001`, `GE-DEMO-WORK-001`, and edge `CWI-DEMO-001 proposed from manual-demo-source-001`.
 - Ensured Minion Brief projection `BRIEF-DEMO-001`.
+- Added BMAD TEA screen gate `council-model-driven-screen-test.ps1` and Playwright runner. Initial browser run failed with Dynamics error `0x80050016` because the app sitemap had no navigable groups/subareas. After the sitemap fix, screen run `2026-07-08T23-22-40-976Z` passed against the rendered app with screenshots/trace and visible seeded rows for Source Records, Work Items, Receipts, and Briefs.
 
 Known remaining UI gap:
 
-- Specific Council forms/views and sitemap group labels still need to be curated for the desired Intake, Work, Brief, Knowledge, and Governance grouping. The app is valid and table-backed, but not yet ergonomically tuned.
+- Specific Council forms/views still need to be curated and pinned. The sitemap groups now render and the core seeded rows are browser-visible, but the app is not yet ergonomically tuned.
