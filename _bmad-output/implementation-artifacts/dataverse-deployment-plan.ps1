@@ -24,12 +24,13 @@ Write-Host ""
 if (-not $ExecuteWrites) {
   Write-Host "DRY RUN ONLY. No tenant writes will be performed."
   Write-Host "This script currently emits the ordered deployment plan and guard checks."
-  Write-Host "Use -ExecuteWrites only after Doug approves Dataverse sandbox writes and a reviewed write implementation exists."
+  Write-Host "Use -ExecuteWrites only after the decision packet is complete and read-only preflight proves the target environment."
   Write-Host ""
 }
 
 if ($ExecuteWrites) {
-  throw "Write execution is intentionally not implemented yet. Use this plan for review, then implement table creation through approved Power Platform tooling or reviewed Dataverse Web API scripts."
+  powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\dataverse-apply-mvp-schema.ps1" -ExecuteWrites -SeedSampleRows
+  exit $LASTEXITCODE
 }
 
 Write-Host "Guard requirements:"

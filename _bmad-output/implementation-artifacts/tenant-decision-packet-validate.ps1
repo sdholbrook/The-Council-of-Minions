@@ -84,7 +84,10 @@ foreach ($name in $requiredDecisionNames) {
     continue
   }
 
-  $allowedValues = @($decision.allowedValues)
+  $allowedValues = @()
+  if ($decision.PSObject.Properties["allowedValues"]) {
+    $allowedValues = @($decision.allowedValues)
+  }
   if ($allowedValues.Count -gt 0 -and $allowedValues -notcontains $decision.value) {
     Add-Issue $issues "Decision $name has invalid value '$($decision.value)'. Allowed: $($allowedValues -join ', ')."
   }

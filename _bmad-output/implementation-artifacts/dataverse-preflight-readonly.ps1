@@ -36,6 +36,10 @@ $results += Invoke-CheckedCommand -FilePath "pac" -Arguments @("auth", "who")
 $results += Invoke-CheckedCommand -FilePath "pac" -Arguments @("env", "who")
 $results += Invoke-CheckedCommand -FilePath "pac" -Arguments @("env", "list-settings")
 
+foreach ($result in $results) {
+  $result.Output = (($result.Output -split "`r?`n") | ForEach-Object { $_.TrimEnd() }) -join "`n"
+}
+
 $failed = $results | Where-Object { $_.ExitCode -ne 0 }
 if ($failed) {
   $failed | ForEach-Object {
@@ -53,42 +57,39 @@ $matchesEnvironment = $envWho -match [regex]::Escape($expectedEnvironmentId)
 $matchesOrganization = $envWho -match [regex]::Escape($expectedOrganizationId)
 
 $timestamp = (Get-Date).ToString("o")
-$evidence = @"
-
-### Preflight Evidence - $timestamp
-
-- Manifest: `$ManifestPath`
-- Expected environment URL: `$($manifest.target.environmentUrl)`
-- Expected environment unique name: `$($manifest.target.environmentUniqueName)`
-- Expected environment ID: `$expectedEnvironmentId`
-- Expected organization ID: `$expectedOrganizationId`
-- Web API endpoint: `$($manifest.target.webApiEndpoint)`
-- Discovery endpoint: `$($manifest.target.discoveryEndpoint)`
-- `pac auth who` exit code: $(($results | Where-Object { $_.Command -like "pac auth who*" }).ExitCode)
-- `pac env who` exit code: $(($results | Where-Object { $_.Command -like "pac env who*" }).ExitCode)
-- Environment ID matched in `pac env who`: $matchesEnvironment
-- Organization ID matched in `pac env who`: $matchesOrganization
-- `pac env list-settings` exit code: $(($results | Where-Object { $_.Command -like "pac env list-settings*" }).ExitCode)
-
-#### pac auth who
-
-````text
-$(($results | Where-Object { $_.Command -like "pac auth who*" }).Output)
-````
-
-#### pac env who
-
-````text
-$envWho
-````
-
-#### pac env list-settings
-
-````text
-$(($results | Where-Object { $_.Command -like "pac env list-settings*" }).Output)
-````
-
-"@
+$authWho = ($results | Where-Object { $_.Command -like "pac auth who*" }).Output
+$settingsExitCode = ($results | Where-Object { $_.Command -like "pac env list-settings*" }).ExitCode
+$evidenceLines = @(
+  "",
+  "### Preflight Evidence - $timestamp",
+  "",
+  "- Manifest: `$ManifestPath`",
+  "- Expected environment URL: `$($manifest.target.environmentUrl)`",
+  "- Expected environment unique name: `$($manifest.target.environmentUniqueName)`",
+  "- Expected environment ID: `$expectedEnvironmentId`",
+  "- Expected organization ID: `$expectedOrganizationId`",
+  "- Web API endpoint: `$($manifest.target.webApiEndpoint)`",
+  "- Discovery endpoint: `$($manifest.target.discoveryEndpoint)`",
+  "- `pac auth who` exit code: $(($results | Where-Object { $_.Command -like "pac auth who*" }).ExitCode)",
+  "- `pac env who` exit code: $(($results | Where-Object { $_.Command -like "pac env who*" }).ExitCode)",
+  "- Environment ID matched in `pac env who`: $matchesEnvironment",
+  "- Organization ID matched in `pac env who`: $matchesOrganization",
+  "- `pac env list-settings` exit code: $settingsExitCode",
+  "- `pac env list-settings` output retained only as an exit code to avoid storing raw tenant settings.",
+  "",
+  "#### pac auth who",
+  "",
+  "````text",
+  $authWho,
+  "````",
+  "",
+  "#### pac env who",
+  "",
+  "````text",
+  $envWho,
+  "````"
+)
+$evidence = $evidenceLines -join [Environment]::NewLine
 
 if (Test-Path -LiteralPath $EvidencePath) {
   Add-Content -LiteralPath $EvidencePath -Value $evidence -Encoding UTF8

@@ -1,7 +1,7 @@
 {
   "artifactVersion": "2026-07-08",
   "project": "The-Council-of-Minions",
-  "status": "pending-user-decisions",
+  "status": "approved-for-guarded-dataverse-mvp-write",
   "purpose": "Capture the exact Doug-approved tenant and live-boundary decisions required before Council tenant validation or Dataverse writes.",
   "target": {
     "environmentUrl": "https://sdhdev.crm.dynamics.com",
@@ -11,7 +11,7 @@
   },
   "decisions": {
     "dataverseMvpOperationalStore": {
-      "value": "pending",
+      "value": "approved",
       "allowedValues": [
         "approved",
         "rejected"
@@ -20,7 +20,7 @@
       "question": "Is Dataverse approved as the MVP operational store?"
     },
     "fabricIqGraphPhase2": {
-      "value": "pending",
+      "value": "defer_to_phase_2",
       "allowedValues": [
         "defer_to_phase_2",
         "evaluate_now",
@@ -30,12 +30,12 @@
       "question": "Should Fabric IQ / Fabric Graph remain deferred to phase 2 graph and analytics projection?"
     },
     "tenantDomainOrId": {
-      "value": "",
+      "value": "f55daafc-83bc-4bcc-b944-c98a0d4279a3",
       "requiredBefore": "optional-azure-graph-validation",
       "question": "What tenant domain or tenant ID should Azure/Graph validation use if authorized?"
     },
     "environmentType": {
-      "value": "pending",
+      "value": "dev",
       "allowedValues": [
         "dev",
         "sandbox",
@@ -46,7 +46,7 @@
       "question": "Is the provided Power Platform environment dev, sandbox, trial, or production?"
     },
     "outlookGraphLiveReads": {
-      "value": "pending",
+      "value": "not_allowed",
       "allowedValues": [
         "allowed_readonly",
         "not_allowed"
@@ -55,7 +55,7 @@
       "question": "Are read-only Outlook/Graph checks allowed?"
     },
     "dataverseSandboxWrites": {
-      "value": "pending",
+      "value": "allowed_after_readonly_preflight",
       "allowedValues": [
         "forbidden",
         "allowed_after_readonly_preflight"
@@ -64,7 +64,7 @@
       "question": "Are Dataverse sandbox writes allowed after read-only preflight proves the target environment?"
     },
     "sourceBodyPolicy": {
-      "value": "pending",
+      "value": "link_only",
       "allowedValues": [
         "link_only",
         "hash_only",
@@ -75,12 +75,12 @@
       "question": "Which source body policy is allowed for sample Source Records?"
     },
     "publisherPrefix": {
-      "value": "",
+      "value": "com",
       "requiredBefore": "solution-creation",
       "question": "What Dataverse publisher prefix should replace or confirm the placeholder prefix?"
     },
     "modelDrivenAppSurface": {
-      "value": "pending",
+      "value": "accepted",
       "allowedValues": [
         "accepted",
         "rejected"
@@ -89,7 +89,7 @@
       "question": "Is a model-driven app accepted as the first Council Queue / Minion Brief surface?"
     },
     "powerAppsMcpAgentFeedEvaluation": {
-      "value": "pending",
+      "value": "defer",
       "allowedValues": [
         "defer",
         "evaluate_after_model_driven_app",
@@ -99,7 +99,7 @@
       "question": "Should Power Apps MCP agent feed be evaluated now or deferred?"
     },
     "humanApprovalOwner": {
-      "value": "",
+      "value": "Doug",
       "requiredBefore": "approval-flow",
       "question": "Who is the human approval owner for decisions, delegations, outbound actions, memory promotion, skill expansion, and tenant writes?"
     }
@@ -113,5 +113,5 @@
     "noAppRegistration": true,
     "noFabricMutation": true
   },
-  "completionRule": "Run tenant-decision-packet-validate.ps1 -RequireComplete before Dataverse write approval. The packet is intentionally incomplete until Doug supplies the required decisions."
+  "completionRule": "Run tenant-decision-packet-validate.ps1 -RequireComplete before Dataverse write execution. Dataverse writes are approved only after read-only preflight proves the target environment and organization IDs."
 }

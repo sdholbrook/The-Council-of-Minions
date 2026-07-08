@@ -21,26 +21,26 @@ This file starts as a template. Fill it only with verified current-state evidenc
 | Area | Status | Evidence |
 | --- | --- | --- |
 | Power Platform CLI | Locally available | `pac help` printed version `2.8.1+ga4eb71c (.NET 10.0.9)` on 2026-07-08. |
-| Power Platform auth | Wrong active profile for Council target | `pac auth list` succeeded on 2026-07-08, but the active profile points to `https://vetsci-val-synsci.crm.dynamics.com/`, not `https://sdhdev.crm.dynamics.com`. Create or select `Council-SDH-Dev` before tenant validation. |
+| Power Platform auth | Target profile selected | `pac env select --environment ba9a96b2-f562-40f6-931d-6b55873954ee` selected `https://sdhdev.crm.dynamics.com/` on 2026-07-08. |
 | Azure CLI | Locally available | `az version` printed `azure-cli` `2.85.0` on 2026-07-08. |
-| Tenant decision packet | Pending decisions | `_bmad-output/implementation-artifacts/tenant-decision-packet.json` exists; `tenant-decision-packet-validate.ps1` passes in warning mode and fails with `-RequireComplete` until Doug supplies required decisions. |
+| Tenant decision packet | Complete for Dataverse MVP write | `_bmad-output/implementation-artifacts/tenant-decision-packet.json` is approved for guarded Dataverse MVP writes; `tenant-decision-packet-validate.ps1 -RequireComplete` passes. |
 | Outlook Source Reference local slice | Mock/manual only | `_bmad-output/implementation-artifacts/outlook-source-reference-slice.json` exists; `outlook-source-reference-slice-validate.ps1` passes locally, but no live Outlook/Graph read has been authorized or performed. |
 | Proposed Work Item extraction local slice | Local JSON only | `_bmad-output/implementation-artifacts/proposed-work-item-extraction-slice.json` exists; `proposed-work-item-extraction-slice-validate.ps1` passes locally, but no Dataverse Work Item writes, receipts, or approvals have been authorized or performed. |
-| Environment identity | Not tested | Expected Environment ID: `ba9a96b2-f562-40f6-931d-6b55873954ee`; expected Organization ID: `0c0fa4db-8614-ef11-9f83-000d3a342d36`. |
-| Dataverse availability | Inferred, not verified | Web API endpoint provided: `https://sdhdev.api.crm.dynamics.com/api/data/v9.2`; must verify with `pac env who`. |
-| Dataverse search/indexing | Not tested | Awaiting `pac env list-settings` or admin portal evidence. |
+| Environment identity | Verified | `pac env who` matched Environment ID `ba9a96b2-f562-40f6-931d-6b55873954ee` and Organization ID `0c0fa4db-8614-ef11-9f83-000d3a342d36`. |
+| Dataverse availability | Verified and written | Web API endpoint `https://sdhdev.api.crm.dynamics.com/api/data/v9.2` accepted metadata and data writes into solution `CouncilOfMinionsMVP`. |
+| Dataverse search/indexing | Not tested | Full search/indexing behavior remains a later validation item. |
 | Dataverse intelligence / semantic model | Not tested | Awaiting environment settings/admin evidence. |
 | Dataverse MCP availability | Not tested | No Dataverse MCP exposed in Codex thread; tenant capability must be checked separately. |
 | Power Apps MCP agent feed | Not tested | Tenant/app capability; not a local Codex plugin. |
-| Model-driven app feasibility | Not tested | Awaiting Dataverse auth and write approval. |
+| Model-driven app feasibility | App shell created | Published model-driven app shell `Council Queue` exists. Table navigation/pages still need app designer or a later reviewed sitemap implementation. |
 | Outlook/Graph reads | Not authorized | Awaiting Doug's live-read boundary. |
 | Teams reads | Not authorized | Awaiting Doug's live-read boundary and target team/channel if needed. |
 | SharePoint/OneDrive reads | Not authorized | Awaiting Doug's live-read boundary and target source if needed. |
 | Fabric IQ / Graph | Deferred | Proposed phase 2 graph/analytics projection; not MVP workflow state owner. |
-| Live writes | Not authorized | Awaiting Doug's explicit Dataverse sandbox write boundary. |
-| Source body policy | Missing | Awaiting link-only/hash-only/summary/full snapshot decision. |
-| Human approval owner | Missing | Awaiting Doug confirmation. |
-| Rollback path | Draft only | Delete unmanaged solution / disable app, flows, agents after any future write. Needs actual solution name after creation. |
+| Live writes | Authorized and completed | Doug authorized removing the tenant write restriction. Guarded script created Dataverse solution, choices, tables, relationships, app shell, and sample rows in `sdhdev`. |
+| Source body policy | Link-only | Sample Source Records use `link_only` policy. |
+| Human approval owner | Doug | Doug is the approval owner for MVP tenant writes and approval-gated actions. |
+| Rollback path | Solution scoped | Delete unmanaged solution `CouncilOfMinionsMVP` and published app `Council Queue` if rollback is required. |
 
 ## Expected Environment
 
@@ -96,6 +96,16 @@ Append entries as evidence is gathered.
 - Restrictions: no tenant writes performed; no receipts created; no approvals executed; no outbound action performed
 - Follow-up owner: Doug
 
+### Entry 1 - Guarded Dataverse MVP Write Completed
+
+- Date/time: 2026-07-08T09:52:27-04:00
+- Command or source: `dataverse-apply-mvp-schema.ps1 -ExecuteWrites -SeedSampleRows`
+- Capability: Live Dataverse MVP schema, solution, app shell, and sample data
+- Observed result: Target preflight matched `sdhdev` environment and organization IDs. The script created solution `CouncilOfMinionsMVP`, 15 global choices, 14 custom tables, non-lookup columns, lookup relationships, published customizations, created app shell `Council Queue`, and seeded one Source Record plus one proposed Work Item.
+- Decision: Dataverse write restriction removed for the guarded MVP path after target proof
+- Restrictions: no outbound action, no flow publish, no agent publish, no app registration, and no Fabric mutation performed
+- Follow-up owner: Doug / Codex
+
 ### Entry 1
 
 - Date/time:
@@ -121,12 +131,4 @@ Before implementation starts against the live tenant, evidence must show:
 
 ## Decisions Pending From Doug
 
-1. Dataverse approved as MVP operational store: yes/no.
-2. Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics: yes/no.
-3. Tenant domain or tenant ID.
-4. Outlook/Graph live reads allowed: yes/no.
-5. Dataverse sandbox writes allowed after approval: yes/no.
-6. Source body policy: link-only, hash-only, summary allowed, or full snapshot allowed.
-7. Publisher prefix.
-8. Model-driven app as first Council Queue / Minion Brief surface: yes/no.
-9. Power Apps MCP agent feed evaluation tonight: yes/no.
+No Dataverse MVP write decisions remain pending. Outlook/Graph live reads remain not allowed, and Fabric IQ / Fabric Graph remain deferred to phase 2.
