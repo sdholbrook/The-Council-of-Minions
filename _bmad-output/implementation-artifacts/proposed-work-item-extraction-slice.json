@@ -1,8 +1,8 @@
 {
   "artifactVersion": "2026-07-08",
   "storyKey": "1-3-extract-proposed-work-items-from-source-records",
-  "status": "local-implemented-tenant-gated",
-  "purpose": "Define and validate proposed Work Item extraction from local Source Record samples without tenant writes, receipts, approval execution, or outbound action.",
+  "status": "local-contract-live-dataverse-proven",
+  "purpose": "Define and validate proposed Work Item extraction from local Source Record samples; scoped live Dataverse demo evidence is captured separately without approval execution or outbound action.",
   "guards": {
     "noTenantWrites": true,
     "noOutboundAction": true,
@@ -121,7 +121,7 @@
         "uncertainty",
         "recommended_next_action"
       ],
-      "tenantEvidenceRequired": "Tenant persistence of proposed Work Items after Dataverse write approval."
+      "tenantEvidenceRequired": "Captured for deterministic demo proposed Work Item CWI-DEMO-001; curated Council Queue form/view evidence remains required."
     },
     {
       "acceptanceCriterion": 2,
@@ -131,7 +131,7 @@
         "CWI-* Council Work Item IDs",
         "Dataverse row IDs absent from product identity fields"
       ],
-      "tenantEvidenceRequired": "Dataverse Work Item and Work Item Source records persisted after write approval."
+      "tenantEvidenceRequired": "Captured for deterministic demo Work Item Source link for CWI-DEMO-001; curated Council Queue form/view evidence remains required."
     }
   ]
 }

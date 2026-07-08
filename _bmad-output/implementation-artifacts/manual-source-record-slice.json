@@ -1,8 +1,8 @@
 {
   "artifactVersion": "2026-07-08",
   "storyKey": "1-1-capture-manual-source-records",
-  "status": "local-implemented-tenant-gated",
-  "purpose": "Define and validate the manual Source Record slice without performing live tenant writes.",
+  "status": "local-contract-live-dataverse-proven",
+  "purpose": "Define and validate the manual Source Record contract locally; scoped live Dataverse evidence is captured in tenant validation artifacts.",
   "guards": {
     "liveTenantWritesApproved": false,
     "requiresReadOnlyPreflightBeforeWrite": true,
@@ -118,7 +118,7 @@
         "manualCapture.workItemCreationOnSave=false",
         "manualCapture.requiresExplicitExtractionStep=true"
       ],
-      "tenantEvidenceRequired": "Dataverse Source Record form save in Council Queue after write approval."
+      "tenantEvidenceRequired": "Captured for deterministic demo Source Record manual-demo-source-001; curated Council Queue form/view evidence remains required."
     },
     {
       "acceptanceCriterion": 2,
@@ -128,7 +128,7 @@
         "hash_only sample with content hash and without content snapshot",
         "summary_allowed sample with summary snapshot reference"
       ],
-      "tenantEvidenceRequired": "Council Queue Source Record form displays data boundary policy and prevents disallowed body capture after write approval."
+      "tenantEvidenceRequired": "Scoped policy is link_only for the live demo seed; curated Council Queue form/view enforcement remains required."
     }
   ]
 }

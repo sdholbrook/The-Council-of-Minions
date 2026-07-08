@@ -10,9 +10,9 @@ source_plan: mvp-sprint-plan-2026-07-08.md
 
 ## Purpose
 
-Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed, readiness gaps are handled, and tenant write approval is granted.
+Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed, readiness gaps are handled, and the scoped tenant write boundary is approved.
 
-These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. Runtime/setup and focused UX now have local artifacts. Tenant validation, Dataverse write approval, publisher prefix, source body policy, and model-driven app acceptance remain open before live tenant execution.
+These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. Runtime/setup and focused UX now have local artifacts. Tenant validation, Dataverse write approval, publisher prefix `com`, source body policy `link_only`, and model-driven app acceptance are closed for the scoped `sdhdev` Dataverse slice. Remaining live MVP gaps are Council Queue form/view curation, approval/hold/block state movement, solution export/ALM evidence, and visual verification.
 
 ## Slice Goal
 
@@ -168,7 +168,7 @@ So that the MVP loop can be tested without violating data boundaries.
 
 ### Acceptance Criteria
 
-**Given** source body policy is not approved
+**Given** source body policy is approved as `link_only`
 **When** the first Source Record is created
 **Then** it must use link-only or mock content
 **And** no sensitive or full message body content is stored.
@@ -344,14 +344,15 @@ Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics.
 Tenant/domain: <tenant domain or tenant ID>
 Environment type: dev/sandbox/trial/prod
 Live reads: Outlook/Graph allowed or not allowed
-Live writes: Dataverse sandbox writes allowed after approval / forbidden
-Source body policy: link-only / hash-only / summary allowed / full snapshot allowed
-Model-driven app is acceptable as first Council Queue / Minion Brief surface: yes/no
+Live writes: Dataverse sandbox writes allowed for scoped MVP schema/app/sample rows in `sdhdev`
+Source body policy: link-only
+Model-driven app is acceptable as first Council Queue / Minion Brief surface: yes
 Power Apps MCP agent feed evaluation tonight: yes/no
-Publisher prefix: <prefix>
+Publisher prefix: com
 ```
 
-Also resolve before tenant development:
+Also resolve before final MVP acceptance:
 
-- Runtime path acceptance: Dataverse/model-driven app only, local prototype first, or another explicit runtime.
-- UX path acceptance: focused model-driven app UX spec now, or accepted limited admin-style MVP surface.
+- Runtime path acceptance beyond the first Dataverse/model-driven app slice.
+- Curated Council Queue forms/views and sitemap labels.
+- Solution export/ALM artifact source control.

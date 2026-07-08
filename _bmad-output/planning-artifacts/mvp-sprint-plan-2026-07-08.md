@@ -1,7 +1,7 @@
 ---
 title: "MVP Sprint Plan"
 project: "The-Council-of-Minions"
-status: local-readiness-gaps-addressed-tenant-approval-required
+status: live-dataverse-foundation-and-demo-seed-complete
 created: 2026-07-08
 depends_on:
   - epics.md
@@ -19,19 +19,19 @@ depends_on:
 
 Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories, passed final validation, and `bmad-check-implementation-readiness` has completed.
 
-This plan is implementation preparation, not authorization for live tenant work. The readiness report originally marked the project as `NEEDS WORK` before Phase 4 implementation because UX contract, runtime/setup baseline, tenant validation, and write approvals were open. The local UX and runtime/setup gaps now have artifacts; tenant validation, write approvals, source body policy, publisher prefix, and model-driven app acceptance remain open.
+This plan started as implementation preparation, not authorization for live tenant work. As of 2026-07-08, Doug approved guarded Dataverse writes after target preflight. The live Dataverse foundation, table-backed model-driven app, and deterministic receipt-backed demo seed now exist in `sdhdev`. Specific model-driven forms/views and sitemap group curation remain open.
 
 ## Planning Boundary
 
-- Dataverse is the proposed MVP operational store.
+- Dataverse is the approved MVP operational store for this tenant slice.
 - Fabric IQ / Fabric Graph are deferred to phase 2 graph/analytics projection.
 - Outlook/Graph source access is tenant-gated.
-- Dataverse live writes are not approved yet.
-- Source body policy is not supplied yet.
-- Publisher prefix is not supplied yet.
-- No custom app runtime manifest exists in the repo; the runtime baseline selects Dataverse/model-driven app as the practical MVP runtime pending Doug approval.
-- Focused UX contract exists for the Council Queue / Minion Brief surface, with open questions around model-driven app acceptance and source body policy.
-- No live tenant changes have been made.
+- Dataverse live writes are approved only through the guarded apply script after target preflight.
+- Source body policy is `link_only` for sample/demo records.
+- Publisher prefix is `com`.
+- The runtime path is Dataverse plus model-driven app `Council Queue`.
+- Focused UX contract exists for the Council Queue / Minion Brief surface.
+- Live tenant changes have been made in `sdhdev` and are recorded in `dataverse-live-validation-2026-07-08.md`.
 - Sprint status tracking exists at `_bmad-output/implementation-artifacts/sprint-status.yaml`.
 - Local validation command exists at `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1`.
 
@@ -207,13 +207,13 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 | --- | --- | --- |
 | S0.0 | Yes locally | Runtime/setup baseline exists; tenant execution still needs Doug approval. |
 | S0.1 | Yes | Epics/stories, readiness report, and sprint status have been generated. |
-| S0.2 | No | Needs storage approval. |
-| S0.3-S0.4 | No | Needs interactive `pac` sign-in and tenant/domain if needed. |
-| S0.5-S0.6 | No | Needs live boundary, source policy, publisher prefix. |
-| S0.7 | Yes locally | UX spines exist; model-driven app acceptance remains a user decision. |
-| S1.x | No | Needs S0 complete and Dataverse write approval. |
-| S2.x | Partially | Can design mock flow now; live/sample writes need S1 and source policy. |
-| S3.x | No | Needs Dataverse app components. |
+| S0.2 | Yes | Dataverse approved; Fabric IQ / Graph deferred to phase 2. |
+| S0.3-S0.4 | Yes | `pac env who` proved environment ID and organization ID. |
+| S0.5-S0.6 | Yes | Dataverse writes allowed after preflight; source policy `link_only`; publisher prefix `com`. |
+| S0.7 | Yes | UX spines exist and model-driven app surface accepted. |
+| S1.x | Mostly | Live solution, choices, tables, columns, relationships, and app components exist. Exported/unpacked ALM artifact still remains a follow-up. |
+| S2.x | Mostly | Deterministic Source Record, proposed Work Item, Work Item Source, proposal Receipt, and Receipt Source exist. Approval/hold/block state changes remain open. |
+| S3.x | Partially | `Council Queue` validates with 12 table components and sitemap; specific forms/views and group labels remain open. |
 | S4.x | Partially | Can document policy now; live records need S1. |
 | S5.x | Partially | Can document evaluation criteria now; live checks need tenant evidence. |
 

@@ -1,5 +1,5 @@
 # generated: 2026-07-08T00:21:17-04:00
-# last_updated: 2026-07-08T01:30:33-04:00
+# last_updated: 2026-07-08T10:20:00-04:00
 # project: The-Council-of-Minions
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: "2026-07-08T00:21:17-04:00"
-last_updated: "2026-07-08T01:30:33-04:00"
+last_updated: "2026-07-08T10:20:00-04:00"
 project: "The-Council-of-Minions"
 project_key: "NOKEY"
 tracking_system: "file-system"
@@ -94,14 +94,22 @@ action_items:
     owner: Codex
     evidence: "_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md"
   - id: tenant-validation
-    status: open
-    owner: Doug
+    status: done
+    owner: Codex
     evidence: "_bmad-output/planning-artifacts/tenant-validation-evidence-2026-07-08.md"
   - id: dataverse-write-approval
-    status: open
-    owner: Doug
-    evidence: "_bmad-output/planning-artifacts/live-tenant-validation-runbook-2026-07-08.md"
+    status: done
+    owner: Doug/Codex
+    evidence: "_bmad-output/implementation-artifacts/tenant-decision-packet.json"
   - id: model-driven-app-acceptance
+    status: done
+    owner: Doug/Codex
+    evidence: "_bmad-output/planning-artifacts/dataverse-live-validation-2026-07-08.md"
+  - id: deterministic-demo-seed
+    status: done
+    owner: Codex
+    evidence: "_bmad-output/planning-artifacts/dataverse-live-validation-2026-07-08.md"
+  - id: model-driven-app-form-view-curation
     status: open
-    owner: Doug
-    evidence: "_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/EXPERIENCE.md"
+    owner: Codex
+    evidence: "_bmad-output/planning-artifacts/dataverse-live-validation-2026-07-08.md"

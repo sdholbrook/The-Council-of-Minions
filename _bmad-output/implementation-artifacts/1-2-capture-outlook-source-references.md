@@ -95,7 +95,7 @@ Story 1.1 established the local implementation pattern:
 - Create a story-specific JSON slice that proves the contract without tenant writes.
 - Add a PowerShell validator with a clear success marker.
 - Wire the validator into `council-mvp-local-validate.ps1`.
-- Leave tenant-dependent model-driven app configuration unchecked until Doug approves live writes and the read-only preflight proves the target environment.
+- Treat tenant-dependent model-driven app configuration as split: Dataverse table components are now proven for the scoped app, while Outlook-specific live Graph reads and curated views/forms remain open.
 
 Files and patterns to preserve:
 
@@ -160,7 +160,7 @@ These remain required before live Story 1.2 completion:
 2. What tenant domain or tenant ID should Graph validation use?
 3. What source body policy is allowed for Outlook samples: link-only, hash-only, summary allowed, or full snapshot allowed?
 4. Does Doug approve Dataverse writes after read-only preflight proves the target environment?
-5. Does Doug accept model-driven app views/forms as the first Council Queue Intake surface?
+5. Which curated model-driven app views/forms should be used for the first Council Queue Intake surface?
 
 ## Project Context Reference
 
@@ -176,7 +176,7 @@ Read `_bmad-output/project-context.md` before implementation. The highest-risk r
 
 | Date | Change |
 | --- | --- |
-| 2026-07-08 | Created Story 1.2 from BMAD epic context and implemented the local Outlook Source Reference slice. Story remains in-progress because live Outlook/Graph reads and model-driven app configuration are tenant gated. |
+| 2026-07-08 | Created Story 1.2 from BMAD epic context and implemented the local Outlook Source Reference slice. Story remains in-progress because live Outlook/Graph reads are still gated and Outlook-specific app views/forms are not curated. |
 
 ## Dev Agent Record
 
@@ -194,7 +194,7 @@ GPT-5 Codex
 
 - Story context created from BMAD epics, project context, architecture contracts, Source Record contract, Story 1.1 learnings, current manifest/scripts, and official Microsoft Graph documentation.
 - Local non-tenant implementation proves Outlook message/thread reference shape, immutable-ID guidance, conversation reference preservation, mock/manual fallback marking, and Source Record / Work Item separation.
-- Tenant-dependent work remains open: Doug must approve live reads/writes, source body policy, tenant/domain, publisher prefix, and model-driven app acceptance before live Outlook capture can satisfy the remaining task.
+- Tenant-dependent work remains open for live Outlook capture: Doug must approve live Graph reads and any expanded source body policy before this story can satisfy the remaining live-read task.
 
 ### File List
 

@@ -57,37 +57,26 @@ $matchesEnvironment = $envWho -match [regex]::Escape($expectedEnvironmentId)
 $matchesOrganization = $envWho -match [regex]::Escape($expectedOrganizationId)
 
 $timestamp = (Get-Date).ToString("o")
-$authWho = ($results | Where-Object { $_.Command -like "pac auth who*" }).Output
+$authExitCode = ($results | Where-Object { $_.Command -like "pac auth who*" }).ExitCode
+$envExitCode = ($results | Where-Object { $_.Command -like "pac env who*" }).ExitCode
 $settingsExitCode = ($results | Where-Object { $_.Command -like "pac env list-settings*" }).ExitCode
 $evidenceLines = @(
   "",
   "### Preflight Evidence - $timestamp",
   "",
-  "- Manifest: `$ManifestPath`",
-  "- Expected environment URL: `$($manifest.target.environmentUrl)`",
-  "- Expected environment unique name: `$($manifest.target.environmentUniqueName)`",
-  "- Expected environment ID: `$expectedEnvironmentId`",
-  "- Expected organization ID: `$expectedOrganizationId`",
-  "- Web API endpoint: `$($manifest.target.webApiEndpoint)`",
-  "- Discovery endpoint: `$($manifest.target.discoveryEndpoint)`",
-  "- `pac auth who` exit code: $(($results | Where-Object { $_.Command -like "pac auth who*" }).ExitCode)",
-  "- `pac env who` exit code: $(($results | Where-Object { $_.Command -like "pac env who*" }).ExitCode)",
-  "- Environment ID matched in `pac env who`: $matchesEnvironment",
-  "- Organization ID matched in `pac env who`: $matchesOrganization",
-  "- `pac env list-settings` exit code: $settingsExitCode",
-  "- `pac env list-settings` output retained only as an exit code to avoid storing raw tenant settings.",
-  "",
-  "#### pac auth who",
-  "",
-  "````text",
-  $authWho,
-  "````",
-  "",
-  "#### pac env who",
-  "",
-  "````text",
-  $envWho,
-  "````"
+  ("- Manifest: {0}" -f $ManifestPath),
+  ("- Expected environment URL: {0}" -f $manifest.target.environmentUrl),
+  ("- Expected environment unique name: {0}" -f $manifest.target.environmentUniqueName),
+  ("- Expected environment ID: {0}" -f $expectedEnvironmentId),
+  ("- Expected organization ID: {0}" -f $expectedOrganizationId),
+  ("- Web API endpoint: {0}" -f $manifest.target.webApiEndpoint),
+  ("- Discovery endpoint: {0}" -f $manifest.target.discoveryEndpoint),
+  ("- pac auth who exit code: {0}" -f $authExitCode),
+  ("- pac env who exit code: {0}" -f $envExitCode),
+  ("- Environment ID matched in pac env who: {0}" -f $matchesEnvironment),
+  ("- Organization ID matched in pac env who: {0}" -f $matchesOrganization),
+  ("- pac env list-settings exit code: {0}" -f $settingsExitCode),
+  "- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details."
 )
 $evidence = $evidenceLines -join [Environment]::NewLine
 

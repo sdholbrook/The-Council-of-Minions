@@ -1,8 +1,8 @@
 {
   "artifactVersion": "2026-07-08",
   "storyKey": "1-2-capture-outlook-source-references",
-  "status": "local-implemented-tenant-gated",
-  "purpose": "Define and validate Outlook message/thread Source Record references without performing live Microsoft Graph reads or tenant writes.",
+  "status": "local-contract-live-graph-gated",
+  "purpose": "Define and validate Outlook message/thread Source Record references without performing live Microsoft Graph reads; Dataverse app/table plumbing is proven separately.",
   "guards": {
     "liveOutlookGraphReadsApproved": false,
     "liveTenantWritesApproved": false,

@@ -140,7 +140,7 @@ if ($slice.storyKey -ne "1-1-capture-manual-source-records") {
 }
 
 if ($slice.guards.liveTenantWritesApproved -ne $false) {
-  Add-Issue $issues "Slice guard liveTenantWritesApproved must remain false until Doug approves writes."
+  Add-Issue $issues "Local slice guard liveTenantWritesApproved must remain false because this fixture does not perform writes."
 }
 
 if ($slice.manualCapture.workItemCreationOnSave -ne $false) {

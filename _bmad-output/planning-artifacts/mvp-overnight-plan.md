@@ -5,8 +5,8 @@ status: active
 created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
-current_gate: local_readiness_gaps_addressed_tenant_gated
-primary_blocker: "UX contract and runtime setup now have local artifacts; live implementation remains blocked by tenant validation, source/write approvals, publisher prefix, and model-driven app acceptance."
+current_gate: live_dataverse_foundation_and_demo_seed_complete
+primary_blocker: "Scoped Dataverse tenant writes, publisher prefix, source body policy, and model-driven app acceptance are closed for sdhdev; remaining blockers are Council Queue form/view curation, state-change behavior, solution export/ALM evidence, and visual verification."
 ---
 
 # MVP Overnight Plan
@@ -15,7 +15,7 @@ primary_blocker: "UX contract and runtime setup now have local artifacts; live i
 
 Create the overnight execution plan for getting The Council of Minions MVP as far as possible using the BMAD approach without crossing the current architecture boundaries.
 
-This plan treats BMAD as the delivery harness, not as product architecture. The product remains Microsoft-first, work-item-first, Dataverse-proposed, and tenant-gated until the required evidence exists.
+This plan treats BMAD as the delivery harness, not as product architecture. The product remains Microsoft-first and work-item-first. Dataverse is now the approved MVP operational store for the scoped `sdhdev` slice, with live tenant evidence captured.
 
 ## Current State
 
@@ -47,11 +47,11 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Runtime/setup baseline: `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md`
 - Local validation script: `_bmad-output/implementation-artifacts/council-mvp-local-validate.ps1`
 - Current BMAD workflow state: `bmad-create-epics-and-stories`, `bmad-check-implementation-readiness`, and `bmad-sprint-planning` are complete; next formal story-cycle gate is `bmad-create-story`
-- No custom application runtime manifest exists yet in the repo; the practical MVP runtime is documented as Dataverse/model-driven app pending Doug approval
-- Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
-- No Council-target tenant validation evidence exists yet
-- Local CLI prerequisite evidence exists; active PAC auth is not currently pointed at the Council target environment
-- Required Doug decisions are now captured in a machine-readable packet, but remain pending
+- No custom application runtime manifest exists yet in the repo; the practical MVP runtime is Dataverse/model-driven app
+- Dataverse is approved as the MVP operational store for the scoped `sdhdev` slice
+- Council-target tenant validation evidence exists for the provided environment and organization IDs
+- Local CLI prerequisite evidence exists, and the Dataverse write script now validates the target before mutation
+- Required Doug decisions for the scoped first slice are captured and applied: writes allowed, prefix `com`, source body policy `link_only`, model-driven app accepted
 - Story 1.1, Story 1.2, and Story 1.3 are in progress with local non-tenant slice validators passing; live Dataverse configuration, live Outlook/Graph reads, receipt-backed mutations, and approvals remain gated
 
 ## Meaning of "MVP Finished"
@@ -61,14 +61,14 @@ There are three possible completion levels. The overnight default is Level 1 plu
 | Level | Meaning | Can complete overnight without more input? | Notes |
 | --- | --- | --- | --- |
 | Level 1 | BMAD planning finished | Complete | Includes epics, stories, coverage, readiness report, and sprint-status tracking. |
-| Level 2 | Implementation-ready MVP slice | Partially | Story set, solution decision packet, local validation plan, runtime/setup baseline, UX contract, and first vertical-slice work orders exist; tenant validation and approvals remain open. |
-| Level 3 | Live Microsoft tenant MVP | No | Requires tenant identity, permissions, licensing, DLP/security evidence, admin settings, and explicit authorization for live Microsoft work. |
+| Level 2 | Implementation-ready MVP slice | Mostly | Story set, solution decision packet, local validation plan, runtime/setup baseline, UX contract, first vertical-slice work orders, tenant validation, scoped write approval, and deterministic live demo seed exist. |
+| Level 3 | Live Microsoft tenant MVP | Partial | Dataverse schema/app/table components/sample rows exist in `sdhdev`; curated forms/views, state transitions, solution export/ALM evidence, and broader tenant governance checks remain. |
 
 ## Required From Doug Before Overnight Work Can Fully Run
 
 ### Required Now
 
-1. Resolve remaining implementation-readiness gates before live Phase 4 work: tenant validation, source/write boundaries, publisher prefix, model-driven app acceptance, and explicit write approval.
+1. Finish remaining implementation gaps after the live Dataverse foundation: Council Queue form/view curation, approval/hold/block state transitions, solution export/ALM evidence, and visual verification.
 
 ### Required Before Any Live Microsoft Work
 
@@ -258,14 +258,14 @@ Exit evidence:
 
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
-| Implementation readiness | Complete with local follow-up artifacts | UX contract and runtime setup exist; tenant validation and write approvals remain open. |
-| MVP finish level | Level 1 planning complete plus Level 2 prep | Level 3 requires tenant evidence. |
-| Storage candidate | Dataverse proposed as MVP operational system of record; awaiting Doug approval | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
-| Runtime | Dataverse/model-driven app proposed as practical MVP runtime | Runtime/setup baseline exists; Doug approval and tenant validation still required. |
-| UX surface | Minion Brief plus Council Queue in model-driven app pattern | UX spines exist; Doug acceptance of model-driven app surface still required. |
-| Tenant work | Read-only preflight only after interactive login; no writes | Architecture requires `VERIFY IN TENANT` and Doug approval before mutation. |
-| Tenant decision packet | Pending | Must pass `tenant-decision-packet-validate.ps1 -RequireComplete` before write approval. |
-| Local story slices | Stories 1.1, 1.2, and 1.3 in progress | Manual Source Record, Outlook Source Reference, and proposed Work Item extraction contracts are locally validated; tenant app configuration remains open. |
+| Implementation readiness | Complete with local and live follow-up artifacts | UX contract, runtime setup, tenant validation, scoped write approval, and deterministic demo seed exist. |
+| MVP finish level | Level 2 mostly complete plus Level 3 partial tenant slice | Remaining Level 3 work is UI curation, state transitions, ALM/export, and visual verification. |
+| Storage candidate | Dataverse approved as MVP operational system of record | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
+| Runtime | Dataverse/model-driven app accepted as practical MVP runtime | `Council Queue` exists with table components and `ValidateApp` success. |
+| UX surface | Minion Brief plus Council Queue in model-driven app pattern | Table-backed app exists; specific forms/views and sitemap labels still need curation. |
+| Tenant work | Scoped Dataverse writes allowed and executed after preflight | Broader live Graph reads/writes and non-Dataverse tenant changes remain gated. |
+| Tenant decision packet | Closed for scoped first slice | Prefix `com`, source policy `link_only`, Dataverse write boundary, and model-driven app surface are applied. |
+| Local story slices | Stories 1.1, 1.2, and 1.3 in progress | Manual Source Record, Outlook Source Reference, and proposed Work Item extraction contracts are locally validated; Dataverse app table components and deterministic Source Record/Work Item/Receipt/Brief seed exist. |
 
 ## Completion Criteria For This Goal
 

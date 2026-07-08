@@ -497,9 +497,89 @@ function Get-GlobalChoiceValue {
   throw "Choice value '$Label' not found in $ChoiceName."
 }
 
+function Get-LocalChoiceValue {
+  param(
+    [Parameter(Mandatory = $true)][string]$EntityLogicalName,
+    [Parameter(Mandatory = $true)][string]$AttributeLogicalName,
+    [Parameter(Mandatory = $true)][string]$Label
+  )
+
+  $path = "EntityDefinitions(LogicalName='$EntityLogicalName')/Attributes(LogicalName='$AttributeLogicalName')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?`$select=LogicalName&`$expand=OptionSet"
+  $attribute = Invoke-DataverseRequest -Method GET -Path $path
+  foreach ($option in $attribute.OptionSet.Options) {
+    $candidate = [string]$option.Label.UserLocalizedLabel.Label
+    if ($candidate -eq $Label) {
+      return [int]$option.Value
+    }
+  }
+
+  throw "Local choice value '$Label' not found in $EntityLogicalName.$AttributeLogicalName."
+}
+
+function Format-ODataStringLiteral {
+  param([Parameter(Mandatory = $true)][string]$Value)
+
+  return $Value.Replace("'", "''")
+}
+
+function Get-FirstRecordByText {
+  param(
+    [Parameter(Mandatory = $true)][string]$EntitySetName,
+    [Parameter(Mandatory = $true)][string]$Select,
+    [Parameter(Mandatory = $true)][string]$Field,
+    [Parameter(Mandatory = $true)][string]$Value
+  )
+
+  $escaped = Format-ODataStringLiteral -Value $Value
+  $result = Invoke-DataverseRequest -Method GET -Path "${EntitySetName}?`$select=$Select&`$filter=$Field eq '$escaped'&`$top=1"
+  if ($result.value.Count -eq 0) {
+    return $null
+  }
+
+  return $result.value[0]
+}
+
+function New-RecordIfMissing {
+  param(
+    [Parameter(Mandatory = $true)][string]$EntitySetName,
+    [Parameter(Mandatory = $true)][string]$PrimaryIdAttribute,
+    [Parameter(Mandatory = $true)][string]$LookupField,
+    [Parameter(Mandatory = $true)][string]$LookupValue,
+    [Parameter(Mandatory = $true)]$Body
+  )
+
+  $existing = Get-FirstRecordByText -EntitySetName $EntitySetName -Select $PrimaryIdAttribute -Field $LookupField -Value $LookupValue
+  if ($existing) {
+    return [string]$existing.$PrimaryIdAttribute
+  }
+
+  Invoke-DataverseRequest -Method POST -Path $EntitySetName -Body $Body | Out-Null
+  $created = Get-FirstRecordByText -EntitySetName $EntitySetName -Select $PrimaryIdAttribute -Field $LookupField -Value $LookupValue
+  if (-not $created) {
+    throw "Created record could not be found in $EntitySetName where $LookupField='$LookupValue'."
+  }
+
+  return [string]$created.$PrimaryIdAttribute
+}
+
 function Invoke-PublishAll {
   Write-Host "Publishing customizations"
   Invoke-DataverseRequest -Method POST -Path "PublishAllXml" -Body @{} | Out-Null
+}
+
+function Get-AppModule {
+  if ($script:Manifest.modelDrivenApp -eq $null) {
+    return $null
+  }
+
+  $appName = [string]$script:Manifest.modelDrivenApp.displayName
+  $queryName = $appName.Replace("'", "''")
+  $existing = Invoke-DataverseRequest -Method GET -Path "appmodules?`$select=appmoduleid,appmoduleidunique,name&`$filter=name eq '$queryName'"
+  if ($existing.value.Count -eq 0) {
+    return $null
+  }
+
+  return $existing.value[0]
 }
 
 function Ensure-ModelDrivenApp {
@@ -508,9 +588,8 @@ function Ensure-ModelDrivenApp {
   }
 
   $appName = [string]$script:Manifest.modelDrivenApp.displayName
-  $queryName = $appName.Replace("'", "''")
-  $existing = Invoke-DataverseRequest -Method GET -Path "appmodules?`$select=appmoduleid,name&`$filter=name eq '$queryName'"
-  if ($existing.value.Count -gt 0) {
+  $existing = Get-AppModule
+  if ($existing) {
     Write-Host "Model-driven app exists: $appName"
     return
   }
@@ -525,37 +604,154 @@ function Ensure-ModelDrivenApp {
   }
 }
 
+function Get-EntityRowId {
+  param([Parameter(Mandatory = $true)][string]$LogicalName)
+
+  $queryName = $LogicalName.Replace("'", "''")
+  $result = Invoke-DataverseRequest -Method GET -Path "entities?`$select=entityid,logicalname&`$filter=logicalname eq '$queryName'"
+  if ($result.value.Count -eq 0) {
+    throw "Entity metadata row not found for $LogicalName."
+  }
+
+  return [string]$result.value[0].entityid
+}
+
+function Get-AppComponents {
+  param([Parameter(Mandatory = $true)][string]$AppId)
+
+  $result = Invoke-DataverseRequest -Method GET -Path "RetrieveAppComponents(AppModuleId=$AppId)"
+  return @($result.value)
+}
+
+function Remove-AccidentalEntityTableComponent {
+  param(
+    [Parameter(Mandatory = $true)][string]$AppId,
+    [Parameter(Mandatory = $true)]$Components
+  )
+
+  $entityTableId = Get-EntityRowId -LogicalName "entity"
+  $badComponent = $Components | Where-Object { $_.componenttype -eq 1 -and [string]$_.objectid -eq $entityTableId } | Select-Object -First 1
+  if (-not $badComponent) {
+    return
+  }
+
+  Write-Host "Removing accidental metadata table component: entity"
+  $body = @{
+    AppId = $AppId
+    Components = @(
+      @{
+        "@odata.type" = "Microsoft.Dynamics.CRM.entity"
+        entityid = $entityTableId
+      }
+    )
+  }
+  Invoke-DataverseRequest -Method POST -Path "RemoveAppComponents" -Body $body -IncludeSolutionHeader | Out-Null
+}
+
+function Ensure-AppTableComponents {
+  $app = Get-AppModule
+  if (-not $app) {
+    throw "Model-driven app was not found after creation."
+  }
+
+  $components = Get-AppComponents -AppId ([string]$app.appmoduleid)
+  Remove-AccidentalEntityTableComponent -AppId ([string]$app.appmoduleid) -Components $components
+  $components = Get-AppComponents -AppId ([string]$app.appmoduleid)
+
+  $tables = @()
+  foreach ($group in $script:Manifest.modelDrivenApp.navigationGroups) {
+    $tables += @($group.tables)
+  }
+  $tables = $tables | Select-Object -Unique
+
+  foreach ($tableName in $tables) {
+    $entityRowId = Get-EntityRowId -LogicalName ([string]$tableName)
+    $existing = $components | Where-Object { $_.componenttype -eq 1 -and [string]$_.objectid -eq $entityRowId } | Select-Object -First 1
+    if ($existing) {
+      Write-Host "App table component exists: $tableName"
+      continue
+    }
+
+    $entityDefinition = Get-EntityDefinition -LogicalName ([string]$tableName)
+    $syntheticRecordId = [guid]::NewGuid().ToString()
+    $component = @{
+      "@odata.type" = "Microsoft.Dynamics.CRM.$tableName"
+    }
+    $component[$entityDefinition.PrimaryIdAttribute] = $syntheticRecordId
+
+    Write-Host "Adding app table component: $tableName"
+    $body = @{
+      AppId = [string]$app.appmoduleid
+      Components = @($component)
+    }
+    Invoke-DataverseRequest -Method POST -Path "AddAppComponents" -Body $body -IncludeSolutionHeader | Out-Null
+  }
+}
+
+function Test-ModelDrivenApp {
+  $app = Get-AppModule
+  if (-not $app) {
+    throw "Model-driven app not found for validation."
+  }
+
+  $validation = Invoke-DataverseRequest -Method GET -Path "ValidateApp(AppModuleId=$($app.appmoduleid))"
+  if ($validation.AppValidationResponse.ValidationSuccess -ne $true) {
+    $issues = @($validation.AppValidationResponse.ValidationIssueList | ForEach-Object { "$($_.ErrorType): $($_.Message)" })
+    throw "Model-driven app validation failed: $($issues -join '; ')"
+  }
+
+  $components = Get-AppComponents -AppId ([string]$app.appmoduleid)
+  $tableComponentCount = @($components | Where-Object { $_.componenttype -eq 1 }).Count
+  $sitemapComponentCount = @($components | Where-Object { $_.componenttype -eq 62 }).Count
+  Write-Host "Model-driven app validation succeeded."
+  Write-Host "App table components: $tableComponentCount"
+  Write-Host "App sitemap components: $sitemapComponentCount"
+  foreach ($issue in @($validation.AppValidationResponse.ValidationIssueList)) {
+    Write-Host "App validation $($issue.ErrorType): $($issue.Message)"
+  }
+}
+
 function New-SampleRows {
   $sourceDef = Get-EntityDefinition -LogicalName "com_councilsourcerecord"
   $workDef = Get-EntityDefinition -LogicalName "com_councilworkitem"
+  $receiptDef = Get-EntityDefinition -LogicalName "com_councilreceipt"
+  $workSourceDef = Get-EntityDefinition -LogicalName "com_councilworkitemsource"
+  $receiptSourceDef = Get-EntityDefinition -LogicalName "com_councilreceiptsource"
+  $graphEntityDef = Get-EntityDefinition -LogicalName "com_councilgraphentity"
+  $graphEdgeDef = Get-EntityDefinition -LogicalName "com_councilgraphedge"
+  $briefDef = Get-EntityDefinition -LogicalName "com_councilbrief"
   $sourceSet = $sourceDef.EntitySetName
   $workSet = $workDef.EntitySetName
-  $sourceExternalId = "manual-sample-" + (Get-Date).ToString("yyyyMMdd-HHmmss")
+  $receiptSet = $receiptDef.EntitySetName
+  $workSourceSet = $workSourceDef.EntitySetName
+  $receiptSourceSet = $receiptSourceDef.EntitySetName
+  $graphEntitySet = $graphEntityDef.EntitySetName
+  $graphEdgeSet = $graphEdgeDef.EntitySetName
+  $briefSet = $briefDef.EntitySetName
+  $sourceExternalId = "manual-demo-source-001"
+  $workExternalId = "CWI-DEMO-001"
+  $receiptExternalId = "CR-DEMO-PROPOSED-001"
+  $timestamp = (Get-Date).ToUniversalTime().ToString("o")
 
-  Write-Host "Creating sample Source Record"
+  Write-Host "Ensuring sample Source Record: $sourceExternalId"
   $sourceBody = @{
     com_name = "Manual sample source record"
     com_council_source_record_id = $sourceExternalId
     com_source_system = Get-GlobalChoiceValue -ChoiceName "com_sourcesystem" -Label "manual"
     com_source_kind = Get-GlobalChoiceValue -ChoiceName "com_sourcekind" -Label "manual_note"
     com_source_object_ref = $sourceExternalId
-    com_captured_at = (Get-Date).ToUniversalTime().ToString("o")
+    com_captured_at = $timestamp
     com_captured_by = "Doug"
     com_extraction_status = Get-GlobalChoiceValue -ChoiceName "com_extractionstatus" -Label "new"
+    com_source_to_work_item_rationale = "Manual demo source used to prove the Council source-to-work-item loop."
     com_data_boundary_policy = Get-GlobalChoiceValue -ChoiceName "com_databoundarypolicy" -Label "link_only"
   }
-  $createdSource = Invoke-DataverseRequest -Method POST -Path $sourceSet -Body $sourceBody
-  $sourceId = $createdSource."com_councilsourcerecordid"
+  $sourceId = New-RecordIfMissing -EntitySetName $sourceSet -PrimaryIdAttribute $sourceDef.PrimaryIdAttribute -LookupField "com_council_source_record_id" -LookupValue $sourceExternalId -Body $sourceBody
 
-  if (-not $sourceId) {
-    $lookup = Invoke-DataverseRequest -Method GET -Path "${sourceSet}?`$select=com_councilsourcerecordid&`$filter=com_council_source_record_id eq '$sourceExternalId'"
-    $sourceId = $lookup.value[0].com_councilsourcerecordid
-  }
-
-  Write-Host "Creating sample proposed Work Item"
+  Write-Host "Ensuring sample proposed Work Item: $workExternalId"
   $workBody = @{
     com_title = "Review the first Council source record"
-    com_council_work_item_id = "work-sample-" + (Get-Date).ToString("yyyyMMdd-HHmmss")
+    com_council_work_item_id = $workExternalId
     com_type = Get-GlobalChoiceValue -ChoiceName "com_workitemtype" -Label "request"
     com_summary = "First tenant-seeded work item proving the Council intake path."
     com_state_group = Get-GlobalChoiceValue -ChoiceName "com_workitemstategroup" -Label "proposed"
@@ -565,9 +761,110 @@ function New-SampleRows {
     com_approval_required = $true
     com_semantic_contract_version = "2026-07-08"
   }
-  Invoke-DataverseRequest -Method POST -Path $workSet -Body $workBody | Out-Null
+  $workId = New-RecordIfMissing -EntitySetName $workSet -PrimaryIdAttribute $workDef.PrimaryIdAttribute -LookupField "com_council_work_item_id" -LookupValue $workExternalId -Body $workBody
 
-  Write-Host "Seed rows created: $sourceExternalId"
+  Write-Host "Ensuring sample Work Item Source link"
+  $workSourceName = "$workExternalId primary source"
+  $workSourceBody = @{
+    com_name = $workSourceName
+    "com_work_item@odata.bind" = "/$workSet($workId)"
+    "com_source_record@odata.bind" = "/$sourceSet($sourceId)"
+    com_source_role = Get-LocalChoiceValue -EntityLogicalName "com_councilworkitemsource" -AttributeLogicalName "com_source_role" -Label "primary"
+    com_rationale = "Primary source for the proposed demo Work Item."
+    com_confidence = [decimal]0.95
+  }
+  New-RecordIfMissing -EntitySetName $workSourceSet -PrimaryIdAttribute $workSourceDef.PrimaryIdAttribute -LookupField "com_name" -LookupValue $workSourceName -Body $workSourceBody | Out-Null
+
+  Write-Host "Ensuring sample proposal Receipt: $receiptExternalId"
+  $receiptBody = @{
+    com_receipt_id = $receiptExternalId
+    "com_work_item@odata.bind" = "/$workSet($workId)"
+    com_verb = Get-GlobalChoiceValue -ChoiceName "com_receiptverb" -Label "proposed"
+    com_actor_type = Get-GlobalChoiceValue -ChoiceName "com_actortype" -Label "human"
+    com_actor_id = "Doug"
+    com_authority_basis = "Guarded MVP seed after target preflight."
+    com_occurred_at = $timestamp
+    com_idempotency_key = $receiptExternalId
+    com_evidence_refs = $sourceExternalId
+    com_decision_rationale = "Proposal created for MVP proof; not approved for outbound action."
+    com_confidence = [decimal]0.95
+    com_result = Get-GlobalChoiceValue -ChoiceName "com_receiptresult" -Label "accepted"
+    com_append_only_locked = $true
+  }
+  $receiptId = New-RecordIfMissing -EntitySetName $receiptSet -PrimaryIdAttribute $receiptDef.PrimaryIdAttribute -LookupField "com_receipt_id" -LookupValue $receiptExternalId -Body $receiptBody
+
+  $workReceiptPatch = @{
+    "com_created_receipt@odata.bind" = "/$receiptSet($receiptId)"
+  }
+  Invoke-DataverseRequest -Method PATCH -Path "$workSet($workId)" -Body $workReceiptPatch | Out-Null
+
+  Write-Host "Ensuring sample Receipt Source link"
+  $receiptSourceName = "$receiptExternalId source evidence"
+  $receiptSourceBody = @{
+    com_name = $receiptSourceName
+    "com_receipt@odata.bind" = "/$receiptSet($receiptId)"
+    "com_source_record@odata.bind" = "/$sourceSet($sourceId)"
+    com_evidence_role = Get-LocalChoiceValue -EntityLogicalName "com_councilreceiptsource" -AttributeLogicalName "com_evidence_role" -Label "supporting"
+  }
+  New-RecordIfMissing -EntitySetName $receiptSourceSet -PrimaryIdAttribute $receiptSourceDef.PrimaryIdAttribute -LookupField "com_name" -LookupValue $receiptSourceName -Body $receiptSourceBody | Out-Null
+
+  Write-Host "Ensuring sample graph provenance"
+  $sourceGraphId = "GE-DEMO-SOURCE-001"
+  $workGraphId = "GE-DEMO-WORK-001"
+  $sourceGraphBody = @{
+    com_name = "Demo source record"
+    com_council_graph_entity_id = $sourceGraphId
+    com_entity_type = Get-GlobalChoiceValue -ChoiceName "com_graphentitytype" -Label "source"
+    com_external_binding_ref = $sourceExternalId
+    com_description = "Graph projection of the demo Source Record."
+    com_semantic_contract_version = "2026-07-08"
+    com_status = Get-GlobalChoiceValue -ChoiceName "com_recordstatus" -Label "active"
+  }
+  $sourceGraphRowId = New-RecordIfMissing -EntitySetName $graphEntitySet -PrimaryIdAttribute $graphEntityDef.PrimaryIdAttribute -LookupField "com_council_graph_entity_id" -LookupValue $sourceGraphId -Body $sourceGraphBody
+
+  $workGraphBody = @{
+    com_name = "Demo proposed work item"
+    com_council_graph_entity_id = $workGraphId
+    com_entity_type = Get-GlobalChoiceValue -ChoiceName "com_graphentitytype" -Label "commitment"
+    com_external_binding_ref = $workExternalId
+    com_description = "Graph projection of the demo proposed Work Item."
+    com_semantic_contract_version = "2026-07-08"
+    com_status = Get-GlobalChoiceValue -ChoiceName "com_recordstatus" -Label "active"
+  }
+  $workGraphRowId = New-RecordIfMissing -EntitySetName $graphEntitySet -PrimaryIdAttribute $graphEntityDef.PrimaryIdAttribute -LookupField "com_council_graph_entity_id" -LookupValue $workGraphId -Body $workGraphBody
+
+  $edgeName = "$workExternalId proposed from $sourceExternalId"
+  $edgeBody = @{
+    com_name = $edgeName
+    com_edge_type = Get-GlobalChoiceValue -ChoiceName "com_graphedgetype" -Label "proposed_from"
+    "com_from_entity@odata.bind" = "/$graphEntitySet($workGraphRowId)"
+    "com_to_entity@odata.bind" = "/$graphEntitySet($sourceGraphRowId)"
+    "com_from_work_item@odata.bind" = "/$workSet($workId)"
+    "com_source_record@odata.bind" = "/$sourceSet($sourceId)"
+    "com_receipt@odata.bind" = "/$receiptSet($receiptId)"
+    com_rationale = "Demo Work Item was proposed from the demo Source Record."
+    com_confidence = [decimal]0.95
+    "com_created_receipt@odata.bind" = "/$receiptSet($receiptId)"
+  }
+  New-RecordIfMissing -EntitySetName $graphEdgeSet -PrimaryIdAttribute $graphEdgeDef.PrimaryIdAttribute -LookupField "com_name" -LookupValue $edgeName -Body $edgeBody | Out-Null
+
+  Write-Host "Ensuring sample Minion Brief"
+  $briefExternalId = "BRIEF-DEMO-001"
+  $briefBody = @{
+    com_name = "Demo Minion Brief"
+    com_council_brief_id = $briefExternalId
+    com_brief_date = $timestamp
+    com_priority_summary = "One proposed Work Item is ready for human review in Council Queue."
+    com_decisions_needed = "Review $workExternalId and decide whether to approve, hold, block, or leave proposed."
+    com_delegations_ready = "None. The demo Work Item remains proposed-only."
+    com_risks_if_ignored = "No external risk; this is a seeded MVP proof item."
+    com_blockers = "Specific forms/views are not curated yet; app users see all forms/views."
+    com_recent_receipts = $receiptExternalId
+    com_memory_candidates = "None."
+  }
+  New-RecordIfMissing -EntitySetName $briefSet -PrimaryIdAttribute $briefDef.PrimaryIdAttribute -LookupField "com_council_brief_id" -LookupValue $briefExternalId -Body $briefBody | Out-Null
+
+  Write-Host "Seed rows ensured: $sourceExternalId, $workExternalId, $receiptExternalId, $briefExternalId"
 }
 
 if (-not (Test-Path -LiteralPath $ManifestPath)) {
@@ -600,8 +897,15 @@ if ($decision.decisions.sourceBodyPolicy.value -ne "link_only") {
   throw "The live seed path only supports link_only source body policy."
 }
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\tenant-decision-packet-validate.ps1" -RequireComplete
-powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\dataverse-preflight-readonly.ps1"
+& powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\tenant-decision-packet-validate.ps1" -RequireComplete
+if ($LASTEXITCODE -ne 0) {
+  throw "Tenant decision packet validation failed."
+}
+
+& powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\dataverse-preflight-readonly.ps1"
+if ($LASTEXITCODE -ne 0) {
+  throw "Dataverse read-only preflight failed."
+}
 
 $script:WebApiEndpoint = [string]$script:Manifest.target.webApiEndpoint
 $script:AccessToken = Get-AccessToken -EnvironmentUrl ([string]$script:Manifest.target.environmentUrl)
@@ -623,6 +927,9 @@ Ensure-Columns
 Ensure-Relationships
 Invoke-PublishAll
 Ensure-ModelDrivenApp
+Ensure-AppTableComponents
+Invoke-PublishAll
+Test-ModelDrivenApp
 
 if ($SeedSampleRows) {
   New-SampleRows

@@ -141,7 +141,7 @@ if ($slice.guards.liveOutlookGraphReadsApproved -ne $false) {
 }
 
 if ($slice.guards.liveTenantWritesApproved -ne $false) {
-  Add-Issue $issues "Slice guard liveTenantWritesApproved must remain false until Doug approves writes."
+  Add-Issue $issues "Local Outlook fixture guard liveTenantWritesApproved must remain false because this fixture does not perform writes."
 }
 
 if ($slice.outlookCapture.workItemCreationOnSave -ne $false) {

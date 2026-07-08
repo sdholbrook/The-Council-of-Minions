@@ -6,7 +6,7 @@ baseline_commit: d7cc29a57621c435a61a181ef6724b9fb0b0f1ec
 
 Status: in-progress
 
-<!-- Generated from bmad-create-story context on 2026-07-08, then advanced through the local non-tenant implementation path. Tenant writes, receipts, approvals, and outbound action remain gated. -->
+<!-- Generated from bmad-create-story context on 2026-07-08, then advanced through the local and scoped live Dataverse implementation path. Broader approvals and outbound actions remain gated. -->
 
 ## Story
 
@@ -38,8 +38,8 @@ so that I can decide whether a source should become executable work.
   - [x] Require human approval before execution.
   - [x] Do not create receipts, graph edges, external actions, or approved work in this story.
 - [ ] Configure tenant persistence after write approval.
-  - [ ] Persist proposed Work Items in the target Dataverse environment only after read-only preflight, completed decision packet, write approval, and publisher/source-body decisions.
-  - [ ] Persist Work Item Source links so each proposed Work Item has auditable source provenance.
+  - [x] Persist proposed Work Items in the target Dataverse environment only after read-only preflight, completed decision packet, write approval, and publisher/source-body decisions.
+  - [x] Persist Work Item Source links so each proposed Work Item has auditable source provenance.
   - [ ] Confirm proposed items appear in Council Queue views without creating outbound action.
 - [x] Strengthen validation around this slice.
   - [x] Add a local proposed Work Item extraction slice validator.
@@ -97,7 +97,7 @@ Stories 1.1 and 1.2 established the local implementation pattern:
 - Create a story-specific JSON slice that proves the contract without tenant writes.
 - Add a PowerShell validator with a clear success marker.
 - Wire the validator into `council-mvp-local-validate.ps1`.
-- Leave tenant-dependent model-driven app configuration unchecked until Doug approves live writes and the read-only preflight proves the target environment.
+- Mark tenant-dependent model-driven app configuration complete only after Doug approves live writes and target preflight proves the environment; table components are now proven, while curated views/forms remain open.
 - Mark mock/manual Outlook evidence as not tenant verified.
 
 Carry-forward constraints:
@@ -112,7 +112,7 @@ Carry-forward constraints:
 - Do not collapse Source Records, Work Items, Work Item Source links, Receipts, and graph edges into one object.
 - Do not mark a Work Item approved, completed, delegated, or externally actionable in this story.
 - Do not store source body text beyond the existing local samples.
-- Do not create Power Automate flows, app registrations, Copilot agents, Graph calls, Fabric items, or tenant writes.
+- Do not create Power Automate flows, app registrations, Copilot agents, Graph calls, Fabric items, or tenant writes outside the approved Dataverse schema/app/sample-row boundary.
 - Do not use a Source Record ID as the Work Item ID.
 - Do not claim live MVP behavior from local JSON validation.
 
@@ -134,7 +134,7 @@ PROPOSED_WORK_ITEM_EXTRACTION_SLICE_VALIDATE_OK
 COUNCIL_MVP_LOCAL_VALIDATE_OK
 ```
 
-Do not persist proposed Work Items in Dataverse until `tenant-decision-packet-validate.ps1 -RequireComplete` passes, read-only preflight proves the target environment, and Doug approves writes.
+Persist proposed Work Items in Dataverse only after `tenant-decision-packet-validate.ps1 -RequireComplete` passes, read-only preflight proves the target environment, and Doug approves writes.
 
 ## Definition of Done
 
@@ -144,7 +144,7 @@ Do not persist proposed Work Items in Dataverse until `tenant-decision-packet-va
 - Work Item IDs are stable Council IDs and not Microsoft/Dataverse row identifiers.
 - Local validator and full MVP validator pass.
 - If tenant implementation occurs later, tenant evidence and source-controlled solution/export artifacts are committed.
-- No receipts, approvals, graph edges, outbound actions, flows, agents, app registrations, Fabric mutations, or tenant writes occur in this story.
+- No approvals, outbound actions, flows, agents, app registrations, Fabric mutations, or tenant writes outside the approved Dataverse demo seed boundary occur in this story.
 
 ## Open Questions / Required User Decisions
 
@@ -171,7 +171,8 @@ Read `_bmad-output/project-context.md` before implementation. The highest-risk r
 
 | Date | Change |
 | --- | --- |
-| 2026-07-08 | Created Story 1.3 from BMAD epic context and implemented the local proposed Work Item extraction slice. Story remains in-progress because live Dataverse persistence and Council Queue configuration are tenant gated. |
+| 2026-07-08 | Created Story 1.3 from BMAD epic context and implemented the local proposed Work Item extraction slice. This was initially local-only until Dataverse persistence and Council Queue configuration were approved. |
+| 2026-07-08 | Added live deterministic Dataverse demo seed after write approval: Source Record `manual-demo-source-001`, proposed Work Item `CWI-DEMO-001`, Work Item Source, proposal Receipt `CR-DEMO-PROPOSED-001`, Receipt Source, graph provenance, and Minion Brief `BRIEF-DEMO-001`. Story remains in-progress until the Council Queue view/form experience is visually verified and curated. |
 
 ## Dev Agent Record
 
@@ -189,7 +190,8 @@ GPT-5 Codex
 
 - Story context created from BMAD epics, project context, Source Record contract, Work Item/Receipt contract, Auto-Creation Policy, current manifest, and Story 1.1/1.2 local slice patterns.
 - Local non-tenant implementation proves proposed Work Item extraction shape, Council-level Work Item IDs, primary source references, Work Item Source links, proposal-only behavior, confidence/uncertainty capture, and Source Record / Work Item separation.
-- Tenant-dependent work remains open: Doug must complete the decision packet, approve writes, confirm publisher/source-body/model-driven app decisions, and verify the Council target environment before live persistence.
+- Live tenant persistence is now proven for the deterministic demo seed after completed target preflight and Doug-approved writes.
+- Remaining work: visually verify/curate the Council Queue proposed Work Item views/forms, then move the story to review.
 
 ### File List
 
