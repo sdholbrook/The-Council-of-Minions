@@ -18,6 +18,7 @@ Live writes completed:
 - Created and published model-driven app shell `Council Queue`.
 - Seeded Source Record row `manual-sample-20260708-095226`.
 - Seeded proposed Work Item row `work-sample-20260708-095227`.
+- Earlier failed seed retry left an additional sample Source Record row `manual-sample-20260708-095121` with no paired Work Item.
 
 Known remaining UI gap:
 

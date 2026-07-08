@@ -101,7 +101,7 @@ Append entries as evidence is gathered.
 - Date/time: 2026-07-08T09:52:27-04:00
 - Command or source: `dataverse-apply-mvp-schema.ps1 -ExecuteWrites -SeedSampleRows`
 - Capability: Live Dataverse MVP schema, solution, app shell, and sample data
-- Observed result: Target preflight matched `sdhdev` environment and organization IDs. The script created solution `CouncilOfMinionsMVP`, 15 global choices, 14 custom tables, non-lookup columns, lookup relationships, published customizations, created app shell `Council Queue`, and seeded one Source Record plus one proposed Work Item.
+- Observed result: Target preflight matched `sdhdev` environment and organization IDs. The script created solution `CouncilOfMinionsMVP`, 15 global choices, 14 custom tables, non-lookup columns, lookup relationships, published customizations, created app shell `Council Queue`, and seeded one Source Record plus one proposed Work Item. An earlier failed seed retry left an additional sample Source Record row with no paired Work Item.
 - Decision: Dataverse write restriction removed for the guarded MVP path after target proof
 - Restrictions: no outbound action, no flow publish, no agent publish, no app registration, and no Fabric mutation performed
 - Follow-up owner: Doug / Codex
