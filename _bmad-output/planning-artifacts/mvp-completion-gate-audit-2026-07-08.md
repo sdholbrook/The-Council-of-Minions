@@ -1,7 +1,7 @@
 ---
 title: "MVP Completion Gate Audit"
 project: "The-Council-of-Minions"
-status: not-complete-final-validation-gated
+status: not-complete-workflow-completion-gated
 created: 2026-07-08
 branch: codex/update-bmad-harness-context
 pr: https://github.com/sdholbrook/The-Council-of-Minions/pull/1
@@ -19,15 +19,15 @@ This audit does not redefine "finished." It separates completed evidence from ga
 
 The MVP is **not complete**.
 
-The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements and epic structure with `C`, and formal BMAD stories have been generated. BMAD final validation, implementation readiness analysis, tenant validation, write approval, and live MVP proof remain gated.
+The repo now has a coherent BMAD planning and Dataverse implementation-prep packet. Doug confirmed extracted requirements and epic structure with `C`, formal BMAD stories have been generated, and BMAD final validation passed. Workflow completion, implementation readiness analysis, tenant validation, write approval, and live MVP proof remain gated.
 
 ## Completion Requirements and Evidence
 
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
 | BMAD approach used as delivery harness | `_bmad-output/project-context.md`; PRD, architecture, epics extraction, readiness discovery, sprint/work-order artifacts under `_bmad-output/`; PR #1 updated | Proven for planning/prep |
-| BMAD epics/stories completed | `_bmad-output/planning-artifacts/epics.md` contains five approved epics and 25 generated stories; BMAD Step 4 final validation is not loaded yet | Prepared, pending final validation |
-| Requirements coverage complete | `epics.md` maps all FR1-FR30 to approved epics; story-level final validation is pending | Prepared, pending final validation |
+| BMAD epics/stories completed | `_bmad-output/planning-artifacts/epics.md` contains five approved epics and 25 generated stories; Step 4 validation passed | Proven, pending final workflow completion |
+| Requirements coverage complete | `epics.md` maps all FR1-FR30 to approved epics and story-level requirement references exist for all 25 stories | Proven |
 | Implementation readiness assessed | `_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-08.md` exists but is paused at document discovery | Not complete |
 | Overnight preplan exists | `_bmad-output/planning-artifacts/mvp-overnight-plan.md` | Proven |
 | Required user inputs identified | `mvp-overnight-plan.md`, `live-tenant-kickoff-2026-07-08.md`, `live-tenant-validation-runbook-2026-07-08.md`, `first-vertical-slice-work-orders-2026-07-08.md` | Proven |
@@ -42,9 +42,9 @@ The repo now has a coherent BMAD planning and Dataverse implementation-prep pack
 
 ### BMAD Gates
 
-1. `bmad-create-epics-and-stories` Step 3 is waiting for Doug to select `C` from the final menu before Step 4 final validation can be loaded.
-2. `bmad-check-implementation-readiness` Step 1 document discovery was confirmed by Doug's `C`; readiness analysis should wait until BMAD final validation has completed.
-3. Formal story-set review and readiness analysis cannot complete until BMAD final validation has been performed.
+1. `bmad-create-epics-and-stories` Step 4 final validation is waiting for Doug to select `C` from the final menu to complete the workflow.
+2. `bmad-check-implementation-readiness` Step 1 document discovery was confirmed by Doug's `C`; readiness analysis can begin after the epics workflow completion handoff.
+3. Formal implementation readiness remains incomplete until that review is performed.
 
 ### Tenant Gates
 
@@ -89,15 +89,15 @@ The current branch has completed all reasonable local planning/prep work that do
 
 ## Next Actions After Doug Replies
 
-If Doug replies only `C` to the Step 3 final menu:
+If Doug replies only `C` to the Step 4 final menu:
 
-1. Save the generated stories as Step 3 complete in `epics.md`.
-2. Resume `bmad-create-epics-and-stories` Step 4 final validation.
+1. Complete the `bmad-create-epics-and-stories` workflow.
+2. Invoke `bmad-help` per the completion instruction.
 3. Do not start live tenant auth or writes yet.
 
 If Doug replies with the full before-bed packet:
 
-1. Save Step 3 completion and run BMAD final validation.
+1. Complete BMAD epics workflow handoff.
 2. Complete implementation-readiness analysis.
 3. Run local dry-run checks:
    - `dataverse-manifest-validate.ps1`

@@ -2,7 +2,9 @@
 stepsCompleted:
   - step-01-validate-prerequisites
   - step-02-design-epics
-status: stories-generated-pending-final-validation
+  - step-03-create-stories
+  - step-04-final-validation
+status: final-validation-complete-pending-workflow-complete
 inputDocuments:
   - _bmad-output/planning-artifacts/prds/prd-The-Council-of-Minions-2026-07-06/prd.md
   - _bmad-output/planning-artifacts/prds/prd-The-Council-of-Minions-2026-07-06/addendum.md
@@ -255,6 +257,8 @@ As Doug,
 I want to manually capture a work-context source record,
 So that non-email commitments and decisions can enter the Council without pretending they came from Outlook.
 
+**Requirements:** FR1, FR3, FR4, NFR4, AR17
+
 **Acceptance Criteria:**
 
 **Given** the Council MVP is running without live Microsoft source access
@@ -272,6 +276,8 @@ So that non-email commitments and decisions can enter the Council without preten
 As Doug,
 I want Outlook messages and threads captured as Source Records with links and conversation context,
 So that email-driven work can be reviewed without losing its original source.
+
+**Requirements:** FR2, FR4, NFR4, AR13
 
 **Acceptance Criteria:**
 
@@ -291,6 +297,8 @@ As Doug,
 I want the Council to propose Work Items from a Source Record with rationale and confidence,
 So that I can decide whether a source should become executable work.
 
+**Requirements:** FR5, FR6, FR7, FR8
+
 **Acceptance Criteria:**
 
 **Given** a Source Record exists
@@ -309,6 +317,8 @@ As Doug,
 I want the Council to handle Source Records that produce no work or multiple work items,
 So that intake scope stays broader than surfaced queue scope.
 
+**Requirements:** FR5, FR7, NFR14
+
 **Acceptance Criteria:**
 
 **Given** a Source Record contains no actionable work
@@ -326,6 +336,8 @@ So that intake scope stays broader than surfaced queue scope.
 As Doug,
 I want source changes to create drift evidence instead of silently rewriting history,
 So that prior decisions and receipts remain auditable.
+
+**Requirements:** FR30, FR16, FR17
 
 **Acceptance Criteria:**
 
@@ -349,6 +361,8 @@ As Doug,
 I want each Work Item represented as a canonical execution shell,
 So that work can move through the Council without being tied to one Microsoft source system.
 
+**Requirements:** FR8, FR9, FR10, NFR12
+
 **Acceptance Criteria:**
 
 **Given** a proposed Work Item is created
@@ -365,6 +379,8 @@ So that work can move through the Council without being tied to one Microsoft so
 As Doug,
 I want high-risk work to stay proposed until I approve it,
 So that decisions, delegations, risks, sensitive handling, memory promotion, skill authority expansion, and tenant-affecting actions do not execute automatically.
+
+**Requirements:** FR13, FR15
 
 **Acceptance Criteria:**
 
@@ -384,6 +400,8 @@ As Doug,
 I want every meaningful Work Item state change backed by a Receipt,
 So that the queue is explainable and auditable.
 
+**Requirements:** FR9, FR16, FR17, NFR6
+
 **Acceptance Criteria:**
 
 **Given** a Work Item is proposed, approved, blocked, held, resumed, reviewed, completed, or failed
@@ -401,6 +419,8 @@ So that the queue is explainable and auditable.
 As a Council operator,
 I want connector-triggered, scheduled, and agent-generated mutations to be idempotent,
 So that retries do not create duplicate Work Items, Receipts, or approvals.
+
+**Requirements:** FR18, FR16
 
 **Acceptance Criteria:**
 
@@ -420,6 +440,8 @@ As Doug,
 I want only low-risk follow-up and meeting-action items auto-created under strict confidence thresholds,
 So that useful work can appear quickly without bypassing approval boundaries.
 
+**Requirements:** FR14, FR15, FR13
+
 **Acceptance Criteria:**
 
 **Given** a candidate Work Item is a low-risk `follow_up` or `meeting_action`
@@ -437,6 +459,8 @@ So that useful work can appear quickly without bypassing approval boundaries.
 As Doug,
 I want failed or denied actions recorded with evidence,
 So that I can distinguish system errors, policy denials, and items needing human review.
+
+**Requirements:** FR16, NFR13
 
 **Acceptance Criteria:**
 
@@ -459,6 +483,8 @@ As Doug,
 I want a Minion Brief snapshot of the current Council queue,
 So that I can review priority work and risks without opening every Work Item individually.
 
+**Requirements:** FR11
+
 **Acceptance Criteria:**
 
 **Given** Work Items and Receipts exist
@@ -477,6 +503,8 @@ As Doug,
 I want delegation candidates packaged with rationale and confidence,
 So that I can decide whether to delegate, hold, or handle work personally.
 
+**Requirements:** FR12, FR13
+
 **Acceptance Criteria:**
 
 **Given** a proposed Work Item is a delegation candidate
@@ -493,6 +521,8 @@ So that I can decide whether to delegate, hold, or handle work personally.
 As Doug,
 I want internal handoff and external reply drafts prepared but not sent,
 So that I can move faster while retaining control over outbound communication.
+
+**Requirements:** FR12, FR13, FR15
 
 **Acceptance Criteria:**
 
@@ -516,6 +546,8 @@ As Doug,
 I want Work Items, Source Records, people, roles, projects, artifacts, decisions, commitments, risks, topics, skills, Minions, receipts, and memory context linked in a Meaning Graph,
 So that the Council can explain why work exists and what it relates to.
 
+**Requirements:** FR19, FR20, FR21
+
 **Acceptance Criteria:**
 
 **Given** Source Records, Work Items, and Receipts exist
@@ -533,6 +565,8 @@ So that the Council can explain why work exists and what it relates to.
 As Doug,
 I want queue and brief views to explain relationships and source provenance,
 So that I can trust Council recommendations.
+
+**Requirements:** FR20, FR19
 
 **Acceptance Criteria:**
 
@@ -552,6 +586,8 @@ As Doug,
 I want durable context proposed as Memory Candidates before it becomes instruction,
 So that useful learning can be reviewed without letting observations silently govern future behavior.
 
+**Requirements:** FR23
+
 **Acceptance Criteria:**
 
 **Given** a source, receipt, or repeated pattern suggests durable context
@@ -570,6 +606,8 @@ As Doug,
 I want reviewed Memory Candidates promoted into Approved Instructions only with explicit evidence,
 So that binding guidance has provenance and authority.
 
+**Requirements:** FR23, FR16, FR17, NFR11
+
 **Acceptance Criteria:**
 
 **Given** a Memory Candidate is ready for promotion
@@ -587,6 +625,8 @@ So that binding guidance has provenance and authority.
 As a Council maintainer,
 I want approved Council terms projected into Microsoft knowledge planes without making those planes canonical,
 So that Dataverse, Fabric, Copilot Studio, and future agents stay aligned with the Council Semantic Contract.
+
+**Requirements:** FR21, FR22, NFR8, NFR15, AR16
 
 **Acceptance Criteria:**
 
@@ -610,6 +650,8 @@ As Doug,
 I want each reusable Minion capability recorded in a Skill Registry,
 So that skills have explicit triggers, authority, inputs, and proof obligations.
 
+**Requirements:** FR24
+
 **Acceptance Criteria:**
 
 **Given** a skill is added or updated
@@ -626,6 +668,8 @@ So that skills have explicit triggers, authority, inputs, and proof obligations.
 As Doug,
 I want skill installations and authority expansions approval-gated,
 So that new data access, external action, tool use, or authority cannot appear unnoticed.
+
+**Requirements:** FR25, FR13
 
 **Acceptance Criteria:**
 
@@ -645,6 +689,8 @@ As a Council architect,
 I want Microsoft-native planes evaluated before custom substrate,
 So that product implementation follows Microsoft movement without hiding contract gaps.
 
+**Requirements:** FR26, FR27, FR28, NFR2
+
 **Acceptance Criteria:**
 
 **Given** a Council capability needs work context, business-data grounding, human review, ontology, graph, memory, skills, tools, analytics, or automation
@@ -663,6 +709,8 @@ As Doug,
 I want live Microsoft capabilities marked `VERIFY IN TENANT` until proven,
 So that the MVP does not assume tenant features, permissions, licensing, or data boundaries that may not exist.
 
+**Requirements:** FR29, NFR5, NFR9, AR12
+
 **Acceptance Criteria:**
 
 **Given** a story, capability, connector, published agent, app registration, data write, automation, or external action depends on the live Microsoft tenant
@@ -680,6 +728,8 @@ As a Council implementer,
 I want Dataverse readiness proven before schema writes,
 So that the MVP operational store is created in the intended environment with clear rollback and audit boundaries.
 
+**Requirements:** FR27, FR28, FR29, AR3, AR8, AR13
+
 **Acceptance Criteria:**
 
 **Given** Dataverse is approved as the MVP operational store
@@ -688,15 +738,17 @@ So that the MVP operational store is created in the intended environment with cl
 **And** write scripts must remain disabled until Doug approves Dataverse sandbox writes and publisher prefix.
 
 **Given** Dataverse schema creation is approved
-**When** the Council solution is created
-**Then** Source Record, Work Item, Receipt, graph, memory, skill, brief, tenant evidence, and platform evaluation concepts must remain distinct tables or relationships
-**And** solution artifacts must be exportable and reviewable.
+**When** an implementation story requires Dataverse objects
+**Then** schema writes must be tied to the current story's needed tables, columns, relationships, or views
+**And** the dry-run manifest may describe the full MVP target shape without forcing all tables to be created before story value needs them.
 
 ### Story 5.6: Manage Phase 2 Knowledge and Analytics Projections
 
 As a Council architect,
 I want Fabric, Copilot Studio, and analytics projections deferred until MVP contracts are stable,
 So that graph and ontology expansion does not take over workflow state.
+
+**Requirements:** FR22, FR27, FR28, AR5, AR6, AR11
 
 **Acceptance Criteria:**
 

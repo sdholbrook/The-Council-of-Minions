@@ -1,7 +1,7 @@
 ---
 title: "MVP Sprint Plan"
 project: "The-Council-of-Minions"
-status: provisional-aligned-to-generated-stories-pending-final-validation
+status: provisional-aligned-to-validated-stories-pending-workflow-completion
 created: 2026-07-08
 depends_on:
   - epics.md
@@ -14,9 +14,9 @@ depends_on:
 
 ## Purpose
 
-Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories and is waiting for final validation.
+Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories and passed final validation.
 
-This plan is implementation preparation, not the final readiness decision. The generated BMAD stories should either adopt this sequencing or explicitly supersede it during final validation and implementation-readiness review.
+This plan is implementation preparation, not the final readiness decision. The generated BMAD stories should either adopt this sequencing or explicitly supersede it during implementation-readiness review.
 
 ## Planning Boundary
 
@@ -196,7 +196,7 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 
 | Story range | Ready now? | Blocker |
 | --- | --- | --- |
-| S0.1 | Partially | Epics/stories generated; BMAD final validation still needs Doug's Step 3 `C`. |
+| S0.1 | Partially | Epics/stories generated and final validation passed; final workflow completion menu still needs Doug's `C`. |
 | S0.2 | No | Needs storage approval. |
 | S0.3-S0.4 | No | Needs interactive `pac` sign-in and tenant/domain if needed. |
 | S0.5-S0.6 | No | Needs live boundary, source policy, publisher prefix. |
