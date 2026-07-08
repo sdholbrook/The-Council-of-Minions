@@ -70,9 +70,9 @@ try {
     $path = "_bmad-output\implementation-artifacts\sprint-status.yaml"
     $lines = Get-Content $path
     $statusLines = $lines | Where-Object { $_ -match '^  [a-z0-9-]+: (backlog|ready-for-dev|in-progress|review|done|optional)$' }
-    $epics = $statusLines | Where-Object { $_ -match '^  epic-[0-9]+: backlog$' }
+    $epics = $statusLines | Where-Object { $_ -match '^  epic-[0-9]+: (backlog|in-progress|done)$' }
     $stories = $statusLines | Where-Object { $_ -match '^  [0-9]+-[0-9]+-' }
-    $retrospectives = $statusLines | Where-Object { $_ -match '^  epic-[0-9]+-retrospective: optional$' }
+    $retrospectives = $statusLines | Where-Object { $_ -match '^  epic-[0-9]+-retrospective: (optional|done)$' }
     $invalid = $lines | Where-Object { $_ -match '^  [a-z0-9-]+: ' -and $_ -notmatch '^  [a-z0-9-]+: (backlog|ready-for-dev|in-progress|review|done|optional)$' }
 
     if ($epics.Count -ne 5) {
