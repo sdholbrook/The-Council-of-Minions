@@ -1,7 +1,7 @@
 ---
 title: "Tenant Validation Evidence"
 project: "The-Council-of-Minions"
-status: not-started
+status: local-prereq-checked-readonly
 created: 2026-07-08
 target_environment_url: https://sdhdev.crm.dynamics.com
 target_environment_id: ba9a96b2-f562-40f6-931d-6b55873954ee
@@ -20,7 +20,9 @@ This file starts as a template. Fill it only with verified current-state evidenc
 
 | Area | Status | Evidence |
 | --- | --- | --- |
-| Power Platform auth | Not tested | Awaiting interactive `pac auth create`. |
+| Power Platform CLI | Locally available | `pac help` printed version `2.8.1+ga4eb71c (.NET 10.0.9)` on 2026-07-08. |
+| Power Platform auth | Wrong active profile for Council target | `pac auth list` succeeded on 2026-07-08, but the active profile points to `https://vetsci-val-synsci.crm.dynamics.com/`, not `https://sdhdev.crm.dynamics.com`. Create or select `Council-SDH-Dev` before tenant validation. |
+| Azure CLI | Locally available | `az version` printed `azure-cli` `2.85.0` on 2026-07-08. |
 | Environment identity | Not tested | Expected Environment ID: `ba9a96b2-f562-40f6-931d-6b55873954ee`; expected Organization ID: `0c0fa4db-8614-ef11-9f83-000d3a342d36`. |
 | Dataverse availability | Inferred, not verified | Web API endpoint provided: `https://sdhdev.api.crm.dynamics.com/api/data/v9.2`; must verify with `pac env who`. |
 | Dataverse search/indexing | Not tested | Awaiting `pac env list-settings` or admin portal evidence. |
@@ -51,6 +53,16 @@ This file starts as a template. Fill it only with verified current-state evidenc
 
 Append entries as evidence is gathered.
 
+### Entry 0 - Local Prerequisite Check
+
+- Date/time: 2026-07-08T01:07:50-04:00
+- Command or source: `pac help`, `pac auth list`, `az version`
+- Capability: Local CLI readiness before interactive tenant validation
+- Observed result: Power Platform CLI and Azure CLI are installed. Active PAC auth points to `https://vetsci-val-synsci.crm.dynamics.com/`, not the Council target `https://sdhdev.crm.dynamics.com`.
+- Decision: local prerequisites partially ready; target PAC auth still required
+- Restrictions: no tenant writes performed; no Council environment read-only validation performed yet
+- Follow-up owner: Doug / Codex during interactive auth
+
 ### Entry 1
 
 - Date/time:
@@ -76,13 +88,12 @@ Before implementation starts against the live tenant, evidence must show:
 
 ## Decisions Pending From Doug
 
-1. BMAD epics confirmation: `C`.
-2. Dataverse approved as MVP operational store: yes/no.
-3. Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics: yes/no.
-4. Tenant domain or tenant ID.
-5. Outlook/Graph live reads allowed: yes/no.
-6. Dataverse sandbox writes allowed after approval: yes/no.
-7. Source body policy: link-only, hash-only, summary allowed, or full snapshot allowed.
-8. Publisher prefix.
-9. Model-driven app as first Council Queue / Minion Brief surface: yes/no.
-10. Power Apps MCP agent feed evaluation tonight: yes/no.
+1. Dataverse approved as MVP operational store: yes/no.
+2. Fabric IQ / Fabric Graph deferred to phase 2 graph/analytics: yes/no.
+3. Tenant domain or tenant ID.
+4. Outlook/Graph live reads allowed: yes/no.
+5. Dataverse sandbox writes allowed after approval: yes/no.
+6. Source body policy: link-only, hash-only, summary allowed, or full snapshot allowed.
+7. Publisher prefix.
+8. Model-driven app as first Council Queue / Minion Brief surface: yes/no.
+9. Power Apps MCP agent feed evaluation tonight: yes/no.

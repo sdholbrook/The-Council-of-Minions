@@ -49,15 +49,24 @@ Without these confirmations, run only local planning and no live tenant work.
 Before interactive login, run the local no-auth checks:
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\tenant-prereq-local-check.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\dataverse-manifest-validate.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1
 ```
 
 Expected result:
 
+- Local prerequisite check prints `TENANT_PREREQ_LOCAL_CHECK_OK`.
 - Manifest validation succeeds.
 - Deployment plan prints `DRY RUN ONLY`.
 - No tenant authentication or writes occur.
+
+Current local observation from 2026-07-08:
+
+- Power Platform CLI is installed.
+- Azure CLI is installed.
+- `pac auth list` currently shows an active profile for `https://vetsci-val-synsci.crm.dynamics.com/`, not the Council target `https://sdhdev.crm.dynamics.com`.
+- Before tenant validation, create or select a `Council-SDH-Dev` PAC auth profile for the target environment.
 
 Run from `C:\repo\The-Council-of-Minions` while Doug is present.
 
@@ -80,6 +89,14 @@ If mismatch:
 1. Stop.
 2. Do not run write commands.
 3. Use `pac auth list` and `pac auth select` to select the correct profile, or recreate auth with the correct URL.
+
+Optional hard check after auth selection:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\tenant-prereq-local-check.ps1 -RequireTargetAuth
+```
+
+This command fails if the active PAC profile does not point to `https://sdhdev.crm.dynamics.com`.
 
 ## Phase 2 - Read-Only Environment Inspection
 
@@ -250,9 +267,9 @@ Disconnect-MgGraph
 
 ## Current Blockers
 
-- BMAD epics workflow awaits `C`.
 - Dataverse storage decision awaits explicit approval.
 - Tenant/domain ID is not yet supplied.
 - Live read/write boundaries are not yet supplied.
 - Source body policy is not yet supplied.
 - Publisher prefix is not yet supplied.
+- Active PAC auth is currently not the Council target environment.
