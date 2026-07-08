@@ -23,6 +23,7 @@ This file starts as a template. Fill it only with verified current-state evidenc
 | Power Platform CLI | Locally available | `pac help` printed version `2.8.1+ga4eb71c (.NET 10.0.9)` on 2026-07-08. |
 | Power Platform auth | Wrong active profile for Council target | `pac auth list` succeeded on 2026-07-08, but the active profile points to `https://vetsci-val-synsci.crm.dynamics.com/`, not `https://sdhdev.crm.dynamics.com`. Create or select `Council-SDH-Dev` before tenant validation. |
 | Azure CLI | Locally available | `az version` printed `azure-cli` `2.85.0` on 2026-07-08. |
+| Tenant decision packet | Pending decisions | `_bmad-output/implementation-artifacts/tenant-decision-packet.json` exists; `tenant-decision-packet-validate.ps1` passes in warning mode and fails with `-RequireComplete` until Doug supplies required decisions. |
 | Environment identity | Not tested | Expected Environment ID: `ba9a96b2-f562-40f6-931d-6b55873954ee`; expected Organization ID: `0c0fa4db-8614-ef11-9f83-000d3a342d36`. |
 | Dataverse availability | Inferred, not verified | Web API endpoint provided: `https://sdhdev.api.crm.dynamics.com/api/data/v9.2`; must verify with `pac env who`. |
 | Dataverse search/indexing | Not tested | Awaiting `pac env list-settings` or admin portal evidence. |
@@ -62,6 +63,16 @@ Append entries as evidence is gathered.
 - Decision: local prerequisites partially ready; target PAC auth still required
 - Restrictions: no tenant writes performed; no Council environment read-only validation performed yet
 - Follow-up owner: Doug / Codex during interactive auth
+
+### Entry 0.1 - Tenant Decision Packet Initialized
+
+- Date/time: 2026-07-08
+- Command or source: `tenant-decision-packet.json`, `tenant-decision-packet-validate.ps1`
+- Capability: Structured capture for Doug decisions before tenant validation or writes
+- Observed result: Decision packet exists and is intentionally pending. Normal validation passes with pending-decision warnings; `-RequireComplete` fails until required decisions are supplied.
+- Decision: live write approval is not closed
+- Restrictions: no tenant writes performed; no Council environment read-only validation performed yet
+- Follow-up owner: Doug
 
 ### Entry 1
 

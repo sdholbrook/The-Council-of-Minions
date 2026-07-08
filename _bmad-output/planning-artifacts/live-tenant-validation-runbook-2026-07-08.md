@@ -49,6 +49,7 @@ Without these confirmations, run only local planning and no live tenant work.
 Before interactive login, run the local no-auth checks:
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\tenant-decision-packet-validate.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\tenant-prereq-local-check.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\dataverse-manifest-validate.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1
@@ -56,10 +57,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-
 
 Expected result:
 
+- Decision packet validation prints `TENANT_DECISION_PACKET_VALIDATE_OK`. Pending decisions are expected until Doug supplies them.
 - Local prerequisite check prints `TENANT_PREREQ_LOCAL_CHECK_OK`.
 - Manifest validation succeeds.
 - Deployment plan prints `DRY RUN ONLY`.
 - No tenant authentication or writes occur.
+
+Before Dataverse write approval, the decision packet must pass the hard check:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File _bmad-output\implementation-artifacts\tenant-decision-packet-validate.ps1 -RequireComplete
+```
+
+This command fails while any required Doug decision is still `pending` or blank.
 
 Current local observation from 2026-07-08:
 
@@ -172,6 +182,14 @@ Sample source records policy: link-only/hash-only/summary/full.
 ```
 
 If not approved, stop at read-only evidence and update planning artifacts.
+
+The machine-readable approval source is:
+
+```text
+_bmad-output/implementation-artifacts/tenant-decision-packet.json
+```
+
+The write gate is not closed until `tenant-decision-packet-validate.ps1 -RequireComplete` passes and read-only preflight proves the target environment.
 
 ## Phase 6 - Dataverse Solution Creation Plan
 

@@ -36,6 +36,9 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - Dataverse manifest validator: `_bmad-output/implementation-artifacts/dataverse-manifest-validate.ps1`
 - Dataverse read-only preflight script: `_bmad-output/implementation-artifacts/dataverse-preflight-readonly.ps1`
 - Dataverse dry-run deployment plan script: `_bmad-output/implementation-artifacts/dataverse-deployment-plan.ps1`
+- Tenant decision packet: `_bmad-output/implementation-artifacts/tenant-decision-packet.json`
+- Tenant decision validator: `_bmad-output/implementation-artifacts/tenant-decision-packet-validate.ps1`
+- Tenant local prerequisite guard: `_bmad-output/implementation-artifacts/tenant-prereq-local-check.ps1`
 - Sprint status tracking: `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - UX contract: `_bmad-output/planning-artifacts/ux-designs/ux-The-Council-of-Minions-2026-07-08/DESIGN.md` and `EXPERIENCE.md`
 - Runtime/setup baseline: `_bmad-output/implementation-artifacts/runtime-setup-baseline-2026-07-08.md`
@@ -44,6 +47,8 @@ This plan treats BMAD as the delivery harness, not as product architecture. The 
 - No custom application runtime manifest exists yet in the repo; the practical MVP runtime is documented as Dataverse/model-driven app pending Doug approval
 - Dataverse is proposed as the MVP operational store, pending Doug's explicit approval and tenant verification
 - No tenant validation evidence exists yet
+- Local CLI prerequisite evidence exists; active PAC auth is not currently pointed at the Council target environment
+- Required Doug decisions are now captured in a machine-readable packet, but remain pending
 
 ## Meaning of "MVP Finished"
 
@@ -227,8 +232,9 @@ Exit evidence:
 4. Produce solution decision packet and tenant evidence backlog. Prepared, tenant evidence still empty.
 5. Prepare first implementation story. Pending tenant/write boundary decision.
 6. Validate files with `git diff --check` and BMAD config resolver.
-7. Commit and push artifacts if the packet is coherent.
-8. Update PR #1.
+7. Validate the tenant decision packet and local PAC prerequisite guard.
+8. Commit and push artifacts if the packet is coherent.
+9. Update PR #1.
 
 ## Explicit Non-Goals Overnight
 
@@ -254,6 +260,7 @@ Exit evidence:
 | Runtime | Dataverse/model-driven app proposed as practical MVP runtime | Runtime/setup baseline exists; Doug approval and tenant validation still required. |
 | UX surface | Minion Brief plus Council Queue in model-driven app pattern | UX spines exist; Doug acceptance of model-driven app surface still required. |
 | Tenant work | Read-only preflight only after interactive login; no writes | Architecture requires `VERIFY IN TENANT` and Doug approval before mutation. |
+| Tenant decision packet | Pending | Must pass `tenant-decision-packet-validate.ps1 -RequireComplete` before write approval. |
 
 ## Completion Criteria For This Goal
 

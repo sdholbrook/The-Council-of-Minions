@@ -44,6 +44,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Tenant decision packet validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\tenant-decision-packet-validate.ps1"
+    if ($LASTEXITCODE -ne 0) {
+      throw "Tenant decision packet validation failed."
+    }
+    $output | ForEach-Object { Write-Host $_ }
+    if (($output -join "`n") -notmatch "TENANT_DECISION_PACKET_VALIDATE_OK") {
+      throw "Tenant decision packet validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Manual Source Record slice validation" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\manual-source-record-slice-validate.ps1"
     if ($LASTEXITCODE -ne 0) {

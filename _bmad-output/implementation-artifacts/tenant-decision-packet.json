@@ -1,0 +1,117 @@
+{
+  "artifactVersion": "2026-07-08",
+  "project": "The-Council-of-Minions",
+  "status": "pending-user-decisions",
+  "purpose": "Capture the exact Doug-approved tenant and live-boundary decisions required before Council tenant validation or Dataverse writes.",
+  "target": {
+    "environmentUrl": "https://sdhdev.crm.dynamics.com",
+    "environmentUniqueName": "unq0c0fa4db8614ef119f83000d3a342",
+    "environmentId": "ba9a96b2-f562-40f6-931d-6b55873954ee",
+    "organizationId": "0c0fa4db-8614-ef11-9f83-000d3a342d36"
+  },
+  "decisions": {
+    "dataverseMvpOperationalStore": {
+      "value": "pending",
+      "allowedValues": [
+        "approved",
+        "rejected"
+      ],
+      "requiredBefore": "tenant-write-planning",
+      "question": "Is Dataverse approved as the MVP operational store?"
+    },
+    "fabricIqGraphPhase2": {
+      "value": "pending",
+      "allowedValues": [
+        "defer_to_phase_2",
+        "evaluate_now",
+        "reject_for_mvp"
+      ],
+      "requiredBefore": "tenant-write-planning",
+      "question": "Should Fabric IQ / Fabric Graph remain deferred to phase 2 graph and analytics projection?"
+    },
+    "tenantDomainOrId": {
+      "value": "",
+      "requiredBefore": "optional-azure-graph-validation",
+      "question": "What tenant domain or tenant ID should Azure/Graph validation use if authorized?"
+    },
+    "environmentType": {
+      "value": "pending",
+      "allowedValues": [
+        "dev",
+        "sandbox",
+        "trial",
+        "production"
+      ],
+      "requiredBefore": "tenant-validation",
+      "question": "Is the provided Power Platform environment dev, sandbox, trial, or production?"
+    },
+    "outlookGraphLiveReads": {
+      "value": "pending",
+      "allowedValues": [
+        "allowed_readonly",
+        "not_allowed"
+      ],
+      "requiredBefore": "outlook-graph-checks",
+      "question": "Are read-only Outlook/Graph checks allowed?"
+    },
+    "dataverseSandboxWrites": {
+      "value": "pending",
+      "allowedValues": [
+        "forbidden",
+        "allowed_after_readonly_preflight"
+      ],
+      "requiredBefore": "dataverse-write",
+      "question": "Are Dataverse sandbox writes allowed after read-only preflight proves the target environment?"
+    },
+    "sourceBodyPolicy": {
+      "value": "pending",
+      "allowedValues": [
+        "link_only",
+        "hash_only",
+        "summary_allowed",
+        "full_snapshot_allowed"
+      ],
+      "requiredBefore": "sample-source-records",
+      "question": "Which source body policy is allowed for sample Source Records?"
+    },
+    "publisherPrefix": {
+      "value": "",
+      "requiredBefore": "solution-creation",
+      "question": "What Dataverse publisher prefix should replace or confirm the placeholder prefix?"
+    },
+    "modelDrivenAppSurface": {
+      "value": "pending",
+      "allowedValues": [
+        "accepted",
+        "rejected"
+      ],
+      "requiredBefore": "council-queue-app",
+      "question": "Is a model-driven app accepted as the first Council Queue / Minion Brief surface?"
+    },
+    "powerAppsMcpAgentFeedEvaluation": {
+      "value": "pending",
+      "allowedValues": [
+        "defer",
+        "evaluate_after_model_driven_app",
+        "evaluate_now_readonly"
+      ],
+      "requiredBefore": "agent-feed-evaluation",
+      "question": "Should Power Apps MCP agent feed be evaluated now or deferred?"
+    },
+    "humanApprovalOwner": {
+      "value": "",
+      "requiredBefore": "approval-flow",
+      "question": "Who is the human approval owner for decisions, delegations, outbound actions, memory promotion, skill expansion, and tenant writes?"
+    }
+  },
+  "guards": {
+    "noTenantWritesUntilReadonlyPreflightMatches": true,
+    "noWritesWhenDecisionPending": true,
+    "noOutboundAction": true,
+    "noFlowPublish": true,
+    "noAgentPublish": true,
+    "noAppRegistration": true,
+    "noFabricMutation": true
+  },
+  "completionRule": "Run tenant-decision-packet-validate.ps1 -RequireComplete before Dataverse write approval. The packet is intentionally incomplete until Doug supplies the required decisions."
+}
