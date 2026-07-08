@@ -2,7 +2,7 @@
 title: "Implementation Readiness Assessment Report"
 project: "The-Council-of-Minions"
 date: 2026-07-08
-status: document-discovery-confirmed-pending-epics
+status: document-discovery-confirmed-pending-bmad-final-validation
 workflow: bmad-check-implementation-readiness
 stepsCompleted:
   - step-01-document-discovery
@@ -35,7 +35,7 @@ includedDocuments:
 
 Beginning document discovery to inventory all project files before implementation-readiness assessment.
 
-This report is initialized from the `bmad-check-implementation-readiness` workflow. Doug confirmed the discovered document set with `C`; content analysis is intentionally deferred until the formal BMAD epic/story set exists.
+This report is initialized from the `bmad-check-implementation-readiness` workflow. Doug confirmed the discovered document set with `C`; content analysis is intentionally deferred until the generated BMAD epic/story set passes final validation.
 
 ## PRD Files Found
 
@@ -105,7 +105,7 @@ Recommended assessment inputs:
 Current known state:
 
 - `epics.md` contains the Step 1 requirements extraction from `bmad-create-epics-and-stories`.
-- Formal epic and story generation is not complete because that workflow is waiting for Doug's `C` confirmation.
+- Formal epic and story generation now exists in `epics.md`; BMAD final validation is still pending.
 
 ## UX Design Files Found
 
@@ -154,7 +154,7 @@ These files are not PRD, architecture, epics, or UX inputs for the formal readin
 ### Workflow Gates
 
 - `bmad-create-epics-and-stories` cannot proceed to Step 2 until Doug confirms requirements with `C`.
-- `bmad-check-implementation-readiness` document discovery is confirmed, but implementation readiness analysis should wait for formal BMAD epics/stories.
+- `bmad-check-implementation-readiness` document discovery is confirmed, but implementation readiness analysis should wait for BMAD final validation.
 
 ## Required Confirmation
 
@@ -179,4 +179,4 @@ Proposed readiness assessment source set:
 4. UX:
    - none.
 
-Confirmed with `C`. Next readiness step is file validation after formal BMAD epics/stories are completed.
+Confirmed with `C`. Next readiness step is file validation after BMAD final validation of the generated epics/stories.

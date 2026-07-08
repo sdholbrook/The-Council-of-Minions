@@ -1,7 +1,7 @@
 ---
 title: "First Vertical Slice Work Orders"
 project: "The-Council-of-Minions"
-status: provisional-pending-bmad-epics-confirmation
+status: provisional-aligned-to-generated-stories-pending-final-validation
 created: 2026-07-08
 source_plan: mvp-sprint-plan-2026-07-08.md
 ---
@@ -10,9 +10,9 @@ source_plan: mvp-sprint-plan-2026-07-08.md
 
 ## Purpose
 
-Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is confirmed and tenant write approval is granted.
+Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow passes final validation and tenant write approval is granted.
 
-These are provisional work orders. They should become formal BMAD stories after `bmad-create-epics-and-stories` completes.
+These are provisional work orders aligned to the generated BMAD stories. They should be reconciled after `bmad-create-epics-and-stories` final validation completes.
 
 ## Slice Goal
 
