@@ -32,13 +32,13 @@ This file contains verified current-state evidence from live commands, admin set
 | Dataverse intelligence / semantic model | Not tested | Awaiting environment settings/admin evidence. |
 | Dataverse MCP availability | Not tested | No Dataverse MCP exposed in Codex thread; tenant capability must be checked separately. |
 | Power Apps MCP agent feed | Not tested | Tenant/app capability; not a local Codex plugin. |
-| Model-driven app feasibility | Screen-verified table-backed app | Published model-driven app `Council Queue` exists with 12 Council table components. `ValidateApp` returns success with only form/view selection warnings. Browser screen gate initially reproduced Dynamics error `0x80050016`; after manifest-driven sitemap update, screen runs include `2026-07-09T15-43-41-825Z` with seeded row and receipt-backed state-transition visibility. |
-| Dataverse solution ALM | Exported and unpacked | `_bmad-output/implementation-artifacts/dataverse-export-solution.ps1` exported unmanaged solution `CouncilOfMinionsMVP` from `sdhdev`, unpacked 198 source files, and recorded `_bmad-output/implementation-artifacts/alm/export-evidence.json`. |
+| Model-driven app feasibility | Screen-verified table-backed app with curated forms/views | Published model-driven app `Council Queue` exists with 12 Council table components, 12 pinned forms, 30 pinned views, and 18 manifest-curated views. `ValidateApp` now returns success with zero issues. Browser screen gate initially reproduced Dynamics error `0x80050016`; after sitemap and form/view curation, screen runs include `2026-07-09T15-59-14-759Z` with seeded row and receipt-backed state-transition visibility. |
+| Dataverse solution ALM | Exported and unpacked | `_bmad-output/implementation-artifacts/dataverse-export-solution.ps1` exported unmanaged solution `CouncilOfMinionsMVP` from `sdhdev`, unpacked 216 source files, and recorded `_bmad-output/implementation-artifacts/alm/export-evidence.json`. |
 | Outlook/Graph reads | Not authorized | Awaiting Doug's live-read boundary. |
 | Teams reads | Not authorized | Awaiting Doug's live-read boundary and target team/channel if needed. |
 | SharePoint/OneDrive reads | Not authorized | Awaiting Doug's live-read boundary and target source if needed. |
 | Fabric IQ / Graph | Deferred | Proposed phase 2 graph/analytics projection; not MVP workflow state owner. |
-| Live writes | Authorized and completed | Doug authorized removing the tenant write restriction. Guarded scripts created Dataverse solution, choices, tables, relationships, manifest-driven model-driven app sitemap, deterministic receipt-backed demo rows, receipt-backed state-transition demo rows, graph provenance, and a Minion Brief in `sdhdev`. |
+| Live writes | Authorized and completed | Doug authorized removing the tenant write restriction. Guarded scripts created Dataverse solution, choices, tables, relationships, manifest-driven model-driven app sitemap, pinned forms/views, deterministic receipt-backed demo rows, receipt-backed state-transition demo rows, graph provenance, and a Minion Brief in `sdhdev`. |
 | Source body policy | Link-only | Sample Source Records use `link_only` policy. |
 | Human approval owner | Doug | Doug is the approval owner for MVP tenant writes and approval-gated actions. |
 | Rollback path | Solution scoped | Delete unmanaged solution `CouncilOfMinionsMVP` and published app `Council Queue` if rollback is required. |
@@ -112,9 +112,9 @@ Append entries as evidence is gathered.
 - Date/time: 2026-07-08T23:22:40Z
 - Command or source: `council-model-driven-screen-test.ps1`
 - Capability: Actual browser validation of the rendered `Council Queue` model-driven app
-- Observed result: First strict browser run reproduced the user-visible Dynamics error `0x80050016` with message that the user lacked permissions for records or the site map was wrong. The app sitemap XML only had an Area and no Groups/SubAreas. `dataverse-apply-mvp-schema.ps1` was updated to generate the sitemap from manifest navigation groups and publish it. Follow-up screen runs `2026-07-08T23-22-40-976Z`, `2026-07-09T15-29-54-028Z`, `2026-07-09T15-37-21-204Z`, and `2026-07-09T15-43-41-825Z` passed and captured screenshots/trace for app home, Source Records, proposed Work Items, Receipts, and Briefs. The rendered grids showed seeded row markers: `Manual sample source record`, `Review the first Council source record`, `Approve demo Council work item`, `Hold demo Council work item`, `Block demo Council work item`, `Review demo Council work item`, `Complete demo Council work item`, `Fail demo Council work item`, `CR-DEMO-PROPOSED-001`, `CR-DEMO-STATE-APPROVED-APPROVED`, `CR-DEMO-STATE-HELD-HELD`, `CR-DEMO-STATE-BLOCKED-BLOCKED`, `CR-DEMO-STATE-INREVIEW-INREVIEW`, `CR-DEMO-STATE-COMPLETED-COMPLETED`, `CR-DEMO-STATE-FAILED-FAILED`, and `Demo Minion Brief`.
+- Observed result: First strict browser run reproduced the user-visible Dynamics error `0x80050016` with message that the user lacked permissions for records or the site map was wrong. The app sitemap XML only had an Area and no Groups/SubAreas. `dataverse-apply-mvp-schema.ps1` was updated to generate the sitemap from manifest navigation groups and publish it. Follow-up screen runs `2026-07-08T23-22-40-976Z`, `2026-07-09T15-29-54-028Z`, `2026-07-09T15-37-21-204Z`, `2026-07-09T15-43-41-825Z`, and post-curation run `2026-07-09T15-59-14-759Z` passed and captured screenshots/trace for app home, Source Records, proposed Work Items, Receipts, and Briefs. The rendered grids showed seeded row markers: `Manual sample source record`, `Review the first Council source record`, `Approve demo Council work item`, `Hold demo Council work item`, `Block demo Council work item`, `Review demo Council work item`, `Complete demo Council work item`, `Fail demo Council work item`, `CR-DEMO-PROPOSED-001`, `CR-DEMO-STATE-APPROVED-APPROVED`, `CR-DEMO-STATE-HELD-HELD`, `CR-DEMO-STATE-BLOCKED-BLOCKED`, `CR-DEMO-STATE-INREVIEW-INREVIEW`, `CR-DEMO-STATE-COMPLETED-COMPLETED`, `CR-DEMO-STATE-FAILED-FAILED`, and `Demo Minion Brief`.
 - Decision: model-driven app screen access is now proven for the scoped MVP slice; `ValidateApp` alone is no longer treated as sufficient evidence.
-- Restrictions: screen gate still records platform console/page/telemetry noise for review; curated forms/views remain open.
+- Restrictions: screen gate still records platform console/page/telemetry noise for review; final tenant-surface proof must stay current after app changes.
 - Follow-up owner: Codex
 
 ### Entry 3 - Dataverse Solution ALM Export
@@ -122,7 +122,7 @@ Append entries as evidence is gathered.
 - Date/time: 2026-07-09T11:26:45-04:00
 - Command or source: `dataverse-export-solution.ps1`
 - Capability: Source-controlled Dataverse solution evidence for the scoped MVP environment
-- Observed result: Exported unmanaged solution `CouncilOfMinionsMVP` from `https://sdhdev.crm.dynamics.com`, unpacked 198 source files to `_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP`, and recorded `export-evidence.json` with solution XML, customizations XML, app module, and app sitemap flags.
+- Observed result: Exported unmanaged solution `CouncilOfMinionsMVP` from `https://sdhdev.crm.dynamics.com`, unpacked 216 source files to `_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP`, and recorded `export-evidence.json` with solution XML, customizations XML, app module, app sitemap, form components, view components, and curated SavedQuery files.
 - Decision: `ValidateApp` and live table writes are no longer the only persistence evidence; the solution now has source-controlled ALM evidence.
 - Restrictions: exported unmanaged source only; ZIP and unpack logs are local/ignored, and no outbound action, flow publish, agent publish, app registration, or Fabric mutation was performed.
 - Follow-up owner: Codex
@@ -134,9 +134,22 @@ Append entries as evidence is gathered.
 - Capability: Live Dataverse receipt-backed state transition proof for the scoped MVP queue
 - Observed result: Guarded script reused Source Record `manual-demo-source-001`, created or ensured six deterministic state demo Work Items, and appended 12 deterministic proposal/transition Receipts. Covered final state groups are `approved`, `held`, `blocked`, `in_review`, `completed`, and `failed`.
 - Evidence artifact: `_bmad-output/implementation-artifacts/state-transition-demo-evidence.json`
-- Screen proof: `council-model-driven-screen-test.ps1` run `2026-07-09T15-43-41-825Z` passed with the state demo Work Item titles and terminal Receipt IDs visible in the rendered model-driven app grids.
+- Screen proof: `council-model-driven-screen-test.ps1` run `2026-07-09T15-59-14-759Z` passed with the state demo Work Item titles and terminal Receipt IDs visible in the rendered model-driven app grids after app curation.
 - Decision: state changes are now treated as receipt-backed projections rather than direct unlogged edits.
 - Restrictions: demo script does not perform outbound action; `noOutboundAction` is asserted in the evidence artifact.
+- Follow-up owner: Codex
+
+### Entry 5 - Model-Driven App Form/View Curation
+
+- Date/time: 2026-07-09T11:54:28.9671827-04:00
+- Command or source: `dataverse-apply-app-curation.ps1 -ExecuteWrites`
+- Capability: Curated `Council Queue` app forms/views through supported model-driven app components
+- Observed result: Guarded script created and pinned 18 manifest-curated system views, pinned one main form and one baseline system view for each of the 12 app tables, published customizations, and wrote `_bmad-output/implementation-artifacts/app-curation-evidence.json`.
+- Validation result: `ValidateApp` returned success with zero issues and `formViewWarningsRemaining=0`.
+- ALM result: Re-exported solution now has 216 unpacked source files; `AppModule.xml` includes form components (`type=60`) and view components (`type=26`), and the curated SavedQuery XML files are source-controlled.
+- Screen result: post-curation screen gate `2026-07-09T15-59-14-759Z` passed.
+- Decision: the prior form/view curation gap is closed for the scoped MVP app.
+- Restrictions: this does not authorize live Outlook/Graph reads, outbound action, flows, agents, app registrations, or Fabric mutation.
 - Follow-up owner: Codex
 
 ## Minimum MVP Gate
@@ -188,6 +201,54 @@ No Dataverse MVP write decisions remain pending. Outlook/Graph live reads remain
 - pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
 
 ### Preflight Evidence - 2026-07-09T11:36:41.4977509-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-09T11:51:33.0233249-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-09T11:52:05.4439884-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-09T11:52:42.8250593-04:00
 
 - Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
 - Expected environment URL: https://sdhdev.crm.dynamics.com

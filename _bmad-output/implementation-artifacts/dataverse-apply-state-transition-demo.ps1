@@ -311,7 +311,7 @@ function Invoke-StateTransitionDemo {
     $briefPatch = @{
       com_priority_summary = "Demo queue now includes proposed plus receipt-backed approved, held, blocked, in-review, completed, and failed state examples."
       com_decisions_needed = "Use the state demo rows to verify Council Queue filtering and receipt-backed movement."
-      com_blockers = "Curated forms/views remain open; state movement is proven through deterministic receipt-backed demo rows."
+      com_blockers = "No Dataverse/model-driven app blocker remains for the scoped demo; live Outlook/Graph reads and broader governance checks remain separate gates."
       com_recent_receipts = ($createdReceipts -join "; ")
     }
     Invoke-DataverseRequest -Method PATCH -Path "$script:BriefSet($briefId)" -Body $briefPatch | Out-Null

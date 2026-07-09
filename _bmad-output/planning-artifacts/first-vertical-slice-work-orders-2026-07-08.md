@@ -12,7 +12,7 @@ source_plan: mvp-sprint-plan-2026-07-08.md
 
 Define the first implementable MVP slice as work orders that a BMAD developer agent can execute after the formal epics/stories workflow is completed, readiness gaps are handled, and the scoped tenant write boundary is approved.
 
-These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. Runtime/setup and focused UX now have local artifacts. Tenant validation, Dataverse write approval, publisher prefix `com`, source body policy `link_only`, model-driven app acceptance, receipt-backed state-transition demo rows, solution export/ALM evidence, and browser screen verification are closed for the scoped `sdhdev` Dataverse slice. Remaining live MVP gaps are Council Queue form/view curation, final tenant-surface proof, and broader governance carry-forward.
+These work orders are aligned to the validated BMAD stories and the completed implementation-readiness report. Runtime/setup and focused UX now have local artifacts. Tenant validation, Dataverse write approval, publisher prefix `com`, source body policy `link_only`, model-driven app acceptance, receipt-backed state-transition demo rows, solution export/ALM evidence, Council Queue form/view curation, and browser screen verification are closed for the scoped `sdhdev` Dataverse slice. Remaining live MVP gaps are final tenant-surface proof and broader governance carry-forward.
 
 ## Slice Goal
 
@@ -336,7 +336,7 @@ So that the MVP work is reproducible and reviewable.
 
 ## Immediate Next Action
 
-Resolve curated Council Queue forms/views and run final tenant-surface validation before declaring MVP acceptance.
+Run final tenant-surface validation before declaring MVP acceptance.
 
 Tenant packet currently in effect:
 
@@ -356,5 +356,4 @@ Publisher prefix: com
 Also resolve before final MVP acceptance:
 
 - Runtime path acceptance beyond the first Dataverse/model-driven app slice.
-- Curated Council Queue forms/views and sitemap labels.
 - Final tenant-surface proof after Council Queue form/view curation.

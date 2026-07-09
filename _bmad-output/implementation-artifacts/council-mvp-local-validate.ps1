@@ -119,7 +119,7 @@ try {
     if ($evidence.solutionName -ne "CouncilOfMinionsMVP") {
       throw "ALM evidence solutionName mismatch: $($evidence.solutionName)"
     }
-    if ($evidence.fileCount -lt 190) {
+    if ($evidence.fileCount -lt 216) {
       throw "ALM evidence file count unexpectedly low: $($evidence.fileCount)"
     }
     foreach ($flag in @("containsSolutionXml", "containsCustomizationsXml", "containsAppModule", "containsSiteMap")) {
@@ -142,6 +142,22 @@ try {
     foreach ($marker in @("group_intake", "group_work", "group_brief", "group_knowledge", "group_governance", "subarea_com_councilsourcerecord", "subarea_com_councilworkitem")) {
       if ($siteMapText -notmatch [regex]::Escape($marker)) {
         throw "AppModuleSiteMap missing marker: $marker"
+      }
+    }
+
+    $appModuleText = Get-Content -Raw $appModuleXml
+    foreach ($marker in @('AppModuleComponent type="26"', 'AppModuleComponent type="60"')) {
+      if ($appModuleText -notmatch [regex]::Escape($marker)) {
+        throw "AppModule missing form/view component marker: $marker"
+      }
+    }
+
+    foreach ($viewName in @("New Source Records", "Proposed Work Items", "Needs Human Approval", "Recent Receipts", "Memory Receipts")) {
+      $matches = @(Get-ChildItem (Join-Path $solutionRoot "Entities") -Recurse -File -Filter "*.xml" | Where-Object {
+          (Get-Content -Raw -LiteralPath $_.FullName) -match [regex]::Escape($viewName)
+        })
+      if ($matches.Count -lt 1) {
+        throw "Unpacked solution missing curated view XML marker: $viewName"
       }
     }
 
@@ -186,6 +202,58 @@ try {
     }
 
     Write-Host "Receipt-backed state transition evidence OK."
+  }
+
+  Invoke-ValidationStep "Model-driven app form/view curation evidence check" {
+    $scriptPath = "_bmad-output\implementation-artifacts\dataverse-apply-app-curation.ps1"
+    $evidencePath = "_bmad-output\implementation-artifacts\app-curation-evidence.json"
+    if (-not (Test-Path $scriptPath)) {
+      throw "Missing app curation script: $scriptPath"
+    }
+    if (-not (Test-Path $evidencePath)) {
+      throw "Missing app curation evidence: $evidencePath"
+    }
+
+    $dryRun = & powershell -NoProfile -ExecutionPolicy Bypass -File $scriptPath
+    if ($LASTEXITCODE -ne 0) {
+      throw "App curation dry run failed."
+    }
+    if (($dryRun -join "`n") -notmatch "DATAVERSE_APPLY_APP_CURATION_DRY_RUN_OK") {
+      throw "App curation dry run did not print success marker."
+    }
+
+    $evidence = Get-Content -Raw $evidencePath | ConvertFrom-Json
+    if ($evidence.environmentUrl -ne "https://sdhdev.crm.dynamics.com") {
+      throw "App curation evidence environment mismatch: $($evidence.environmentUrl)"
+    }
+    if ($evidence.appName -ne "Council Queue") {
+      throw "App curation evidence appName mismatch: $($evidence.appName)"
+    }
+    if (@($evidence.appTables).Count -ne 12) {
+      throw "Expected 12 app tables in app curation evidence, found $(@($evidence.appTables).Count)."
+    }
+    if ($evidence.pinnedFormCount -ne 12) {
+      throw "Expected 12 pinned forms, found $($evidence.pinnedFormCount)."
+    }
+    if ($evidence.pinnedViewCount -lt 30) {
+      throw "Expected at least 30 pinned views, found $($evidence.pinnedViewCount)."
+    }
+    if ($evidence.curatedViewCount -ne 18) {
+      throw "Expected 18 curated views, found $($evidence.curatedViewCount)."
+    }
+    if ($evidence.validateAppSuccess -ne $true) {
+      throw "App curation evidence must have validateAppSuccess=true."
+    }
+    if ($evidence.formViewWarningsRemaining -ne 0) {
+      throw "App curation evidence still has form/view warnings: $($evidence.formViewWarningsRemaining)."
+    }
+    foreach ($viewName in @("New Source Records", "Proposed Work Items", "Needs Human Approval", "Failed Needs Review", "Recent Receipts", "Memory Receipts")) {
+      if (@($evidence.curatedViews.name) -notcontains $viewName) {
+        throw "App curation evidence missing curated view: $viewName"
+      }
+    }
+
+    Write-Host "Model-driven app form/view curation evidence OK."
   }
 
   Invoke-ValidationStep "Epics placeholder check" {

@@ -52,4 +52,4 @@ Do not mark the MVP screen surface complete from `ValidateApp` alone. `ValidateA
 
 The current gate is intentionally text-marker based because Power Apps model-driven app DOM selectors are platform-owned and brittle. Missing business markers fail the run even if navigation succeeds.
 
-Known current risk: the app validates with warnings because Council tables do not yet pin specific forms/views. Those warnings are acceptable for backend foundation and current screen proof, but not for final MVP acceptance.
+Current curation evidence: `app-curation-evidence.json` proves the app now pins 12 main forms, 30 views, and 18 manifest-curated views, with `ValidateApp` returning zero issues. Final MVP acceptance still requires the screen gate and tenant evidence to stay current after any further app changes.

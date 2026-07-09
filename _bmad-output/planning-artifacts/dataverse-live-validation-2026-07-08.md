@@ -18,7 +18,7 @@ Live writes completed:
 - Created and published model-driven app `Council Queue`.
 - Added 12 Council table components to `Council Queue`.
 - Replaced the generated empty app sitemap with manifest-driven Intake, Work, Brief, Knowledge, and Governance groups.
-- `ValidateApp` returned success; remaining warnings only state that specific forms/views are not pinned, so app users see all forms/views for each Council table.
+- `ValidateApp` initially returned success with warnings that specific forms/views were not pinned.
 - Seeded Source Record row `manual-sample-20260708-095226`.
 - Seeded proposed Work Item row `work-sample-20260708-095227`.
 - Earlier failed seed retry left an additional sample Source Record row `manual-sample-20260708-095121` with no paired Work Item.
@@ -35,7 +35,13 @@ Live writes completed:
 - Exported unmanaged solution `CouncilOfMinionsMVP` from `sdhdev` and unpacked it to `_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP`.
 - Recorded `_bmad-output/implementation-artifacts/alm/export-evidence.json` with 198 unpacked source files, solution XML, customizations XML, app module, and app sitemap evidence.
 - Added local validation coverage for the unpacked ALM source, including 14 Council entity folders, 15 Council option set files, and manifest sitemap groups/subareas.
+- Applied model-driven app form/view curation with `_bmad-output/implementation-artifacts/dataverse-apply-app-curation.ps1 -ExecuteWrites`.
+- Created and pinned 18 manifest-curated system views across Source Records, Work Items, and Receipts.
+- Pinned one main form and one baseline system view for each of the 12 `Council Queue` app tables.
+- Recorded `_bmad-output/implementation-artifacts/app-curation-evidence.json` with `pinnedFormCount=12`, `pinnedViewCount=30`, `curatedViewCount=18`, `validateAppSuccess=true`, and `formViewWarningsRemaining=0`.
+- Re-exported unmanaged solution `CouncilOfMinionsMVP`; refreshed ALM evidence now records 216 unpacked source files, including curated SavedQuery XML files and AppModule form/view components.
+- Re-ran strict browser evidence after curation. Screen run `2026-07-09T15-59-14-759Z` passed against the rendered app after form/view pinning and refreshed ALM export.
 
-Known remaining UI gap:
+Known remaining live gap:
 
-- Specific Council forms/views still need to be curated and pinned. The sitemap groups now render and the core seeded/state-transition rows are browser-visible, but the app is not yet ergonomically tuned.
+- No scoped Dataverse/model-driven app gap remains from current evidence. Live Outlook/Graph reads and broader tenant governance checks remain separate gates.

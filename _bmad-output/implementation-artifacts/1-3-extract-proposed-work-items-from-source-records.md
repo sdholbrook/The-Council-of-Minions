@@ -97,7 +97,7 @@ Stories 1.1 and 1.2 established the local implementation pattern:
 - Create a story-specific JSON slice that proves the contract without tenant writes.
 - Add a PowerShell validator with a clear success marker.
 - Wire the validator into `council-mvp-local-validate.ps1`.
-- Mark tenant-dependent model-driven app configuration complete only after Doug approves live writes and target preflight proves the environment; table components are now proven, while curated views/forms remain open.
+- Mark tenant-dependent model-driven app configuration complete only after Doug approves live writes and target preflight proves the environment; table components and curated views/forms are now proven.
 - Mark mock/manual Outlook evidence as not tenant verified.
 
 Carry-forward constraints:
@@ -172,7 +172,8 @@ Read `_bmad-output/project-context.md` before implementation. The highest-risk r
 | Date | Change |
 | --- | --- |
 | 2026-07-08 | Created Story 1.3 from BMAD epic context and implemented the local proposed Work Item extraction slice. This was initially local-only until Dataverse persistence and Council Queue configuration were approved. |
-| 2026-07-08 | Added live deterministic Dataverse demo seed after write approval: Source Record `manual-demo-source-001`, proposed Work Item `CWI-DEMO-001`, Work Item Source, proposal Receipt `CR-DEMO-PROPOSED-001`, Receipt Source, graph provenance, and Minion Brief `BRIEF-DEMO-001`. Story remains in-progress until the Council Queue view/form experience is visually verified and curated. |
+| 2026-07-08 | Added live deterministic Dataverse demo seed after write approval: Source Record `manual-demo-source-001`, proposed Work Item `CWI-DEMO-001`, Work Item Source, proposal Receipt `CR-DEMO-PROPOSED-001`, Receipt Source, graph provenance, and Minion Brief `BRIEF-DEMO-001`. |
+| 2026-07-09 | Applied `Council Queue` form/view curation: Work Item views are pinned, including `Proposed Work Items`, `Needs Human Approval`, state-specific review views, and `ValidateApp` reports zero form/view issues. |
 
 ## Dev Agent Record
 
@@ -191,7 +192,7 @@ GPT-5 Codex
 - Story context created from BMAD epics, project context, Source Record contract, Work Item/Receipt contract, Auto-Creation Policy, current manifest, and Story 1.1/1.2 local slice patterns.
 - Local non-tenant implementation proves proposed Work Item extraction shape, Council-level Work Item IDs, primary source references, Work Item Source links, proposal-only behavior, confidence/uncertainty capture, and Source Record / Work Item separation.
 - Live tenant persistence is now proven for the deterministic demo seed after completed target preflight and Doug-approved writes.
-- Remaining work: visually verify/curate the Council Queue proposed Work Item views/forms, then move the story to review.
+- Remaining work: keep final tenant-surface screen proof current after app curation, then move the story to review when the BMAD story gate is ready.
 
 ### File List
 

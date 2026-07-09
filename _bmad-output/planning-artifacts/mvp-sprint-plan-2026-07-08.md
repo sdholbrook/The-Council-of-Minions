@@ -19,7 +19,7 @@ depends_on:
 
 Define the provisional MVP sprint sequence now that the formal `bmad-create-epics-and-stories` workflow has generated stories, passed final validation, and `bmad-check-implementation-readiness` has completed.
 
-This plan started as implementation preparation, not authorization for live tenant work. As of 2026-07-08, Doug approved guarded Dataverse writes after target preflight. The live Dataverse foundation, table-backed model-driven app, and deterministic receipt-backed demo seed now exist in `sdhdev`. Specific model-driven forms/views and sitemap group curation remain open.
+This plan started as implementation preparation, not authorization for live tenant work. As of 2026-07-08, Doug approved guarded Dataverse writes after target preflight. The live Dataverse foundation, table-backed model-driven app, deterministic receipt-backed demo seed, receipt-backed state transitions, sitemap groups, pinned model-driven forms/views, and post-curation screen proof now exist in `sdhdev`. Live Outlook/Graph read approval and broader governance carry-forward remain open.
 
 ## Planning Boundary
 
@@ -212,8 +212,8 @@ This demonstrates the product thesis without waiting for Graph, Work IQ, Copilot
 | S0.5-S0.6 | Yes | Dataverse writes allowed after preflight; source policy `link_only`; publisher prefix `com`. |
 | S0.7 | Yes | UX spines exist and model-driven app surface accepted. |
 | S1.x | Mostly | Live solution, choices, tables, columns, relationships, and app components exist. Exported/unpacked ALM artifact still remains a follow-up. |
-| S2.x | Mostly | Deterministic Source Record, proposed Work Item, Work Item Source, proposal Receipt, and Receipt Source exist. Approval/hold/block state changes remain open. |
-| S3.x | Partially | `Council Queue` validates with 12 table components and sitemap; specific forms/views and group labels remain open. |
+| S2.x | Mostly | Deterministic Source Record, proposed Work Item, Work Item Source, proposal Receipt, Receipt Source, and receipt-backed state transition demo rows exist. |
+| S3.x | Mostly | `Council Queue` validates with 12 table components, sitemap, 12 pinned forms, 30 pinned views, 18 manifest-curated views, and post-curation screen proof. |
 | S4.x | Partially | Can document policy now; live records need S1. |
 | S5.x | Partially | Can document evaluation criteria now; live checks need tenant evidence. |
 

@@ -118,7 +118,7 @@
         "manualCapture.workItemCreationOnSave=false",
         "manualCapture.requiresExplicitExtractionStep=true"
       ],
-      "tenantEvidenceRequired": "Captured for deterministic demo Source Record manual-demo-source-001; curated Council Queue form/view evidence remains required."
+      "tenantEvidenceRequired": "Captured for deterministic demo Source Record manual-demo-source-001; Council Queue form/view evidence is captured in app-curation-evidence.json."
     },
     {
       "acceptanceCriterion": 2,
@@ -128,7 +128,7 @@
         "hash_only sample with content hash and without content snapshot",
         "summary_allowed sample with summary snapshot reference"
       ],
-      "tenantEvidenceRequired": "Scoped policy is link_only for the live demo seed; curated Council Queue form/view enforcement remains required."
+      "tenantEvidenceRequired": "Scoped policy is link_only for the live demo seed; Council Queue form/view enforcement is captured in app-curation-evidence.json."
     }
   ]
 }

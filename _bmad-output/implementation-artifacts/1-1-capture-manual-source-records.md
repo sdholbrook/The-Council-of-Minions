@@ -227,7 +227,8 @@ Read `_bmad-output/project-context.md` before implementation. The highest-risk r
 | Date | Change |
 | --- | --- |
 | 2026-07-08 | Started implementation from baseline `22ec6295a3e0477370d2495edb344e1fba711e59`; added local manual Source Record slice artifact, Source Record form metadata, and story-specific validator. This was initially local-only until tenant approval and live model-driven app configuration were supplied. |
-| 2026-07-08 | Added live deterministic Source Record `manual-demo-source-001` in `sdhdev` and validated `Council Queue` includes the Source Record table component. Story remains in-progress until Source Record views/forms are curated and visually verified. |
+| 2026-07-08 | Added live deterministic Source Record `manual-demo-source-001` in `sdhdev` and validated `Council Queue` includes the Source Record table component. |
+| 2026-07-09 | Applied `Council Queue` form/view curation: Source Record main form is pinned, manifest-curated Source Record views are pinned, and `ValidateApp` reports zero form/view issues. |
 
 ## Dev Agent Record
 
@@ -247,7 +248,7 @@ GPT-5 Codex
 - Story moved to in-progress; local non-tenant implementation is complete, and scoped live Source Record persistence is now proven.
 - Local Story 1.1 implementation artifacts now prove the manual Source Record contract, data boundary policy examples, Source Record / Work Item separation, and Council Queue Intake metadata without performing tenant writes.
 - Live Source Record persistence is now proven in `sdhdev` after completed target preflight and Doug-approved writes.
-- Remaining work: curate and visually verify Source Record views/forms in `Council Queue`.
+- Remaining work: keep final tenant-surface screen proof current after app curation.
 
 ### File List
 

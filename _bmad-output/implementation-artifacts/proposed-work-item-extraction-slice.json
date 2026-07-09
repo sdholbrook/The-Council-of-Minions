@@ -121,7 +121,7 @@
         "uncertainty",
         "recommended_next_action"
       ],
-      "tenantEvidenceRequired": "Captured for deterministic demo proposed Work Item CWI-DEMO-001; curated Council Queue form/view evidence remains required."
+      "tenantEvidenceRequired": "Captured for deterministic demo proposed Work Item CWI-DEMO-001; Council Queue form/view evidence is captured in app-curation-evidence.json."
     },
     {
       "acceptanceCriterion": 2,
@@ -131,7 +131,7 @@
         "CWI-* Council Work Item IDs",
         "Dataverse row IDs absent from product identity fields"
       ],
-      "tenantEvidenceRequired": "Captured for deterministic demo Work Item Source link for CWI-DEMO-001; curated Council Queue form/view evidence remains required."
+      "tenantEvidenceRequired": "Captured for deterministic demo Work Item Source link for CWI-DEMO-001; Council Queue form/view evidence is captured in app-curation-evidence.json."
     }
   ]
 }

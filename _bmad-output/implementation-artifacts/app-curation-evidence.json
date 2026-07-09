@@ -1,0 +1,365 @@
+﻿{
+    "generatedAt":  "2026-07-09T11:54:28.9671827-04:00",
+    "environmentUrl":  "https://sdhdev.crm.dynamics.com",
+    "appId":  "f45bad48-d47a-f111-ab0e-7ced8d3d5402",
+    "appName":  "Council Queue",
+    "appTables":  [
+                      "com_councilsourcerecord",
+                      "com_councilworkitem",
+                      "com_councilreceipt",
+                      "com_councilbrief",
+                      "com_councilgraphentity",
+                      "com_councilgraphedge",
+                      "com_councilmemorycandidate",
+                      "com_councilapprovedinstruction",
+                      "com_councilskill",
+                      "com_councilminion",
+                      "com_counciltenantevidence",
+                      "com_councilplatformevaluation"
+                  ],
+    "pinnedFormCount":  12,
+    "pinnedViewCount":  30,
+    "curatedViewCount":  18,
+    "pinnedForms":  [
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Information",
+                            "id":  "0eab7d36-09f4-42d9-8e96-f7920c6218ca"
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Information",
+                            "id":  "8d2bf5da-3401-4d41-82dd-cef26c2e4fea"
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Information",
+                            "id":  "9a7a023e-4b38-42dd-aa3b-ba9f36f841f3"
+                        },
+                        {
+                            "table":  "com_councilbrief",
+                            "name":  "Information",
+                            "id":  "2e9b1a58-b8bd-42f8-a531-2ec6d86b4e52"
+                        },
+                        {
+                            "table":  "com_councilgraphentity",
+                            "name":  "Information",
+                            "id":  "8ed4a282-c9fd-4246-99bb-5f09f810bf66"
+                        },
+                        {
+                            "table":  "com_councilgraphedge",
+                            "name":  "Information",
+                            "id":  "40faf9ff-a0dd-47a1-ae96-f7ffc4063038"
+                        },
+                        {
+                            "table":  "com_councilmemorycandidate",
+                            "name":  "Information",
+                            "id":  "f3673dd5-a2ba-4ca8-a785-da50056d6f3c"
+                        },
+                        {
+                            "table":  "com_councilapprovedinstruction",
+                            "name":  "Information",
+                            "id":  "e4f14973-7580-4093-8dec-2b1f95018ca4"
+                        },
+                        {
+                            "table":  "com_councilskill",
+                            "name":  "Information",
+                            "id":  "ee893357-18fb-4d2f-8143-a8fea4038b51"
+                        },
+                        {
+                            "table":  "com_councilminion",
+                            "name":  "Information",
+                            "id":  "57fed86f-ba1c-4ca7-aaf5-3df0f02372b7"
+                        },
+                        {
+                            "table":  "com_counciltenantevidence",
+                            "name":  "Information",
+                            "id":  "45ed6e4c-3c78-4e2d-b3dc-e0691d2f9d4f"
+                        },
+                        {
+                            "table":  "com_councilplatformevaluation",
+                            "name":  "Information",
+                            "id":  "91ef604f-4ff8-4f44-8a75-7d855e9b2eba"
+                        }
+                    ],
+    "pinnedViews":  [
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Active Council Source Records",
+                            "id":  "a02aaace-fc94-4128-af1f-0dcec2b3f25b",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Active Council Work Items",
+                            "id":  "f0157a57-b1ec-4640-949a-1f7152685585",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Active Council Receipts",
+                            "id":  "ac4076df-d86c-4d7e-9a9f-5a7c1a7bb50d",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilbrief",
+                            "name":  "Active Council Briefs",
+                            "id":  "f9e4b750-3a98-4280-a513-9d99a6ce18d2",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilgraphentity",
+                            "name":  "Active Council Graph Entitys",
+                            "id":  "7c0f0647-58b0-4547-9e5c-8e69a5cab00b",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilgraphedge",
+                            "name":  "Active Council Graph Edges",
+                            "id":  "4546eaa7-aecd-44fa-9346-3eb42508e513",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilmemorycandidate",
+                            "name":  "Active Council Memory Candidates",
+                            "id":  "0632ffa5-b0ff-4165-8387-bb8082d2e369",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilapprovedinstruction",
+                            "name":  "Active Council Approved Instructions",
+                            "id":  "192b2c96-889e-4247-9dfa-832d66fb5748",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilskill",
+                            "name":  "Active Council Skills",
+                            "id":  "66c6e0e4-9fbd-4018-b35a-eb916ed6fa7b",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilminion",
+                            "name":  "Active Council Minions",
+                            "id":  "ceef14c6-dd17-4026-9ba2-0adbb76c07ae",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_counciltenantevidence",
+                            "name":  "Active Council Tenant Evidences",
+                            "id":  "e285d5f3-ee55-4fb8-bf76-ab1c28d7db25",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilplatformevaluation",
+                            "name":  "Active Council Platform Evaluations",
+                            "id":  "df89a8c7-bba2-49fb-88ce-2b161509daf3",
+                            "baseline":  true
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "New Source Records",
+                            "id":  "75916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Outlook Source Records",
+                            "id":  "78916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Mock Outlook Source Records",
+                            "id":  "7b916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Held Source Records",
+                            "id":  "7e916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Extracted Source Records",
+                            "id":  "81916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilsourcerecord",
+                            "name":  "Source Records With Drift Risk",
+                            "id":  "84916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Proposed Work Items",
+                            "id":  "87916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Needs Human Approval",
+                            "id":  "8a916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Approved Work Items",
+                            "id":  "8d916e39-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Blocked or Held Work Items",
+                            "id":  "a0039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "In Review",
+                            "id":  "a3039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Completed Recently",
+                            "id":  "a6039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilworkitem",
+                            "name":  "Failed Needs Review",
+                            "id":  "a9039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Recent Receipts",
+                            "id":  "ac039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Failed Receipts",
+                            "id":  "af039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Policy Denials",
+                            "id":  "b2039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "External Action Requests",
+                            "id":  "b5039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        },
+                        {
+                            "table":  "com_councilreceipt",
+                            "name":  "Memory Receipts",
+                            "id":  "b8039e3f-ae7b-f111-ab0e-7ced8d3d5402",
+                            "baseline":  false
+                        }
+                    ],
+    "curatedViews":  [
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "New Source Records",
+                             "id":  "75916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "Outlook Source Records",
+                             "id":  "78916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "Mock Outlook Source Records",
+                             "id":  "7b916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "Held Source Records",
+                             "id":  "7e916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "Extracted Source Records",
+                             "id":  "81916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilsourcerecord",
+                             "name":  "Source Records With Drift Risk",
+                             "id":  "84916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Proposed Work Items",
+                             "id":  "87916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Needs Human Approval",
+                             "id":  "8a916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Approved Work Items",
+                             "id":  "8d916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Blocked or Held Work Items",
+                             "id":  "a0039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "In Review",
+                             "id":  "a3039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Completed Recently",
+                             "id":  "a6039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilworkitem",
+                             "name":  "Failed Needs Review",
+                             "id":  "a9039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilreceipt",
+                             "name":  "Recent Receipts",
+                             "id":  "ac039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilreceipt",
+                             "name":  "Failed Receipts",
+                             "id":  "af039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilreceipt",
+                             "name":  "Policy Denials",
+                             "id":  "b2039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilreceipt",
+                             "name":  "External Action Requests",
+                             "id":  "b5039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         },
+                         {
+                             "table":  "com_councilreceipt",
+                             "name":  "Memory Receipts",
+                             "id":  "b8039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                         }
+                     ],
+    "validateAppSuccess":  true,
+    "validationIssueCount":  0,
+    "validationIssues":  [
+
+                         ],
+    "formViewWarningsRemaining":  0
+}

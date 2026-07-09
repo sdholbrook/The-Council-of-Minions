@@ -95,7 +95,7 @@ Story 1.1 established the local implementation pattern:
 - Create a story-specific JSON slice that proves the contract without tenant writes.
 - Add a PowerShell validator with a clear success marker.
 - Wire the validator into `council-mvp-local-validate.ps1`.
-- Treat tenant-dependent model-driven app configuration as split: Dataverse table components are now proven for the scoped app, while Outlook-specific live Graph reads and curated views/forms remain open.
+- Treat tenant-dependent model-driven app configuration as split: Dataverse table components and curated views/forms are now proven for the scoped app, while Outlook-specific live Graph reads remain open.
 
 Files and patterns to preserve:
 
@@ -176,7 +176,8 @@ Read `_bmad-output/project-context.md` before implementation. The highest-risk r
 
 | Date | Change |
 | --- | --- |
-| 2026-07-08 | Created Story 1.2 from BMAD epic context and implemented the local Outlook Source Reference slice. Story remains in-progress because live Outlook/Graph reads are still gated and Outlook-specific app views/forms are not curated. |
+| 2026-07-08 | Created Story 1.2 from BMAD epic context and implemented the local Outlook Source Reference slice. Story remains in-progress because live Outlook/Graph reads are still gated. |
+| 2026-07-09 | Applied `Council Queue` form/view curation: Source Record views are pinned, including `Outlook Source Records` and `Mock Outlook Source Records`, and `ValidateApp` reports zero form/view issues. |
 
 ## Dev Agent Record
 

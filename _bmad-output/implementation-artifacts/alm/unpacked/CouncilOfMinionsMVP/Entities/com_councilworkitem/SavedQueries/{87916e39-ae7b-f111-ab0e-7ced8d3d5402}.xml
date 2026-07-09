@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{87916e39-ae7b-f111-ab0e-7ced8d3d5402}</savedqueryid>
+    <layoutxml>
+      <grid name="com_councilworkitem" jump="com_title" select="1" icon="1" preview="1">
+        <row name="result" id="com_councilworkitemid">
+          <cell name="com_title" width="180" />
+          <cell name="com_council_work_item_id" width="180" />
+          <cell name="com_type" width="180" />
+          <cell name="com_state_group" width="180" />
+          <cell name="com_approval_required" width="180" />
+          <cell name="com_risk_class" width="180" />
+          <cell name="com_recommended_next_action" width="180" />
+        </row>
+      </grid>
+    </layoutxml>
+    <columnsetxml>
+      <columnset version="1.0">
+        <column>com_councilworkitemid</column>
+        <column>com_title</column>
+        <column>com_council_work_item_id</column>
+        <column>com_type</column>
+        <column>com_state_group</column>
+        <column>com_approval_required</column>
+        <column>com_risk_class</column>
+        <column>com_recommended_next_action</column>
+      </columnset>
+    </columnsetxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="com_councilworkitem">
+          <attribute name="com_councilworkitemid" />
+          <attribute name="com_title" />
+          <attribute name="com_council_work_item_id" />
+          <attribute name="com_type" />
+          <attribute name="com_state_group" />
+          <attribute name="com_approval_required" />
+          <attribute name="com_risk_class" />
+          <attribute name="com_recommended_next_action" />
+          <order attribute="com_title" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+            <condition attribute="com_state_group" operator="eq" value="950001000" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>0.1.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Proposed Work Items" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Council MVP curated app view: Proposed Work Items." languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

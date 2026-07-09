@@ -6,7 +6,7 @@ created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
 current_gate: live_dataverse_foundation_and_demo_seed_complete
-primary_blocker: "Scoped Dataverse tenant writes, publisher prefix, source body policy, model-driven app acceptance, receipt-backed state transitions, solution export/ALM evidence, and screen verification are closed for sdhdev; remaining blockers are Council Queue form/view curation and final tenant-surface proof."
+primary_blocker: "Scoped Dataverse tenant writes, publisher prefix, source body policy, model-driven app acceptance, receipt-backed state transitions, Council Queue form/view curation, solution export/ALM evidence, and post-curation screen verification are closed for sdhdev; remaining blockers are live Outlook/Graph read approval and broader governance carry-forward."
 ---
 
 # MVP Overnight Plan
@@ -62,13 +62,13 @@ There are three possible completion levels. The overnight default is Level 1 plu
 | --- | --- | --- | --- |
 | Level 1 | BMAD planning finished | Complete | Includes epics, stories, coverage, readiness report, and sprint-status tracking. |
 | Level 2 | Implementation-ready MVP slice | Mostly | Story set, solution decision packet, local validation plan, runtime/setup baseline, UX contract, first vertical-slice work orders, tenant validation, scoped write approval, and deterministic live demo seed exist. |
-| Level 3 | Live Microsoft tenant MVP | Partial | Dataverse schema/app/table components/sample rows, receipt-backed state transitions, unpacked ALM source, and screen evidence exist in `sdhdev`; curated forms/views, final tenant-surface proof, and broader tenant governance checks remain. |
+| Level 3 | Live Microsoft tenant MVP | Partial | Dataverse schema/app/table components/sample rows, receipt-backed state transitions, pinned forms/views, unpacked ALM source, and post-curation screen evidence exist in `sdhdev`; live Outlook/Graph read approval and broader tenant governance checks remain. |
 
 ## Required From Doug Before Overnight Work Can Fully Run
 
 ### Required Now
 
-1. Finish remaining implementation gaps after the live Dataverse foundation: Council Queue form/view curation, final tenant-surface proof, and broader governance carry-forward.
+1. Finish remaining implementation gaps after the live Dataverse foundation: live Outlook/Graph read boundary and broader governance carry-forward.
 
 ### Required Before Any Live Microsoft Work
 
@@ -259,10 +259,10 @@ Exit evidence:
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
 | Implementation readiness | Complete with local and live follow-up artifacts | UX contract, runtime setup, tenant validation, scoped write approval, and deterministic demo seed exist. |
-| MVP finish level | Level 2 mostly complete plus Level 3 partial tenant slice | Remaining Level 3 work is UI curation, final tenant-surface proof, and broader governance carry-forward. |
+| MVP finish level | Level 2 mostly complete plus Level 3 partial tenant slice | Remaining Level 3 work is live Outlook/Graph read approval and broader governance carry-forward. |
 | Storage candidate | Dataverse approved as MVP operational system of record | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
 | Runtime | Dataverse/model-driven app accepted as practical MVP runtime | `Council Queue` exists with table components and `ValidateApp` success. |
-| UX surface | Minion Brief plus Council Queue in model-driven app pattern | Table-backed app exists; specific forms/views and sitemap labels still need curation. |
+| UX surface | Minion Brief plus Council Queue in model-driven app pattern | Table-backed app exists with pinned forms/views and manifest-curated Source Record, Work Item, and Receipt views. |
 | Tenant work | Scoped Dataverse writes allowed and executed after preflight | Broader live Graph reads/writes and non-Dataverse tenant changes remain gated. |
 | Tenant decision packet | Closed for scoped first slice | Prefix `com`, source policy `link_only`, Dataverse write boundary, and model-driven app surface are applied. |
 | Local story slices | Stories 1.1, 1.2, and 1.3 in progress | Manual Source Record, Outlook Source Reference, and proposed Work Item extraction contracts are locally validated; Dataverse app table components and deterministic Source Record/Work Item/Receipt/Brief seed exist. |
