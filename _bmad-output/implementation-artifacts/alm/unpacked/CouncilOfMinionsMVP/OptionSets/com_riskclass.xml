@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_riskclass" localizedName="Council Risk Class" description="Council of Minions global choice: Council Risk Class" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Risk Class" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Risk Class" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950002000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="none" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="relationship" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="legal" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="finance" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="delivery" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="sensitive" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="governance" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950002007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="unknown" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

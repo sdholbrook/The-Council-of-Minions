@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_workitemstategroup" localizedName="Council Work Item State Group" description="Council of Minions global choice: Council Work Item State Group" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Work Item State Group" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Work Item State Group" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950001000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="proposed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="approved" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="blocked" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="held" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="in_review" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="completed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950001006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="failed" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

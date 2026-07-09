@@ -28,7 +28,10 @@ Live writes completed:
 - Ensured Work Item Source and Receipt Source provenance links for the deterministic demo.
 - Ensured graph provenance rows `GE-DEMO-SOURCE-001`, `GE-DEMO-WORK-001`, and edge `CWI-DEMO-001 proposed from manual-demo-source-001`.
 - Ensured Minion Brief projection `BRIEF-DEMO-001`.
-- Added BMAD TEA screen gate `council-model-driven-screen-test.ps1` and Playwright runner. Initial browser run failed with Dynamics error `0x80050016` because the app sitemap had no navigable groups/subareas. After the sitemap fix, screen run `2026-07-08T23-22-40-976Z` passed against the rendered app with screenshots/trace and visible seeded rows for Source Records, Work Items, Receipts, and Briefs.
+- Added BMAD TEA screen gate `council-model-driven-screen-test.ps1` and Playwright runner. Initial browser run failed with Dynamics error `0x80050016` because the app sitemap had no navigable groups/subareas. After the sitemap fix, screen runs `2026-07-08T23-22-40-976Z` and `2026-07-09T15-29-54-028Z` passed against the rendered app with screenshots/trace and visible seeded rows for Source Records, Work Items, Receipts, and Briefs.
+- Exported unmanaged solution `CouncilOfMinionsMVP` from `sdhdev` and unpacked it to `_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP`.
+- Recorded `_bmad-output/implementation-artifacts/alm/export-evidence.json` with 198 unpacked source files, solution XML, customizations XML, app module, and app sitemap evidence.
+- Added local validation coverage for the unpacked ALM source, including 14 Council entity folders, 15 Council option set files, and manifest sitemap groups/subareas.
 
 Known remaining UI gap:
 

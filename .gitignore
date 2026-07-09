@@ -1,2 +1,4 @@
 _bmad-output/test-artifacts/model-driven-screen/.auth/
 _bmad-output/test-artifacts/model-driven-screen/runs/
+_bmad-output/implementation-artifacts/alm/exports/*.zip
+_bmad-output/implementation-artifacts/alm/logs/

@@ -100,6 +100,54 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Dataverse ALM export source check" {
+    $almRoot = "_bmad-output\implementation-artifacts\alm"
+    $solutionRoot = Join-Path $almRoot "unpacked\CouncilOfMinionsMVP"
+    $evidencePath = Join-Path $almRoot "export-evidence.json"
+    $solutionXml = Join-Path $solutionRoot "Other\Solution.xml"
+    $customizationsXml = Join-Path $solutionRoot "Other\Customizations.xml"
+    $appModuleXml = Join-Path $solutionRoot "AppModules\council_queue_61fd2b5e\AppModule.xml"
+    $siteMapXml = Join-Path $solutionRoot "AppModuleSiteMaps\council_queue_61fd2b5e\AppModuleSiteMap.xml"
+
+    foreach ($path in @($evidencePath, $solutionXml, $customizationsXml, $appModuleXml, $siteMapXml)) {
+      if (-not (Test-Path $path)) {
+        throw "Missing ALM export artifact: $path"
+      }
+    }
+
+    $evidence = Get-Content -Raw $evidencePath | ConvertFrom-Json
+    if ($evidence.solutionName -ne "CouncilOfMinionsMVP") {
+      throw "ALM evidence solutionName mismatch: $($evidence.solutionName)"
+    }
+    if ($evidence.fileCount -lt 190) {
+      throw "ALM evidence file count unexpectedly low: $($evidence.fileCount)"
+    }
+    foreach ($flag in @("containsSolutionXml", "containsCustomizationsXml", "containsAppModule", "containsSiteMap")) {
+      if ($evidence.$flag -ne $true) {
+        throw "ALM evidence flag is not true: $flag"
+      }
+    }
+
+    $entityCount = @(Get-ChildItem (Join-Path $solutionRoot "Entities") -Directory -Filter "com_council*").Count
+    if ($entityCount -ne 14) {
+      throw "Expected 14 Council entity folders in unpacked solution, found $entityCount."
+    }
+
+    $optionSetCount = @(Get-ChildItem (Join-Path $solutionRoot "OptionSets") -File -Filter "com_*.xml").Count
+    if ($optionSetCount -ne 15) {
+      throw "Expected 15 Council option set files in unpacked solution, found $optionSetCount."
+    }
+
+    $siteMapText = Get-Content -Raw $siteMapXml
+    foreach ($marker in @("group_intake", "group_work", "group_brief", "group_knowledge", "group_governance", "subarea_com_councilsourcerecord", "subarea_com_councilworkitem")) {
+      if ($siteMapText -notmatch [regex]::Escape($marker)) {
+        throw "AppModuleSiteMap missing marker: $marker"
+      }
+    }
+
+    Write-Host "Dataverse ALM export source OK."
+  }
+
   Invoke-ValidationStep "Epics placeholder check" {
     rg -n "\{\{|\}\}" "_bmad-output\planning-artifacts\epics.md"
     if ($LASTEXITCODE -eq 0) {

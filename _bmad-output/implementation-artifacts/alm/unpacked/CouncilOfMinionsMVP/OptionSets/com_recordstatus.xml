@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_recordstatus" localizedName="Council Record Status" description="Council of Minions global choice: Council Record Status" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Record Status" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Record Status" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950014000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="candidate" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950014001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="active" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950014002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="deprecated" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950014003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="suspended" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950014004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="retired" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950014005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="superseded" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

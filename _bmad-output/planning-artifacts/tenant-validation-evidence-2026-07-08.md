@@ -32,7 +32,8 @@ This file contains verified current-state evidence from live commands, admin set
 | Dataverse intelligence / semantic model | Not tested | Awaiting environment settings/admin evidence. |
 | Dataverse MCP availability | Not tested | No Dataverse MCP exposed in Codex thread; tenant capability must be checked separately. |
 | Power Apps MCP agent feed | Not tested | Tenant/app capability; not a local Codex plugin. |
-| Model-driven app feasibility | Screen-verified table-backed app | Published model-driven app `Council Queue` exists with 12 Council table components. `ValidateApp` returns success with only form/view selection warnings. Browser screen gate initially reproduced Dynamics error `0x80050016`; after manifest-driven sitemap update, screen run `2026-07-08T23-22-40-976Z` passed with seeded row visibility. |
+| Model-driven app feasibility | Screen-verified table-backed app | Published model-driven app `Council Queue` exists with 12 Council table components. `ValidateApp` returns success with only form/view selection warnings. Browser screen gate initially reproduced Dynamics error `0x80050016`; after manifest-driven sitemap update, latest screen run `2026-07-09T15-29-54-028Z` passed with seeded row visibility. |
+| Dataverse solution ALM | Exported and unpacked | `_bmad-output/implementation-artifacts/dataverse-export-solution.ps1` exported unmanaged solution `CouncilOfMinionsMVP` from `sdhdev`, unpacked 198 source files, and recorded `_bmad-output/implementation-artifacts/alm/export-evidence.json`. |
 | Outlook/Graph reads | Not authorized | Awaiting Doug's live-read boundary. |
 | Teams reads | Not authorized | Awaiting Doug's live-read boundary and target team/channel if needed. |
 | SharePoint/OneDrive reads | Not authorized | Awaiting Doug's live-read boundary and target source if needed. |
@@ -111,9 +112,19 @@ Append entries as evidence is gathered.
 - Date/time: 2026-07-08T23:22:40Z
 - Command or source: `council-model-driven-screen-test.ps1`
 - Capability: Actual browser validation of the rendered `Council Queue` model-driven app
-- Observed result: First strict browser run reproduced the user-visible Dynamics error `0x80050016` with message that the user lacked permissions for records or the site map was wrong. The app sitemap XML only had an Area and no Groups/SubAreas. `dataverse-apply-mvp-schema.ps1` was updated to generate the sitemap from manifest navigation groups and publish it. Follow-up screen run `2026-07-08T23-22-40-976Z` passed and captured screenshots/trace for app home, Source Records, proposed Work Items, Receipts, and Briefs. The rendered grids showed seeded row markers: `Manual sample source record`, `Review the first Council source record`, `CR-DEMO-PROPOSED-001`, and `Demo Minion Brief`.
+- Observed result: First strict browser run reproduced the user-visible Dynamics error `0x80050016` with message that the user lacked permissions for records or the site map was wrong. The app sitemap XML only had an Area and no Groups/SubAreas. `dataverse-apply-mvp-schema.ps1` was updated to generate the sitemap from manifest navigation groups and publish it. Follow-up screen runs `2026-07-08T23-22-40-976Z` and `2026-07-09T15-29-54-028Z` passed and captured screenshots/trace for app home, Source Records, proposed Work Items, Receipts, and Briefs. The rendered grids showed seeded row markers: `Manual sample source record`, `Review the first Council source record`, `CR-DEMO-PROPOSED-001`, and `Demo Minion Brief`.
 - Decision: model-driven app screen access is now proven for the scoped MVP slice; `ValidateApp` alone is no longer treated as sufficient evidence.
 - Restrictions: screen gate still records platform console/page/telemetry noise for review; curated forms/views remain open.
+- Follow-up owner: Codex
+
+### Entry 3 - Dataverse Solution ALM Export
+
+- Date/time: 2026-07-09T11:26:45-04:00
+- Command or source: `dataverse-export-solution.ps1`
+- Capability: Source-controlled Dataverse solution evidence for the scoped MVP environment
+- Observed result: Exported unmanaged solution `CouncilOfMinionsMVP` from `https://sdhdev.crm.dynamics.com`, unpacked 198 source files to `_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP`, and recorded `export-evidence.json` with solution XML, customizations XML, app module, and app sitemap flags.
+- Decision: `ValidateApp` and live table writes are no longer the only persistence evidence; the solution now has source-controlled ALM evidence.
+- Restrictions: exported unmanaged source only; ZIP and unpack logs are local/ignored, and no outbound action, flow publish, agent publish, app registration, or Fabric mutation was performed.
 - Follow-up owner: Codex
 
 ## Minimum MVP Gate

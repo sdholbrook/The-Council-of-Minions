@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_sourcekind" localizedName="Council Source Kind" description="Council of Minions global choice: Council Source Kind" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Source Kind" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Source Kind" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950007000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="message" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="thread" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="chat" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="meeting" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="file" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="comment" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="task" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="manual_note" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950007008" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="other" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

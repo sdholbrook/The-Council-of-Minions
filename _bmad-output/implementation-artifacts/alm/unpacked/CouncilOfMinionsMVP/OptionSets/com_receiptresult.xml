@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_receiptresult" localizedName="Council Receipt Result" description="Council of Minions global choice: Council Receipt Result" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Receipt Result" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Receipt Result" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950005000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="accepted" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950005001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="rejected" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950005002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="succeeded" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950005003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="failed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950005004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="superseded" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950005005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="no_op" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

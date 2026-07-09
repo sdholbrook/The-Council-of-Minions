@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>council_queue_61fd2b5e</UniqueName>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="com_councilapprovedinstruction" />
+    <AppModuleComponent type="1" schemaName="com_councilbrief" />
+    <AppModuleComponent type="1" schemaName="com_councilgraphedge" />
+    <AppModuleComponent type="1" schemaName="com_councilgraphentity" />
+    <AppModuleComponent type="1" schemaName="com_councilmemorycandidate" />
+    <AppModuleComponent type="1" schemaName="com_councilminion" />
+    <AppModuleComponent type="1" schemaName="com_councilplatformevaluation" />
+    <AppModuleComponent type="1" schemaName="com_councilreceipt" />
+    <AppModuleComponent type="1" schemaName="com_councilskill" />
+    <AppModuleComponent type="1" schemaName="com_councilsourcerecord" />
+    <AppModuleComponent type="1" schemaName="com_counciltenantevidence" />
+    <AppModuleComponent type="1" schemaName="com_councilworkitem" />
+    <AppModuleComponent type="62" schemaName="council_queue_61fd2b5e" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="Council Queue" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Council of Minions MVP queue for source records, proposed work items, receipts, knowledge, and governance." languagecode="1033" />
+  </Descriptions>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_actortype" localizedName="Council Actor Type" description="Council of Minions global choice: Council Actor Type" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Actor Type" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Actor Type" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950004000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="human" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950004001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="minion" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950004002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="system" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950004003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="connector" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950004004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="trusted_rule" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

@@ -1,0 +1,13 @@
+﻿{
+    "generatedAt":  "2026-07-09T11:26:45.5802912-04:00",
+    "environmentUrl":  "https://sdhdev.crm.dynamics.com",
+    "solutionName":  "CouncilOfMinionsMVP",
+    "unmanagedZipPath":  null,
+    "unpackedPath":  "_bmad-output/implementation-artifacts/alm/unpacked/CouncilOfMinionsMVP",
+    "unpackLogPath":  "_bmad-output/implementation-artifacts/alm/logs/CouncilOfMinionsMVP_unpack.log",
+    "fileCount":  198,
+    "containsSolutionXml":  true,
+    "containsCustomizationsXml":  true,
+    "containsAppModule":  true,
+    "containsSiteMap":  true
+}
