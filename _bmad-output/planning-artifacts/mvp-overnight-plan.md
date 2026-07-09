@@ -6,7 +6,7 @@ created: 2026-07-08
 owner: Doug
 current_branch: codex/update-bmad-harness-context
 current_gate: live_dataverse_foundation_and_demo_seed_complete
-primary_blocker: "Scoped Dataverse tenant writes, publisher prefix, source body policy, and model-driven app acceptance are closed for sdhdev; remaining blockers are Council Queue form/view curation, state-change behavior, solution export/ALM evidence, and visual verification."
+primary_blocker: "Scoped Dataverse tenant writes, publisher prefix, source body policy, model-driven app acceptance, receipt-backed state transitions, solution export/ALM evidence, and screen verification are closed for sdhdev; remaining blockers are Council Queue form/view curation and final tenant-surface proof."
 ---
 
 # MVP Overnight Plan
@@ -62,13 +62,13 @@ There are three possible completion levels. The overnight default is Level 1 plu
 | --- | --- | --- | --- |
 | Level 1 | BMAD planning finished | Complete | Includes epics, stories, coverage, readiness report, and sprint-status tracking. |
 | Level 2 | Implementation-ready MVP slice | Mostly | Story set, solution decision packet, local validation plan, runtime/setup baseline, UX contract, first vertical-slice work orders, tenant validation, scoped write approval, and deterministic live demo seed exist. |
-| Level 3 | Live Microsoft tenant MVP | Partial | Dataverse schema/app/table components/sample rows exist in `sdhdev`; curated forms/views, state transitions, solution export/ALM evidence, and broader tenant governance checks remain. |
+| Level 3 | Live Microsoft tenant MVP | Partial | Dataverse schema/app/table components/sample rows, receipt-backed state transitions, unpacked ALM source, and screen evidence exist in `sdhdev`; curated forms/views, final tenant-surface proof, and broader tenant governance checks remain. |
 
 ## Required From Doug Before Overnight Work Can Fully Run
 
 ### Required Now
 
-1. Finish remaining implementation gaps after the live Dataverse foundation: Council Queue form/view curation, approval/hold/block state transitions, solution export/ALM evidence, and visual verification.
+1. Finish remaining implementation gaps after the live Dataverse foundation: Council Queue form/view curation, final tenant-surface proof, and broader governance carry-forward.
 
 ### Required Before Any Live Microsoft Work
 
@@ -164,7 +164,7 @@ Likely first vertical slice:
 1. Load or capture a mock Outlook Source Record.
 2. Extract a proposed Work Item with rationale, confidence, owner candidate, urgency, and recommended next action.
 3. Display it in a Council Queue / Minion Brief surface.
-4. Apply human approval/hold/block/review state changes.
+4. Confirm receipt-backed human approval/hold/block/review state changes remain visible in the model-driven app screen gate.
 5. Append Receipts for every mutation.
 6. Show relationship/provenance explanation without graph editing.
 
@@ -259,7 +259,7 @@ Exit evidence:
 | Decision | Default until Doug answers | Why |
 | --- | --- | --- |
 | Implementation readiness | Complete with local and live follow-up artifacts | UX contract, runtime setup, tenant validation, scoped write approval, and deterministic demo seed exist. |
-| MVP finish level | Level 2 mostly complete plus Level 3 partial tenant slice | Remaining Level 3 work is UI curation, state transitions, ALM/export, and visual verification. |
+| MVP finish level | Level 2 mostly complete plus Level 3 partial tenant slice | Remaining Level 3 work is UI curation, final tenant-surface proof, and broader governance carry-forward. |
 | Storage candidate | Dataverse approved as MVP operational system of record | Microsoft-first and aligned with model-driven app, Dataverse intelligence, Power Apps MCP, and receipt/governance needs. |
 | Runtime | Dataverse/model-driven app accepted as practical MVP runtime | `Council Queue` exists with table components and `ValidateApp` success. |
 | UX surface | Minion Brief plus Council Queue in model-driven app pattern | Table-backed app exists; specific forms/views and sitemap labels still need curation. |

@@ -95,12 +95,30 @@ $screenDefinitions = @(
   @{
     name = "proposed-work-items"
     url = "$environmentUrl/main.aspx?appid=$appId&pagetype=entitylist&etn=com_councilworkitem"
-    mustContainAll = @("Council Work Items", "Review the first Council source record")
+    mustContainAll = @(
+      "Council Work Items",
+      "Review the first Council source record",
+      "Approve demo Council work item",
+      "Hold demo Council work item",
+      "Block demo Council work item",
+      "Review demo Council work item",
+      "Complete demo Council work item",
+      "Fail demo Council work item"
+    )
   },
   @{
     name = "receipts"
     url = "$environmentUrl/main.aspx?appid=$appId&pagetype=entitylist&etn=com_councilreceipt"
-    mustContainAll = @("Council Receipts", "CR-DEMO-PROPOSED-001")
+    mustContainAll = @(
+      "Council Receipts",
+      "CR-DEMO-PROPOSED-001",
+      "CR-DEMO-STATE-APPROVED-APPROVED",
+      "CR-DEMO-STATE-HELD-HELD",
+      "CR-DEMO-STATE-BLOCKED-BLOCKED",
+      "CR-DEMO-STATE-INREVIEW-INREVIEW",
+      "CR-DEMO-STATE-COMPLETED-COMPLETED",
+      "CR-DEMO-STATE-FAILED-FAILED"
+    )
   },
   @{
     name = "briefs"

@@ -148,6 +148,46 @@ try {
     Write-Host "Dataverse ALM export source OK."
   }
 
+  Invoke-ValidationStep "Receipt-backed state transition evidence check" {
+    $scriptPath = "_bmad-output\implementation-artifacts\dataverse-apply-state-transition-demo.ps1"
+    $evidencePath = "_bmad-output\implementation-artifacts\state-transition-demo-evidence.json"
+    if (-not (Test-Path $scriptPath)) {
+      throw "Missing state transition demo script: $scriptPath"
+    }
+    if (-not (Test-Path $evidencePath)) {
+      throw "Missing state transition evidence: $evidencePath"
+    }
+
+    $dryRun = & powershell -NoProfile -ExecutionPolicy Bypass -File $scriptPath
+    if ($LASTEXITCODE -ne 0) {
+      throw "State transition demo dry run failed."
+    }
+    if (($dryRun -join "`n") -notmatch "DATAVERSE_APPLY_STATE_TRANSITION_DEMO_DRY_RUN_OK") {
+      throw "State transition demo dry run did not print success marker."
+    }
+
+    $evidence = Get-Content -Raw $evidencePath | ConvertFrom-Json
+    if ($evidence.environmentUrl -ne "https://sdhdev.crm.dynamics.com") {
+      throw "State transition evidence environment mismatch: $($evidence.environmentUrl)"
+    }
+    if ($evidence.workItemCount -ne 6) {
+      throw "Expected 6 state transition demo Work Items, found $($evidence.workItemCount)."
+    }
+    if ($evidence.receiptCount -ne 12) {
+      throw "Expected 12 state transition demo Receipts, found $($evidence.receiptCount)."
+    }
+    foreach ($state in @("approved", "held", "blocked", "in_review", "completed", "failed")) {
+      if (@($evidence.stateGroups) -notcontains $state) {
+        throw "State transition evidence missing state: $state"
+      }
+    }
+    if ($evidence.noOutboundAction -ne $true) {
+      throw "State transition evidence must assert noOutboundAction."
+    }
+
+    Write-Host "Receipt-backed state transition evidence OK."
+  }
+
   Invoke-ValidationStep "Epics placeholder check" {
     rg -n "\{\{|\}\}" "_bmad-output\planning-artifacts\epics.md"
     if ($LASTEXITCODE -eq 0) {

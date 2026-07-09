@@ -1,0 +1,39 @@
+﻿{
+    "generatedAt":  "2026-07-09T11:37:02.7215847-04:00",
+    "environmentUrl":  "https://sdhdev.crm.dynamics.com",
+    "sourceRecordId":  "manual-demo-source-001",
+    "workItemCount":  6,
+    "receiptCount":  12,
+    "stateGroups":  [
+                        "approved",
+                        "held",
+                        "blocked",
+                        "in_review",
+                        "completed",
+                        "failed"
+                    ],
+    "workItemIds":  [
+                        "CWI-DEMO-STATE-APPROVED",
+                        "CWI-DEMO-STATE-HELD",
+                        "CWI-DEMO-STATE-BLOCKED",
+                        "CWI-DEMO-STATE-INREVIEW",
+                        "CWI-DEMO-STATE-COMPLETED",
+                        "CWI-DEMO-STATE-FAILED"
+                    ],
+    "receiptIds":  [
+                       "CR-DEMO-STATE-APPROVED-PROPOSED",
+                       "CR-DEMO-STATE-APPROVED-APPROVED",
+                       "CR-DEMO-STATE-HELD-PROPOSED",
+                       "CR-DEMO-STATE-HELD-HELD",
+                       "CR-DEMO-STATE-BLOCKED-PROPOSED",
+                       "CR-DEMO-STATE-BLOCKED-BLOCKED",
+                       "CR-DEMO-STATE-INREVIEW-PROPOSED",
+                       "CR-DEMO-STATE-INREVIEW-INREVIEW",
+                       "CR-DEMO-STATE-COMPLETED-PROPOSED",
+                       "CR-DEMO-STATE-COMPLETED-COMPLETED",
+                       "CR-DEMO-STATE-FAILED-PROPOSED",
+                       "CR-DEMO-STATE-FAILED-FAILED"
+                   ],
+    "noOutboundAction":  true,
+    "idempotencyBasis":  "deterministic Work Item IDs and Receipt IDs"
+}

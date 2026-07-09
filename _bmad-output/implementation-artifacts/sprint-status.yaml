@@ -1,5 +1,5 @@
 # generated: 2026-07-08T00:21:17-04:00
-# last_updated: 2026-07-09T11:27:27-04:00
+# last_updated: 2026-07-09T11:40:15-04:00
 # project: The-Council-of-Minions
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: "2026-07-08T00:21:17-04:00"
-last_updated: "2026-07-09T11:27:27-04:00"
+last_updated: "2026-07-09T11:40:15-04:00"
 project: "The-Council-of-Minions"
 project_key: "NOKEY"
 tracking_system: "file-system"
@@ -121,6 +121,10 @@ action_items:
     status: done
     owner: Codex
     evidence: "_bmad-output/implementation-artifacts/alm/export-evidence.json"
+  - id: receipt-backed-state-transition-demo
+    status: done
+    owner: Codex
+    evidence: "_bmad-output/implementation-artifacts/state-transition-demo-evidence.json"
   - id: model-driven-app-form-view-curation
     status: open
     owner: Codex
