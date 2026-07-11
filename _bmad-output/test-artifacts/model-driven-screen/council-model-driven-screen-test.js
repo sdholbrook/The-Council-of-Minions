@@ -2,6 +2,29 @@ const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
 
+const APP_ERROR_PATTERNS = [
+  /sorry[, ]+something went wrong/i,
+  /something went wrong/i,
+  /an error has occurred/i,
+  /error code[: ]/i,
+  /invalid app/i,
+  /app module/i,
+  /could not find/i,
+  /does not exist/i,
+  /you do not have permission/i,
+  /you don't have permission/i,
+  /permissions for these records/i,
+  /permissions to these records/i,
+  /something may be wrong with the site map/i,
+  /access denied/i,
+  /errorhandler\.aspx/i,
+  /ErrorCode=0x/i,
+  /cannot read properties/i,
+  /script error/i,
+  /failed to load/i,
+  /try again later/i,
+];
+
 function argValue(name, fallback = undefined) {
   const index = process.argv.indexOf(name);
   if (index === -1 || index + 1 >= process.argv.length) {
@@ -45,35 +68,14 @@ async function collectDiagnostics(page) {
 }
 
 function findAppError(text) {
-  const patterns = [
-    /sorry[, ]+something went wrong/i,
-    /something went wrong/i,
-    /an error has occurred/i,
-    /error code[: ]/i,
-    /invalid app/i,
-    /app module/i,
-    /could not find/i,
-    /does not exist/i,
-    /you do not have permission/i,
-    /you don't have permission/i,
-    /permissions for these records/i,
-    /permissions to these records/i,
-    /something may be wrong with the site map/i,
-    /access denied/i,
-    /errorhandler\.aspx/i,
-    /ErrorCode=0x/i,
-    /cannot read properties/i,
-    /script error/i,
-    /failed to load/i,
-    /try again later/i,
-  ];
-
-  return patterns.find((pattern) => pattern.test(text));
+  return APP_ERROR_PATTERNS.find((pattern) => pattern.test(text));
 }
 
 async function assertNoVisibleAppError(page, contextLabel) {
   const text = await visibleBodyText(page);
-  const match = findAppError(text);
+  const title = await page.title().catch(() => "");
+  const combined = `${page.url()}\n${title}\n${text}`;
+  const match = findAppError(combined);
   if (match) {
     throw new Error(`${contextLabel}: visible app error matched ${match}`);
   }
@@ -84,27 +86,100 @@ function checkMarkers(text, screen) {
   const missingAll = expectedAll.filter((value) => !text.includes(value));
   const expectedAny = screen.mustContainAny || [];
   const matchedAny = expectedAny.length === 0 || expectedAny.some((value) => text.includes(value));
-  return { expectedAll, missingAll, expectedAny, matchedAny };
+  const forbidden = screen.mustNotContainAny || [];
+  const unexpected = forbidden.filter((value) => text.includes(value));
+  return { expectedAll, missingAll, expectedAny, matchedAny, forbidden, unexpected };
 }
 
 async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
-  const deadline = Date.now() + timeoutMs;
-  let lastCheck = null;
+  const expectedAll = screen.mustContainAll || [];
+  const expectedAny = screen.mustContainAny || [];
+  const forbidden = screen.mustNotContainAny || [];
+  const appErrorSources = APP_ERROR_PATTERNS.map((pattern) => pattern.source);
 
-  while (Date.now() < deadline) {
+  let resultHandle;
+  try {
+    resultHandle = await page.waitForFunction(
+      ({ expectedAll, expectedAny, forbidden, appErrorSources }) => {
+        const bodyText = document.body?.innerText || "";
+        const title = document.title || "";
+        const currentUrl = window.location.href || "";
+        const combined = `${currentUrl}\n${title}\n${bodyText}`;
+        const appError = appErrorSources.find((source) => new RegExp(source, "i").test(combined));
+        if (appError) {
+          return {
+            outcome: "app-error",
+            appError,
+            text: bodyText.slice(0, 4000),
+            title,
+            url: currentUrl,
+          };
+        }
+
+        const missingAll = expectedAll.filter((value) => !bodyText.includes(value));
+        const matchedAny = expectedAny.length === 0 || expectedAny.some((value) => bodyText.includes(value));
+        const unexpected = forbidden.filter((value) => bodyText.includes(value));
+        if (missingAll.length === 0 && matchedAny && unexpected.length === 0) {
+          return {
+            outcome: "passed",
+            expectedAll,
+            missingAll,
+            expectedAny,
+            matchedAny,
+            forbidden,
+            unexpected,
+            text: bodyText.slice(0, 4000),
+            title,
+            url: currentUrl,
+          };
+        }
+
+        if (missingAll.length === 0 && matchedAny && unexpected.length > 0) {
+          return {
+            outcome: "unexpected-marker",
+            unexpected,
+            expectedAll,
+            missingAll,
+            expectedAny,
+            matchedAny,
+            forbidden,
+            text: bodyText.slice(0, 4000),
+            title,
+            url: currentUrl,
+          };
+        }
+
+        return false;
+      },
+      { expectedAll, expectedAny, forbidden, appErrorSources },
+      { timeout: timeoutMs, polling: 500 },
+    );
+  } catch (error) {
     await assertNoVisibleAppError(page, screen.name);
-    const text = await visibleBodyText(page);
-    lastCheck = checkMarkers(text, screen);
-    if (lastCheck.missingAll.length === 0 && lastCheck.matchedAny) {
-      return { text, markerCheck: lastCheck };
-    }
-    await page.waitForTimeout(1000);
+    const text = await visibleBodyText(page).catch(() => "");
+    const lastCheck = checkMarkers(text, screen);
+    const missing = lastCheck.missingAll.length > 0 ? lastCheck.missingAll.join(", ") : "(none)";
+    const unexpected = lastCheck.unexpected.length > 0 ? lastCheck.unexpected.join(", ") : "(none)";
+    throw new Error(`${screen.name}: screen did not reach expected visible markers within ${timeoutMs}ms. Missing: ${missing}. Forbidden still visible: ${unexpected}. ${error.message}`);
   }
 
-  if (lastCheck?.missingAll?.length > 0) {
+  const result = await resultHandle.jsonValue();
+  if (result.outcome === "passed") {
+    return { text: result.text, markerCheck: result };
+  }
+  if (result.outcome === "app-error") {
+    throw new Error(`${screen.name}: visible app error matched /${result.appError}/ at ${result.url}`);
+  }
+  if (result.outcome === "unexpected-marker") {
+    throw new Error(`${screen.name}: forbidden visible markers were found: ${result.unexpected.join(", ")}`);
+  }
+
+  const text = await visibleBodyText(page).catch(() => "");
+  const lastCheck = checkMarkers(text, screen);
+  if (lastCheck.missingAll.length > 0) {
     throw new Error(`${screen.name}: expected visible markers were not found within ${timeoutMs}ms: ${lastCheck.missingAll.join(", ")}`);
   }
-  throw new Error(`${screen.name}: none of the expected visible markers were found within ${timeoutMs}ms: ${(lastCheck?.expectedAny || []).join(", ")}`);
+  throw new Error(`${screen.name}: none of the expected visible markers were found within ${timeoutMs}ms: ${lastCheck.expectedAny.join(", ")}`);
 }
 
 async function waitForAppShell(page, config, interactive) {
@@ -112,22 +187,14 @@ async function waitForAppShell(page, config, interactive) {
   const loginUrlPattern = /login\.microsoftonline\.com|login\.live\.com|microsoftonline\.com/i;
   const loginTextPattern = /sign in|pick an account|enter password/i;
 
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const currentUrl = page.url();
-    const text = await visibleBodyText(page).catch(() => "");
-    const loginVisible = loginUrlPattern.test(currentUrl) || loginTextPattern.test(text);
-    if (!loginVisible) {
-      break;
-    }
-
-    if (!interactive) {
-      throw new Error("SCREEN_TEST_AUTH_REQUIRED: browser is not authenticated for the model-driven app.");
-    }
-
-    await page.waitForTimeout(5000);
+  const currentUrl = page.url();
+  const text = await visibleBodyText(page).catch(() => "");
+  const loginVisible = loginUrlPattern.test(currentUrl) || loginTextPattern.test(text);
+  if (loginVisible && !interactive) {
+    throw new Error("SCREEN_TEST_AUTH_REQUIRED: browser is not authenticated for the model-driven app.");
   }
 
-  if (interactive) {
+  if (loginVisible && interactive) {
     await page.waitForURL((url) => url.href.startsWith(config.environmentUrl), { timeout: 600000 }).catch(() => {});
   }
 
@@ -197,11 +264,22 @@ async function run() {
 
     await page.goto(config.appUrl, { waitUntil: "domcontentloaded", timeout: 90000 });
     await waitForAppShell(page, config, interactive);
+    if (config.appHome) {
+      await waitForScreenMarkers(page, config.appHome);
+    }
     screenshots.push({ name: "app-home", path: await screenshot(page, artifactDir, "01-app-home") });
     await assertNoVisibleAppError(page, "app-home");
-    checks.push({ name: "app-home", status: "passed", diagnostics: await collectDiagnostics(page) });
+    checks.push({
+      name: "app-home",
+      status: "passed",
+      screenType: config.appHome?.screenType || "app-home",
+      expectedAllMarkers: config.appHome?.mustContainAll || [],
+      expectedAnyMarkers: config.appHome?.mustContainAny || [],
+      diagnostics: await collectDiagnostics(page),
+    });
 
     for (const screen of config.screens) {
+      await page.goto("about:blank", { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.goto(screen.url, { waitUntil: "domcontentloaded", timeout: 90000 });
       await waitForAppShell(page, config, interactive);
       const markerResult = await waitForScreenMarkers(page, screen);
@@ -212,8 +290,12 @@ async function run() {
       checks.push({
         name: screen.name,
         status: "passed",
+        screenType: screen.screenType || "screen",
+        viewName: screen.viewName || null,
+        table: screen.table || null,
         expectedAllMarkers: markerResult.markerCheck.expectedAll,
         expectedAnyMarkers: markerResult.markerCheck.expectedAny,
+        forbiddenMarkers: markerResult.markerCheck.forbidden,
         diagnostics: await collectDiagnostics(page),
       });
     }

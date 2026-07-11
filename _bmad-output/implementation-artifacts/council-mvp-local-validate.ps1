@@ -330,10 +330,15 @@ try {
     }
 
     $readmeText = Get-Content -Raw $screenReadme
-    foreach ($marker in @("Council Queue", "screenshots", "Playwright trace", 'Do not mark the MVP screen surface complete from `ValidateApp` alone')) {
+    foreach ($marker in @("Council Queue", "screenshots", "Playwright trace", "curated view IDs", "record forms", 'Do not mark the MVP screen surface complete from `ValidateApp` alone')) {
       if ($readmeText -notmatch [regex]::Escape($marker)) {
         throw "Screen gate README missing marker: $marker"
       }
+    }
+
+    $screenText = Get-Content -Raw $screenJs
+    if ($screenText -match "waitForTimeout") {
+      throw "Model-driven app screen runner must not use fixed sleeps for screen readiness."
     }
 
     Write-Host "Model-driven app screen gate harness exists."
