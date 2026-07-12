@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_extractionstatus" localizedName="Council Extraction Status" description="Council of Minions global choice: Council Extraction Status" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Extraction Status" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Extraction Status" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950008000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="new" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950008001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="extracted" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950008002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="ignored" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950008003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="held" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950008004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="failed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950008005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="superseded" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

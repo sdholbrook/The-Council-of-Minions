@@ -1,0 +1,134 @@
+{
+  "artifactVersion": "2026-07-08",
+  "storyKey": "1-1-capture-manual-source-records",
+  "status": "local-contract-live-dataverse-proven",
+  "purpose": "Define and validate the manual Source Record contract locally; scoped live Dataverse evidence is captured in tenant validation artifacts.",
+  "guards": {
+    "liveTenantWritesApproved": false,
+    "requiresReadOnlyPreflightBeforeWrite": true,
+    "requiresPublisherPrefixBeforeWrite": true,
+    "requiresSourceBodyPolicyBeforeSampleData": true,
+    "noWorkItemCreatedOnSourceSave": true,
+    "noOutboundAction": true,
+    "noFlowPublish": true,
+    "noAgentPublish": true,
+    "noAppRegistration": true,
+    "noFabricMutation": true
+  },
+  "manualCapture": {
+    "dataverseTable": "com_councilsourcerecord",
+    "modelDrivenApp": "com_CouncilQueue",
+    "navigationGroup": "Intake",
+    "defaultSourceSystem": "manual",
+    "defaultSourceKind": "manual_note",
+    "defaultExtractionStatus": "new",
+    "defaultDataBoundaryPolicy": "link_only",
+    "workItemCreationOnSave": false,
+    "requiresExplicitExtractionStep": true,
+    "requiredFields": [
+      "com_council_source_record_id",
+      "com_source_system",
+      "com_source_kind",
+      "com_source_object_ref",
+      "com_captured_at",
+      "com_captured_by",
+      "com_extraction_status",
+      "com_source_to_work_item_rationale",
+      "com_data_boundary_policy"
+    ],
+    "visibleFormFields": [
+      "com_name",
+      "com_council_source_record_id",
+      "com_source_system",
+      "com_source_kind",
+      "com_source_object_ref",
+      "com_source_object_url",
+      "com_captured_at",
+      "com_captured_by",
+      "com_content_snapshot_ref",
+      "com_content_hash",
+      "com_permission_snapshot",
+      "com_sensitivity_label",
+      "com_retention_or_hold_flags",
+      "com_extraction_status",
+      "com_source_to_work_item_rationale",
+      "com_data_boundary_policy"
+    ],
+    "requiredViews": [
+      "New Source Records",
+      "Held Source Records"
+    ],
+    "sampleRecords": [
+      {
+        "com_name": "Manual source - link only example",
+        "com_council_source_record_id": "CSR-MANUAL-LINK-001",
+        "com_source_system": "manual",
+        "com_source_kind": "manual_note",
+        "com_source_object_ref": "manual:2026-07-08:link-only-example",
+        "com_source_object_url": "https://example.invalid/manual-source-link-only",
+        "com_captured_at": "2026-07-08T01:02:10-04:00",
+        "com_captured_by": "Doug",
+        "com_permission_snapshot": "unknown",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "new",
+        "com_source_to_work_item_rationale": "Manual non-email context captured for later extraction review; no Work Item created on save.",
+        "com_data_boundary_policy": "link_only"
+      },
+      {
+        "com_name": "Manual source - hash only example",
+        "com_council_source_record_id": "CSR-MANUAL-HASH-001",
+        "com_source_system": "manual",
+        "com_source_kind": "manual_note",
+        "com_source_object_ref": "manual:2026-07-08:hash-only-example",
+        "com_captured_at": "2026-07-08T01:02:10-04:00",
+        "com_captured_by": "Doug",
+        "com_content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "com_permission_snapshot": "unknown",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "held",
+        "com_source_to_work_item_rationale": "Sensitive or unknown source body policy; only a hash is retained until Doug approves richer capture.",
+        "com_data_boundary_policy": "hash_only"
+      },
+      {
+        "com_name": "Manual source - summary allowed example",
+        "com_council_source_record_id": "CSR-MANUAL-SUMMARY-001",
+        "com_source_system": "manual",
+        "com_source_kind": "manual_note",
+        "com_source_object_ref": "manual:2026-07-08:summary-example",
+        "com_captured_at": "2026-07-08T01:02:10-04:00",
+        "com_captured_by": "Doug",
+        "com_content_snapshot_ref": "summary:manual-source-summary-001",
+        "com_permission_snapshot": "unknown",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "new",
+        "com_source_to_work_item_rationale": "Summary-only manual capture can be reviewed later for zero, one, or many proposed Work Items.",
+        "com_data_boundary_policy": "summary_allowed"
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "manualCapture.requiredFields",
+        "manualCapture.sampleRecords",
+        "manualCapture.workItemCreationOnSave=false",
+        "manualCapture.requiresExplicitExtractionStep=true"
+      ],
+      "tenantEvidenceRequired": "Captured for deterministic demo Source Record manual-demo-source-001; Council Queue form/view evidence is captured in app-curation-evidence.json."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "com_databoundarypolicy choice values in manifest",
+        "link_only sample without content snapshot",
+        "hash_only sample with content hash and without content snapshot",
+        "summary_allowed sample with summary snapshot reference"
+      ],
+      "tenantEvidenceRequired": "Scoped policy is link_only for the live demo seed; Council Queue form/view enforcement is captured in app-curation-evidence.json."
+    }
+  ]
+}

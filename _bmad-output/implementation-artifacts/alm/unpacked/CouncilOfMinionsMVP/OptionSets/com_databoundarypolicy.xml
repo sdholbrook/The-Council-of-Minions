@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_databoundarypolicy" localizedName="Council Data Boundary Policy" description="Council of Minions global choice: Council Data Boundary Policy" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Data Boundary Policy" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Data Boundary Policy" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950009000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="link_only" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950009001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="hash_only" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950009002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="summary_allowed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950009003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="full_snapshot_allowed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950009004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="unknown" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

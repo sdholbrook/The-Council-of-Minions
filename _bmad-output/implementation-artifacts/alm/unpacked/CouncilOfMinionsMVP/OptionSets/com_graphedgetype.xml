@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_graphedgetype" localizedName="Council Graph Edge Type" description="Council of Minions global choice: Council Graph Edge Type" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Graph Edge Type" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Graph Edge Type" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950013000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="proposed_from" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="evidenced_by" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="assigned_to" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="involves" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="about" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="depends_on" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="blocks" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="resolves" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013008" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="supersedes" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013009" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="uses_skill" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950013010" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="assisted_by" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

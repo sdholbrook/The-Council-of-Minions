@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{b8039e3f-ae7b-f111-ab0e-7ced8d3d5402}</savedqueryid>
+    <layoutxml>
+      <grid name="com_councilreceipt" jump="com_receipt_id" select="1" icon="1" preview="1">
+        <row name="result" id="com_councilreceiptid">
+          <cell name="com_receipt_id" width="180" />
+          <cell name="com_verb" width="180" />
+          <cell name="com_actor_type" width="180" />
+          <cell name="com_actor_id" width="180" />
+          <cell name="com_before_state" width="180" />
+          <cell name="com_after_state" width="180" />
+          <cell name="com_result" width="180" />
+          <cell name="com_occurred_at" width="150" />
+        </row>
+      </grid>
+    </layoutxml>
+    <columnsetxml>
+      <columnset version="1.0">
+        <column>com_councilreceiptid</column>
+        <column>com_receipt_id</column>
+        <column>com_verb</column>
+        <column>com_actor_type</column>
+        <column>com_actor_id</column>
+        <column>com_before_state</column>
+        <column>com_after_state</column>
+        <column>com_result</column>
+        <column>com_occurred_at</column>
+      </columnset>
+    </columnsetxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="com_councilreceipt">
+          <attribute name="com_councilreceiptid" />
+          <attribute name="com_receipt_id" />
+          <attribute name="com_verb" />
+          <attribute name="com_actor_type" />
+          <attribute name="com_actor_id" />
+          <attribute name="com_before_state" />
+          <attribute name="com_after_state" />
+          <attribute name="com_result" />
+          <attribute name="com_occurred_at" />
+          <order attribute="com_receipt_id" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+            <condition attribute="com_verb" operator="in">
+              <value>950003009</value>
+              <value>950003010</value>
+            </condition>
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>0.1.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Memory Receipts" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Council MVP curated app view: Memory Receipts." languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

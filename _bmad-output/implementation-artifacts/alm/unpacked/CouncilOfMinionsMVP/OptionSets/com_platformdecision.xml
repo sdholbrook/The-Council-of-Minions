@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_platformdecision" localizedName="Council Platform Decision" description="Council of Minions global choice: Council Platform Decision" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Platform Decision" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Platform Decision" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950011000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="adopt" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950011001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="defer" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950011002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="reject" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950011003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="custom_gap_build" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950011004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="not_tested" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

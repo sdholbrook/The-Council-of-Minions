@@ -1,0 +1,604 @@
+{
+  "manifestVersion": "2026-07-08",
+  "project": "The-Council-of-Minions",
+  "status": "draft-ready-for-review",
+  "target": {
+    "environmentUrl": "https://sdhdev.crm.dynamics.com",
+    "environmentUniqueName": "unq0c0fa4db8614ef119f83000d3a342",
+    "environmentId": "ba9a96b2-f562-40f6-931d-6b55873954ee",
+    "organizationId": "0c0fa4db-8614-ef11-9f83-000d3a342d36",
+    "webApiEndpoint": "https://sdhdev.api.crm.dynamics.com/api/data/v9.2",
+    "discoveryEndpoint": "https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances"
+  },
+  "solution": {
+    "displayName": "Council of Minions MVP",
+    "uniqueName": "CouncilOfMinionsMVP",
+    "publisherDisplayName": "Council of Minions",
+    "publisherPrefix": "com",
+    "publisherUniqueName": "CouncilOfMinions",
+    "version": "0.1.0.0"
+  },
+  "guards": {
+    "requiresDougApprovalBeforeWrite": true,
+    "requiresPacEnvWhoMatch": true,
+    "noOutboundAction": true,
+    "noFlowPublish": true,
+    "noAgentPublish": true,
+    "noAppRegistration": true,
+    "noFabricMutation": true,
+    "defaultSourceBodyPolicy": "link_only"
+  },
+  "choices": [
+    {
+      "name": "com_workitemtype",
+      "displayName": "Council Work Item Type",
+      "values": [
+        "decision",
+        "delegation",
+        "follow_up",
+        "request",
+        "risk",
+        "artifact_task",
+        "meeting_action"
+      ]
+    },
+    {
+      "name": "com_workitemstategroup",
+      "displayName": "Council Work Item State Group",
+      "values": [
+        "proposed",
+        "approved",
+        "blocked",
+        "held",
+        "in_review",
+        "completed",
+        "failed"
+      ]
+    },
+    {
+      "name": "com_riskclass",
+      "displayName": "Council Risk Class",
+      "values": [
+        "none",
+        "relationship",
+        "legal",
+        "finance",
+        "delivery",
+        "sensitive",
+        "governance",
+        "unknown"
+      ]
+    },
+    {
+      "name": "com_receiptverb",
+      "displayName": "Council Receipt Verb",
+      "values": [
+        "proposed",
+        "approved",
+        "delegated",
+        "blocked",
+        "held",
+        "resumed",
+        "reviewed",
+        "completed",
+        "failed",
+        "memory_proposed",
+        "memory_promoted",
+        "source_drifted",
+        "policy_denied",
+        "external_action_requested",
+        "external_action_completed"
+      ]
+    },
+    {
+      "name": "com_actortype",
+      "displayName": "Council Actor Type",
+      "values": [
+        "human",
+        "minion",
+        "system",
+        "connector",
+        "trusted_rule"
+      ]
+    },
+    {
+      "name": "com_receiptresult",
+      "displayName": "Council Receipt Result",
+      "values": [
+        "accepted",
+        "rejected",
+        "succeeded",
+        "failed",
+        "superseded",
+        "no_op"
+      ]
+    },
+    {
+      "name": "com_sourcesystem",
+      "displayName": "Council Source System",
+      "values": [
+        "outlook",
+        "teams",
+        "sharepoint",
+        "onedrive",
+        "calendar",
+        "manual",
+        "other"
+      ]
+    },
+    {
+      "name": "com_sourcekind",
+      "displayName": "Council Source Kind",
+      "values": [
+        "message",
+        "thread",
+        "chat",
+        "meeting",
+        "file",
+        "comment",
+        "task",
+        "manual_note",
+        "other"
+      ]
+    },
+    {
+      "name": "com_extractionstatus",
+      "displayName": "Council Extraction Status",
+      "values": [
+        "new",
+        "extracted",
+        "ignored",
+        "held",
+        "failed",
+        "superseded"
+      ]
+    },
+    {
+      "name": "com_databoundarypolicy",
+      "displayName": "Council Data Boundary Policy",
+      "values": [
+        "link_only",
+        "hash_only",
+        "summary_allowed",
+        "full_snapshot_allowed",
+        "unknown"
+      ]
+    },
+    {
+      "name": "com_authorityclass",
+      "displayName": "Council Authority Class",
+      "values": [
+        "manual_only",
+        "ask_before_use",
+        "approved_automatic"
+      ]
+    },
+    {
+      "name": "com_platformdecision",
+      "displayName": "Council Platform Decision",
+      "values": [
+        "adopt",
+        "defer",
+        "reject",
+        "custom_gap_build",
+        "not_tested"
+      ]
+    },
+    {
+      "name": "com_graphentitytype",
+      "displayName": "Council Graph Entity Type",
+      "values": [
+        "person",
+        "role",
+        "project",
+        "artifact",
+        "decision",
+        "commitment",
+        "risk",
+        "source",
+        "skill",
+        "minion",
+        "topic"
+      ]
+    },
+    {
+      "name": "com_graphedgetype",
+      "displayName": "Council Graph Edge Type",
+      "values": [
+        "proposed_from",
+        "evidenced_by",
+        "assigned_to",
+        "involves",
+        "about",
+        "depends_on",
+        "blocks",
+        "resolves",
+        "supersedes",
+        "uses_skill",
+        "assisted_by"
+      ]
+    },
+    {
+      "name": "com_recordstatus",
+      "displayName": "Council Record Status",
+      "values": [
+        "candidate",
+        "active",
+        "deprecated",
+        "suspended",
+        "retired",
+        "superseded"
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "displayName": "Council Source Record",
+      "schemaName": "com_councilsourcerecord",
+      "primaryNameColumn": "com_name",
+      "contract": "source-record-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_source_record_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_source_system", "type": "choice", "choice": "com_sourcesystem", "required": true },
+        { "name": "com_source_kind", "type": "choice", "choice": "com_sourcekind", "required": true },
+        { "name": "com_source_object_ref", "type": "text", "required": true },
+        { "name": "com_source_object_url", "type": "url", "required": false },
+        { "name": "com_conversation_ref", "type": "text", "required": false },
+        { "name": "com_parent_ref", "type": "text", "required": false },
+        { "name": "com_captured_at", "type": "datetime", "required": true },
+        { "name": "com_captured_by", "type": "text", "required": true },
+        { "name": "com_observed_modified_at", "type": "datetime", "required": false },
+        { "name": "com_source_version_ref", "type": "text", "required": false },
+        { "name": "com_content_snapshot_ref", "type": "multiline", "required": false },
+        { "name": "com_content_hash", "type": "text", "required": false },
+        { "name": "com_attachment_refs", "type": "multiline", "required": false },
+        { "name": "com_permission_snapshot", "type": "multiline", "required": false },
+        { "name": "com_sensitivity_label", "type": "text", "required": false },
+        { "name": "com_retention_or_hold_flags", "type": "multiline", "required": false },
+        { "name": "com_extraction_status", "type": "choice", "choice": "com_extractionstatus", "required": true },
+        { "name": "com_extraction_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 },
+        { "name": "com_source_to_work_item_rationale", "type": "multiline", "required": false },
+        { "name": "com_data_boundary_policy", "type": "choice", "choice": "com_databoundarypolicy", "required": true }
+      ],
+      "views": [
+        "New Source Records",
+        "Outlook Source Records",
+        "Mock Outlook Source Records",
+        "Held Source Records",
+        "Extracted Source Records",
+        "Source Records With Drift Risk"
+      ],
+      "forms": [
+        {
+          "name": "Source Record Main",
+          "sections": [
+            {
+              "name": "Source identity",
+              "fields": [
+                "com_name",
+                "com_council_source_record_id",
+                "com_source_system",
+                "com_source_kind",
+                "com_source_object_ref",
+                "com_source_object_url",
+                "com_conversation_ref",
+                "com_parent_ref"
+              ]
+            },
+            {
+              "name": "Capture and data boundary",
+              "fields": [
+                "com_captured_at",
+                "com_captured_by",
+                "com_data_boundary_policy",
+                "com_content_snapshot_ref",
+                "com_content_hash",
+                "com_permission_snapshot",
+                "com_sensitivity_label",
+                "com_retention_or_hold_flags"
+              ]
+            },
+            {
+              "name": "Extraction review",
+              "fields": [
+                "com_extraction_status",
+                "com_extraction_confidence",
+                "com_source_to_work_item_rationale",
+                "com_observed_modified_at",
+                "com_source_version_ref",
+                "com_attachment_refs"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "Council Work Item",
+      "schemaName": "com_councilworkitem",
+      "primaryNameColumn": "com_title",
+      "contract": "work-item-receipt-contract.md",
+      "columns": [
+        { "name": "com_title", "type": "text", "required": true },
+        { "name": "com_council_work_item_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_type", "type": "choice", "choice": "com_workitemtype", "required": true },
+        { "name": "com_summary", "type": "multiline", "required": true },
+        { "name": "com_state_group", "type": "choice", "choice": "com_workitemstategroup", "required": true },
+        { "name": "com_owner_candidate", "type": "text", "required": false },
+        { "name": "com_owner_candidate_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 },
+        { "name": "com_approved_owner", "type": "text", "required": false },
+        { "name": "com_urgency", "type": "choice", "values": ["low", "normal", "high", "critical", "unknown"], "required": false },
+        { "name": "com_risk_class", "type": "choice", "choice": "com_riskclass", "required": true },
+        { "name": "com_confidence_summary", "type": "multiline", "required": false },
+        { "name": "com_primary_source_record", "type": "lookup", "target": "com_councilsourcerecord", "required": true },
+        { "name": "com_rationale", "type": "multiline", "required": true },
+        { "name": "com_recommended_next_action", "type": "multiline", "required": false },
+        { "name": "com_approval_required", "type": "boolean", "required": true },
+        { "name": "com_semantic_contract_version", "type": "text", "required": true },
+        { "name": "com_created_receipt", "type": "lookup", "target": "com_councilreceipt", "required": false },
+        { "name": "com_auto_creation_policy_result", "type": "choice", "values": ["not_evaluated", "auto_created", "proposal_only", "policy_denied"], "required": false },
+        { "name": "com_policy_flags", "type": "multiline", "required": false }
+      ],
+      "views": [
+        "Proposed Work Items",
+        "Needs Human Approval",
+        "Approved Work Items",
+        "Blocked or Held Work Items",
+        "In Review",
+        "Completed Recently",
+        "Failed Needs Review"
+      ]
+    },
+    {
+      "displayName": "Council Receipt",
+      "schemaName": "com_councilreceipt",
+      "primaryNameColumn": "com_receipt_id",
+      "contract": "work-item-receipt-contract.md",
+      "columns": [
+        { "name": "com_receipt_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_work_item", "type": "lookup", "target": "com_councilworkitem", "required": false },
+        { "name": "com_verb", "type": "choice", "choice": "com_receiptverb", "required": true },
+        { "name": "com_actor_type", "type": "choice", "choice": "com_actortype", "required": true },
+        { "name": "com_actor_id", "type": "text", "required": true },
+        { "name": "com_authority_basis", "type": "text", "required": true },
+        { "name": "com_occurred_at", "type": "datetime", "required": true },
+        { "name": "com_idempotency_key", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_before_state", "type": "text", "required": false },
+        { "name": "com_after_state", "type": "text", "required": false },
+        { "name": "com_evidence_refs", "type": "multiline", "required": false },
+        { "name": "com_decision_rationale", "type": "multiline", "required": false },
+        { "name": "com_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 },
+        { "name": "com_result", "type": "choice", "choice": "com_receiptresult", "required": true },
+        { "name": "com_failure_code", "type": "text", "required": false },
+        { "name": "com_policy_flags", "type": "multiline", "required": false },
+        { "name": "com_append_only_locked", "type": "boolean", "required": true, "default": true }
+      ],
+      "views": [
+        "Recent Receipts",
+        "Failed Receipts",
+        "Policy Denials",
+        "External Action Requests",
+        "Memory Receipts"
+      ]
+    },
+    {
+      "displayName": "Council Work Item Source",
+      "schemaName": "com_councilworkitemsource",
+      "primaryNameColumn": "com_name",
+      "contract": "source-record-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_work_item", "type": "lookup", "target": "com_councilworkitem", "required": true },
+        { "name": "com_source_record", "type": "lookup", "target": "com_councilsourcerecord", "required": true },
+        { "name": "com_source_role", "type": "choice", "values": ["primary", "supporting", "contradicting", "superseding"], "required": true },
+        { "name": "com_rationale", "type": "multiline", "required": false },
+        { "name": "com_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 }
+      ]
+    },
+    {
+      "displayName": "Council Receipt Source",
+      "schemaName": "com_councilreceiptsource",
+      "primaryNameColumn": "com_name",
+      "contract": "work-item-receipt-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_receipt", "type": "lookup", "target": "com_councilreceipt", "required": true },
+        { "name": "com_source_record", "type": "lookup", "target": "com_councilsourcerecord", "required": true },
+        { "name": "com_evidence_role", "type": "choice", "values": ["supporting", "approval", "failure_evidence", "drift_evidence"], "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Graph Entity",
+      "schemaName": "com_councilgraphentity",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_graph_entity_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_entity_type", "type": "choice", "choice": "com_graphentitytype", "required": true },
+        { "name": "com_external_binding_ref", "type": "text", "required": false },
+        { "name": "com_description", "type": "multiline", "required": false },
+        { "name": "com_semantic_contract_version", "type": "text", "required": true },
+        { "name": "com_status", "type": "choice", "choice": "com_recordstatus", "required": true }
+      ]
+    },
+    {
+      "displayName": "Council Graph Edge",
+      "schemaName": "com_councilgraphedge",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_edge_type", "type": "choice", "choice": "com_graphedgetype", "required": true },
+        { "name": "com_from_entity", "type": "lookup", "target": "com_councilgraphentity", "required": false },
+        { "name": "com_to_entity", "type": "lookup", "target": "com_councilgraphentity", "required": false },
+        { "name": "com_from_work_item", "type": "lookup", "target": "com_councilworkitem", "required": false },
+        { "name": "com_to_work_item", "type": "lookup", "target": "com_councilworkitem", "required": false },
+        { "name": "com_source_record", "type": "lookup", "target": "com_councilsourcerecord", "required": false },
+        { "name": "com_receipt", "type": "lookup", "target": "com_councilreceipt", "required": false },
+        { "name": "com_rationale", "type": "multiline", "required": false },
+        { "name": "com_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 },
+        { "name": "com_created_receipt", "type": "lookup", "target": "com_councilreceipt", "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Memory Candidate",
+      "schemaName": "com_councilmemorycandidate",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_memory_candidate_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_summary", "type": "multiline", "required": true },
+        { "name": "com_scope", "type": "choice", "values": ["personal", "project", "tenant", "excluded", "unknown"], "required": true },
+        { "name": "com_review_state", "type": "choice", "values": ["proposed", "approved", "rejected", "superseded", "needs_clarification"], "required": true },
+        { "name": "com_confidence", "type": "decimal", "required": false, "min": 0, "max": 1 },
+        { "name": "com_source_record", "type": "lookup", "target": "com_councilsourcerecord", "required": true },
+        { "name": "com_rationale", "type": "multiline", "required": true },
+        { "name": "com_recall_use_policy", "type": "multiline", "required": false },
+        { "name": "com_created_receipt", "type": "lookup", "target": "com_councilreceipt", "required": false },
+        { "name": "com_review_receipt", "type": "lookup", "target": "com_councilreceipt", "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Approved Instruction",
+      "schemaName": "com_councilapprovedinstruction",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_approved_instruction_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_instruction_text", "type": "multiline", "required": true },
+        { "name": "com_scope", "type": "choice", "values": ["personal", "project", "tenant", "workflow", "skill"], "required": true },
+        { "name": "com_source_memory_candidate", "type": "lookup", "target": "com_councilmemorycandidate", "required": false },
+        { "name": "com_approval_receipt", "type": "lookup", "target": "com_councilreceipt", "required": true },
+        { "name": "com_status", "type": "choice", "choice": "com_recordstatus", "required": true },
+        { "name": "com_effective_from", "type": "datetime", "required": true },
+        { "name": "com_superseded_by", "type": "lookup", "target": "com_councilapprovedinstruction", "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Skill",
+      "schemaName": "com_councilskill",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_skill_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_trigger", "type": "multiline", "required": true },
+        { "name": "com_allowed_context", "type": "multiline", "required": true },
+        { "name": "com_required_inputs", "type": "multiline", "required": false },
+        { "name": "com_authority_class", "type": "choice", "choice": "com_authorityclass", "required": true },
+        { "name": "com_approval_requirements", "type": "multiline", "required": true },
+        { "name": "com_proof_owed", "type": "multiline", "required": true },
+        { "name": "com_update_policy", "type": "multiline", "required": true },
+        { "name": "com_status", "type": "choice", "choice": "com_recordstatus", "required": true }
+      ]
+    },
+    {
+      "displayName": "Council Minion",
+      "schemaName": "com_councilminion",
+      "primaryNameColumn": "com_name",
+      "contract": "semantic-contract.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_minion_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_role", "type": "text", "required": true },
+        { "name": "com_allowed_skill_scope", "type": "multiline", "required": false },
+        { "name": "com_authority_summary", "type": "multiline", "required": true },
+        { "name": "com_status", "type": "choice", "choice": "com_recordstatus", "required": true }
+      ]
+    },
+    {
+      "displayName": "Council Brief",
+      "schemaName": "com_councilbrief",
+      "primaryNameColumn": "com_name",
+      "contract": "ARCHITECTURE-SPINE.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_brief_id", "type": "text", "required": true, "alternateKey": true },
+        { "name": "com_brief_date", "type": "datetime", "required": true },
+        { "name": "com_priority_summary", "type": "multiline", "required": true },
+        { "name": "com_decisions_needed", "type": "multiline", "required": false },
+        { "name": "com_delegations_ready", "type": "multiline", "required": false },
+        { "name": "com_risks_if_ignored", "type": "multiline", "required": false },
+        { "name": "com_blockers", "type": "multiline", "required": false },
+        { "name": "com_recent_receipts", "type": "multiline", "required": false },
+        { "name": "com_memory_candidates", "type": "multiline", "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Tenant Evidence",
+      "schemaName": "com_counciltenantevidence",
+      "primaryNameColumn": "com_name",
+      "contract": "tenant-readiness-checklist.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_capability_name", "type": "text", "required": true },
+        { "name": "com_tenant_environment", "type": "text", "required": true },
+        { "name": "com_admin_or_owner", "type": "text", "required": false },
+        { "name": "com_evidence_link_or_ref", "type": "multiline", "required": false },
+        { "name": "com_date_verified", "type": "datetime", "required": false },
+        { "name": "com_restrictions_found", "type": "multiline", "required": false },
+        { "name": "com_decision", "type": "choice", "values": ["available", "unavailable", "available_with_constraints", "not_tested"], "required": true },
+        { "name": "com_follow_up_owner", "type": "text", "required": false }
+      ]
+    },
+    {
+      "displayName": "Council Platform Evaluation",
+      "schemaName": "com_councilplatformevaluation",
+      "primaryNameColumn": "com_name",
+      "contract": "microsoft-platform-fit-matrix-2026-07-07.md",
+      "columns": [
+        { "name": "com_name", "type": "text", "required": true },
+        { "name": "com_council_capability", "type": "text", "required": true },
+        { "name": "com_microsoft_candidate", "type": "text", "required": true },
+        { "name": "com_official_source_date_checked", "type": "text", "required": true },
+        { "name": "com_tenant_gate", "type": "multiline", "required": false },
+        { "name": "com_permission_dlp_impact", "type": "multiline", "required": false },
+        { "name": "com_licensing_cost_gate", "type": "multiline", "required": false },
+        { "name": "com_lifecycle_alm_path", "type": "multiline", "required": false },
+        { "name": "com_contract_gaps", "type": "multiline", "required": false },
+        { "name": "com_decision", "type": "choice", "choice": "com_platformdecision", "required": true },
+        { "name": "com_review_reference", "type": "text", "required": false }
+      ]
+    }
+  ],
+  "modelDrivenApp": {
+    "displayName": "Council Queue",
+    "uniqueName": "com_CouncilQueue",
+    "navigationGroups": [
+      {
+        "name": "Intake",
+        "tables": ["com_councilsourcerecord"]
+      },
+      {
+        "name": "Work",
+        "tables": ["com_councilworkitem", "com_councilreceipt"]
+      },
+      {
+        "name": "Brief",
+        "tables": ["com_councilbrief"]
+      },
+      {
+        "name": "Knowledge",
+        "tables": [
+          "com_councilgraphentity",
+          "com_councilgraphedge",
+          "com_councilmemorycandidate",
+          "com_councilapprovedinstruction",
+          "com_councilskill",
+          "com_councilminion"
+        ]
+      },
+      {
+        "name": "Governance",
+        "tables": [
+          "com_counciltenantevidence",
+          "com_councilplatformevaluation"
+        ]
+      }
+    ]
+  }
+}

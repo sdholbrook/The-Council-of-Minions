@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModuleSiteMap xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SiteMapUniqueName>council_queue_61fd2b5e</SiteMapUniqueName>
+  <EnableCollapsibleGroups>False</EnableCollapsibleGroups>
+  <ShowHome>True</ShowHome>
+  <ShowPinned>True</ShowPinned>
+  <ShowRecents>True</ShowRecents>
+  <SiteMap IntroducedVersion="7.0.0.0">
+    <Area Id="area_council_queue" ShowGroups="true" IntroducedVersion="7.0.0.0">
+      <Titles>
+        <Title Title="Council Queue" LCID="1033" />
+      </Titles>
+      <Group Id="group_intake" IntroducedVersion="7.0.0.0">
+        <Titles>
+          <Title Title="Intake" LCID="1033" />
+        </Titles>
+        <SubArea Id="subarea_com_councilsourcerecord" Entity="com_councilsourcerecord" AvailableOffline="false" />
+      </Group>
+      <Group Id="group_work" IntroducedVersion="7.0.0.0">
+        <Titles>
+          <Title Title="Work" LCID="1033" />
+        </Titles>
+        <SubArea Id="subarea_com_councilworkitem" Entity="com_councilworkitem" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilreceipt" Entity="com_councilreceipt" AvailableOffline="false" />
+      </Group>
+      <Group Id="group_brief" IntroducedVersion="7.0.0.0">
+        <Titles>
+          <Title Title="Brief" LCID="1033" />
+        </Titles>
+        <SubArea Id="subarea_com_councilbrief" Entity="com_councilbrief" AvailableOffline="false" />
+      </Group>
+      <Group Id="group_knowledge" IntroducedVersion="7.0.0.0">
+        <Titles>
+          <Title Title="Knowledge" LCID="1033" />
+        </Titles>
+        <SubArea Id="subarea_com_councilgraphentity" Entity="com_councilgraphentity" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilgraphedge" Entity="com_councilgraphedge" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilmemorycandidate" Entity="com_councilmemorycandidate" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilapprovedinstruction" Entity="com_councilapprovedinstruction" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilskill" Entity="com_councilskill" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilminion" Entity="com_councilminion" AvailableOffline="false" />
+      </Group>
+      <Group Id="group_governance" IntroducedVersion="7.0.0.0">
+        <Titles>
+          <Title Title="Governance" LCID="1033" />
+        </Titles>
+        <SubArea Id="subarea_com_counciltenantevidence" Entity="com_counciltenantevidence" AvailableOffline="false" />
+        <SubArea Id="subarea_com_councilplatformevaluation" Entity="com_councilplatformevaluation" AvailableOffline="false" />
+      </Group>
+    </Area>
+  </SiteMap>
+  <LocalizedNames>
+    <LocalizedName description="Council Queue" languagecode="1033" />
+  </LocalizedNames>
+</AppModuleSiteMap>

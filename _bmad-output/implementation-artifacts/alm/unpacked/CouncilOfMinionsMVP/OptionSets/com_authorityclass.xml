@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_authorityclass" localizedName="Council Authority Class" description="Council of Minions global choice: Council Authority Class" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Authority Class" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Authority Class" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950010000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="manual_only" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950010001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="ask_before_use" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950010002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="approved_automatic" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

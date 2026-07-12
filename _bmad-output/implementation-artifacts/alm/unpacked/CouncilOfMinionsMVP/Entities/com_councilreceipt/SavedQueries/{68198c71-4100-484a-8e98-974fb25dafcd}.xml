@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{68198c71-4100-484a-8e98-974fb25dafcd}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="com_receipt_id" select="1" icon="1" preview="1">
+        <row name="result" id="com_councilreceiptid">
+          <cell name="com_receipt_id" width="300" />
+          <cell name="createdon" width="125" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>1</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="com_councilreceipt">
+          <attribute name="com_councilreceiptid" />
+          <attribute name="com_receipt_id" />
+          <attribute name="createdon" />
+          <order attribute="com_receipt_id" descending="false" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>0.1.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Council Receipt Advanced Find View" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

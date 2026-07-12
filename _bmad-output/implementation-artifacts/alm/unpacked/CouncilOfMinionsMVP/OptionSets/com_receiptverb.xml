@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_receiptverb" localizedName="Council Receipt Verb" description="Council of Minions global choice: Council Receipt Verb" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Receipt Verb" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Receipt Verb" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950003000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="proposed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="approved" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="delegated" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="blocked" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="held" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="resumed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="reviewed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="completed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003008" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="failed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003009" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="memory_proposed" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003010" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="memory_promoted" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003011" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="source_drifted" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003012" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="policy_denied" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003013" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="external_action_requested" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950003014" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="external_action_completed" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>

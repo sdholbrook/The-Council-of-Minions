@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="com_graphentitytype" localizedName="Council Graph Entity Type" description="Council of Minions global choice: Council Graph Entity Type" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>0.1.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <displaynames>
+    <displayname description="Council Graph Entity Type" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="Council of Minions global choice: Council Graph Entity Type" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="950012000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="person" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="role" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="project" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="artifact" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="decision" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="commitment" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="risk" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="source" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012008" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="skill" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012009" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="minion" languagecode="1033" />
+      </labels>
+    </option>
+    <option value="950012010" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="topic" languagecode="1033" />
+      </labels>
+    </option>
+  </options>
+</optionset>
