@@ -173,6 +173,7 @@ $inReviewWorkItemsViewId = Get-RequiredCuratedViewId -CurationEvidence $curation
 $completedWorkItemsViewId = Get-RequiredCuratedViewId -CurationEvidence $curationEvidence -Table "com_councilworkitem" -ViewName "Completed Recently"
 $failedWorkItemsViewId = Get-RequiredCuratedViewId -CurationEvidence $curationEvidence -Table "com_councilworkitem" -ViewName "Failed Needs Review"
 $recentReceiptsViewId = Get-RequiredCuratedViewId -CurationEvidence $curationEvidence -Table "com_councilreceipt" -ViewName "Recent Receipts"
+$failedReceiptsViewId = Get-RequiredCuratedViewId -CurationEvidence $curationEvidence -Table "com_councilreceipt" -ViewName "Failed Receipts"
 
 $appHomeDefinition = @{
   name = "app-home"
@@ -253,10 +254,22 @@ $screenDefinitions = @(
     mustContainAll = @("Failed Needs Review", "Fail demo Council work item")
   },
   @{
+    name = "failed-receipts-view"
+    screenType = "curated-view"
+    table = "com_councilreceipt"
+    viewName = "Failed Receipts"
+    viewId = $failedReceiptsViewId
+    url = "$environmentUrl/main.aspx?appid=$appId&pagetype=entitylist&etn=com_councilreceipt&viewid=$(Format-ModelDrivenViewId $failedReceiptsViewId)&viewType=1039"
+    mustContainAll = @("Failed Receipts", "CR-DEMO-STATE-FAILED-FAILED")
+    mustNotContainAny = @("Active Council Receipts")
+    failOnForbiddenImmediately = $true
+  },
+  @{
     name = "recent-receipts-view"
     screenType = "curated-view"
     table = "com_councilreceipt"
     viewName = "Recent Receipts"
+    viewId = $recentReceiptsViewId
     url = "$environmentUrl/main.aspx?appid=$appId&pagetype=entitylist&etn=com_councilreceipt&viewid=$(Format-ModelDrivenViewId $recentReceiptsViewId)&viewType=1039"
     mustContainAll = @(
       "Recent Receipts",
@@ -268,6 +281,8 @@ $screenDefinitions = @(
       "CR-DEMO-STATE-COMPLETED-COMPLETED",
       "CR-DEMO-STATE-FAILED-FAILED"
     )
+    mustNotContainAny = @("Active Council Receipts")
+    failOnForbiddenImmediately = $true
   },
   @{
     name = "briefs-view"

@@ -1,5 +1,5 @@
 ﻿{
-    "generatedAt":  "2026-07-09T11:54:28.9671827-04:00",
+    "generatedAt":  "2026-07-11T22:37:21.8640143-04:00",
     "environmentUrl":  "https://sdhdev.crm.dynamics.com",
     "appId":  "f45bad48-d47a-f111-ab0e-7ced8d3d5402",
     "appName":  "Council Queue",
@@ -356,6 +356,99 @@
                              "id":  "b8039e3f-ae7b-f111-ab0e-7ced8d3d5402"
                          }
                      ],
+    "publishedCuratedViewComponentCount":  18,
+    "publishedCuratedViewComponents":  [
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "New Source Records",
+                                               "id":  "75916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "Outlook Source Records",
+                                               "id":  "78916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "Mock Outlook Source Records",
+                                               "id":  "7b916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "Held Source Records",
+                                               "id":  "7e916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "Extracted Source Records",
+                                               "id":  "81916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilsourcerecord",
+                                               "name":  "Source Records With Drift Risk",
+                                               "id":  "84916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Proposed Work Items",
+                                               "id":  "87916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Needs Human Approval",
+                                               "id":  "8a916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Approved Work Items",
+                                               "id":  "8d916e39-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Blocked or Held Work Items",
+                                               "id":  "a0039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "In Review",
+                                               "id":  "a3039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Completed Recently",
+                                               "id":  "a6039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilworkitem",
+                                               "name":  "Failed Needs Review",
+                                               "id":  "a9039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilreceipt",
+                                               "name":  "Recent Receipts",
+                                               "id":  "ac039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilreceipt",
+                                               "name":  "Failed Receipts",
+                                               "id":  "af039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilreceipt",
+                                               "name":  "Policy Denials",
+                                               "id":  "b2039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilreceipt",
+                                               "name":  "External Action Requests",
+                                               "id":  "b5039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           },
+                                           {
+                                               "table":  "com_councilreceipt",
+                                               "name":  "Memory Receipts",
+                                               "id":  "b8039e3f-ae7b-f111-ab0e-7ced8d3d5402"
+                                           }
+                                       ],
     "validateAppSuccess":  true,
     "validationIssueCount":  0,
     "validationIssues":  [

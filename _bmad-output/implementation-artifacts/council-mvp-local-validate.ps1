@@ -241,6 +241,15 @@ try {
     if ($evidence.curatedViewCount -ne 18) {
       throw "Expected 18 curated views, found $($evidence.curatedViewCount)."
     }
+    if ($evidence.publishedCuratedViewComponentCount -ne $evidence.curatedViewCount) {
+      throw "Published curated view component count does not match curated view count: $($evidence.publishedCuratedViewComponentCount) / $($evidence.curatedViewCount)."
+    }
+    foreach ($view in @($evidence.curatedViews)) {
+      $publishedMatches = @($evidence.publishedCuratedViewComponents | Where-Object { $_.table -eq $view.table -and $_.name -eq $view.name -and $_.id -eq $view.id })
+      if ($publishedMatches.Count -ne 1) {
+        throw "Published app component evidence missing or duplicated for curated view: $($view.table) / $($view.name)"
+      }
+    }
     if ($evidence.validateAppSuccess -ne $true) {
       throw "App curation evidence must have validateAppSuccess=true."
     }

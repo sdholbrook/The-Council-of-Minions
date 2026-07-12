@@ -59,12 +59,30 @@ async function screenshot(page, artifactDir, name) {
   return filePath;
 }
 
-async function collectDiagnostics(page) {
+function viewIdFromUrl(value) {
+  try {
+    return new URL(value).searchParams.get("viewid")?.replace(/[{}]/g, "") || null;
+  } catch {
+    return null;
+  }
+}
+
+async function collectDiagnostics(page, screen = null) {
+  const renderedUrl = page.url();
   return {
-    url: page.url(),
-    title: await page.title().catch(() => ""),
+    requestedUrl: screen?.url || null,
+    requestedViewId: screen?.viewId || viewIdFromUrl(screen?.url),
+    requestedViewName: screen?.viewName || null,
+    renderedUrl,
+    renderedViewId: viewIdFromUrl(renderedUrl),
+    renderedTitle: await page.title().catch(() => ""),
     bodyTextSample: (await visibleBodyText(page).catch(() => "")).slice(0, 4000),
   };
+}
+
+function routeContext(screen, page, title = "") {
+  const requestedView = screen.viewName ? `${screen.viewName} (${screen.viewId || viewIdFromUrl(screen.url) || "unknown ID"})` : screen.name;
+  return `Requested: ${requestedView} at ${screen.url}. Rendered: ${title || "(no title)"} at ${page.url()}.`;
 }
 
 function findAppError(text) {
@@ -95,12 +113,13 @@ async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
   const expectedAll = screen.mustContainAll || [];
   const expectedAny = screen.mustContainAny || [];
   const forbidden = screen.mustNotContainAny || [];
+  const failOnForbiddenImmediately = screen.failOnForbiddenImmediately === true;
   const appErrorSources = APP_ERROR_PATTERNS.map((pattern) => pattern.source);
 
   let resultHandle;
   try {
     resultHandle = await page.waitForFunction(
-      ({ expectedAll, expectedAny, forbidden, appErrorSources }) => {
+      ({ expectedAll, expectedAny, forbidden, failOnForbiddenImmediately, appErrorSources }) => {
         const bodyText = document.body?.innerText || "";
         const title = document.title || "";
         const currentUrl = window.location.href || "";
@@ -119,22 +138,7 @@ async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
         const missingAll = expectedAll.filter((value) => !bodyText.includes(value));
         const matchedAny = expectedAny.length === 0 || expectedAny.some((value) => bodyText.includes(value));
         const unexpected = forbidden.filter((value) => bodyText.includes(value));
-        if (missingAll.length === 0 && matchedAny && unexpected.length === 0) {
-          return {
-            outcome: "passed",
-            expectedAll,
-            missingAll,
-            expectedAny,
-            matchedAny,
-            forbidden,
-            unexpected,
-            text: bodyText.slice(0, 4000),
-            title,
-            url: currentUrl,
-          };
-        }
-
-        if (missingAll.length === 0 && matchedAny && unexpected.length > 0) {
+        if (unexpected.length > 0 && (failOnForbiddenImmediately || (missingAll.length === 0 && matchedAny))) {
           return {
             outcome: "unexpected-marker",
             unexpected,
@@ -149,9 +153,24 @@ async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
           };
         }
 
+        if (missingAll.length === 0 && matchedAny) {
+          return {
+            outcome: "passed",
+            expectedAll,
+            missingAll,
+            expectedAny,
+            matchedAny,
+            forbidden,
+            unexpected,
+            text: bodyText.slice(0, 4000),
+            title,
+            url: currentUrl,
+          };
+        }
+
         return false;
       },
-      { expectedAll, expectedAny, forbidden, appErrorSources },
+      { expectedAll, expectedAny, forbidden, failOnForbiddenImmediately, appErrorSources },
       { timeout: timeoutMs, polling: 500 },
     );
   } catch (error) {
@@ -160,7 +179,8 @@ async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
     const lastCheck = checkMarkers(text, screen);
     const missing = lastCheck.missingAll.length > 0 ? lastCheck.missingAll.join(", ") : "(none)";
     const unexpected = lastCheck.unexpected.length > 0 ? lastCheck.unexpected.join(", ") : "(none)";
-    throw new Error(`${screen.name}: screen did not reach expected visible markers within ${timeoutMs}ms. Missing: ${missing}. Forbidden still visible: ${unexpected}. ${error.message}`);
+    const title = await page.title().catch(() => "");
+    throw new Error(`${screen.name}: screen did not reach expected visible markers within ${timeoutMs}ms. Missing: ${missing}. Forbidden still visible: ${unexpected}. ${routeContext(screen, page, title)} ${error.message}`);
   }
 
   const result = await resultHandle.jsonValue();
@@ -171,7 +191,7 @@ async function waitForScreenMarkers(page, screen, timeoutMs = 60000) {
     throw new Error(`${screen.name}: visible app error matched /${result.appError}/ at ${result.url}`);
   }
   if (result.outcome === "unexpected-marker") {
-    throw new Error(`${screen.name}: forbidden visible markers were found: ${result.unexpected.join(", ")}`);
+    throw new Error(`${screen.name}: forbidden visible markers were found: ${result.unexpected.join(", ")}. ${routeContext(screen, page, result.title)}`);
   }
 
   const text = await visibleBodyText(page).catch(() => "");
@@ -227,6 +247,7 @@ async function run() {
   let page;
   let status = "failed";
   let failure = null;
+  let activeScreen = null;
 
   try {
     if (userDataDir) {
@@ -275,10 +296,11 @@ async function run() {
       screenType: config.appHome?.screenType || "app-home",
       expectedAllMarkers: config.appHome?.mustContainAll || [],
       expectedAnyMarkers: config.appHome?.mustContainAny || [],
-      diagnostics: await collectDiagnostics(page),
+      diagnostics: await collectDiagnostics(page, config.appHome),
     });
 
     for (const screen of config.screens) {
+      activeScreen = screen;
       await page.goto("about:blank", { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.goto(screen.url, { waitUntil: "domcontentloaded", timeout: 90000 });
       await waitForAppShell(page, config, interactive);
@@ -296,7 +318,7 @@ async function run() {
         expectedAllMarkers: markerResult.markerCheck.expectedAll,
         expectedAnyMarkers: markerResult.markerCheck.expectedAny,
         forbiddenMarkers: markerResult.markerCheck.forbidden,
-        diagnostics: await collectDiagnostics(page),
+        diagnostics: await collectDiagnostics(page, screen),
       });
     }
 
@@ -305,7 +327,7 @@ async function run() {
     failure = {
       message: error.message,
       stack: error.stack,
-      diagnostics: page ? await collectDiagnostics(page).catch(() => null) : null,
+      diagnostics: page ? await collectDiagnostics(page, activeScreen).catch(() => null) : null,
     };
     if (page) {
       try {

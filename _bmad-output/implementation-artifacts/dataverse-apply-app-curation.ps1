@@ -119,6 +119,25 @@ function Format-XmlAttribute {
   return [System.Security.SecurityElement]::Escape($Value)
 }
 
+function Get-NormalizedXml {
+  param(
+    [AllowNull()][string]$Value,
+    [string[]]$IgnoredAttributes = @()
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Value)) {
+    return ""
+  }
+
+  $document = [xml]$Value
+  foreach ($attributeName in $IgnoredAttributes) {
+    if ($document.DocumentElement.HasAttribute($attributeName)) {
+      $document.DocumentElement.RemoveAttribute($attributeName)
+    }
+  }
+  return $document.OuterXml
+}
+
 function Get-AppModule {
   $appName = Format-ODataStringLiteral -Value ([string]$script:Manifest.modelDrivenApp.displayName)
   $existing = Invoke-DataverseRequest -Method GET -Path "appmodules?`$select=appmoduleid,appmoduleidunique,name&`$filter=name eq '$appName'"
@@ -191,9 +210,12 @@ function Get-SavedQueryByName {
 
   $escapedTable = Format-ODataStringLiteral -Value $TableName
   $escapedName = Format-ODataStringLiteral -Value $ViewName
-  $result = Invoke-DataverseRequest -Method GET -Path "savedqueries?`$select=savedqueryid,name,returnedtypecode,querytype&`$filter=returnedtypecode eq '$escapedTable' and name eq '$escapedName' and querytype eq 0&`$top=1"
+  $result = Invoke-DataverseRequest -Method GET -Path "savedqueries?`$select=savedqueryid,name,returnedtypecode,querytype,fetchxml,layoutxml,columnsetxml&`$filter=returnedtypecode eq '$escapedTable' and name eq '$escapedName' and querytype eq 0&`$top=2"
   if ($result.value.Count -eq 0) {
     return $null
+  }
+  if ($result.value.Count -gt 1) {
+    throw "Duplicate curated views found: $TableName / $ViewName"
   }
 
   return $result.value[0]
@@ -204,7 +226,8 @@ function New-FetchXml {
     [Parameter(Mandatory = $true)][string]$TableName,
     [Parameter(Mandatory = $true)][string[]]$Fields,
     [Parameter(Mandatory = $true)][string]$SortField,
-    [object[]]$Conditions
+    [object[]]$Conditions,
+    [bool]$SortDescending = $false
   )
 
   $table = Format-XmlAttribute -Value $TableName
@@ -216,7 +239,8 @@ function New-FetchXml {
     $name = Format-XmlAttribute -Value $field
     [void]$xml.Append("<attribute name=""$name"" />")
   }
-  [void]$xml.Append("<order attribute=""$sort"" descending=""false"" />")
+  $descending = if ($SortDescending) { "true" } else { "false" }
+  [void]$xml.Append("<order attribute=""$sort"" descending=""$descending"" />")
   [void]$xml.Append('<filter type="and">')
   [void]$xml.Append('<condition attribute="statecode" operator="eq" value="0" />')
   foreach ($condition in @($Conditions)) {
@@ -269,33 +293,55 @@ function New-LayoutXml {
   return $xml.ToString()
 }
 
-function New-CuratedView {
+function Set-CuratedView {
   param(
     [Parameter(Mandatory = $true)][string]$TableName,
     [Parameter(Mandatory = $true)][string]$ViewName,
     [Parameter(Mandatory = $true)][string[]]$Fields,
     [Parameter(Mandatory = $true)][string]$JumpField,
     [Parameter(Mandatory = $true)][string]$SortField,
-    [object[]]$Conditions
+    [object[]]$Conditions,
+    [bool]$SortDescending = $false
   )
 
   $existing = Get-SavedQueryByName -TableName $TableName -ViewName $ViewName
-  if ($existing) {
-    return $existing
-  }
-
   $entity = Get-EntityDefinition -LogicalName $TableName
   $fieldList = @($entity.PrimaryIdAttribute) + @($Fields | Where-Object { $_ -ne $entity.PrimaryIdAttribute })
+  $fetchXml = New-FetchXml -TableName $TableName -Fields $fieldList -SortField $SortField -Conditions $Conditions -SortDescending $SortDescending
+  $layoutXml = New-LayoutXml -TableName $TableName -ObjectTypeCode ([int]$entity.ObjectTypeCode) -PrimaryIdAttribute ([string]$entity.PrimaryIdAttribute) -Fields $fieldList -JumpField $JumpField
+  $columnSetXml = "<columnset version=""1.0"">$(($fieldList | ForEach-Object { "<column>$_</column>" }) -join '')</columnset>"
   $body = @{
     name = $ViewName
     returnedtypecode = $TableName
     querytype = 0
     isquickfindquery = $false
     isdefault = $false
-    fetchxml = New-FetchXml -TableName $TableName -Fields $fieldList -SortField $SortField -Conditions $Conditions
-    layoutxml = New-LayoutXml -TableName $TableName -ObjectTypeCode ([int]$entity.ObjectTypeCode) -PrimaryIdAttribute ([string]$entity.PrimaryIdAttribute) -Fields $fieldList -JumpField $JumpField
-    columnsetxml = "<columnset version=""1.0"">$(($fieldList | ForEach-Object { "<column>$_</column>" }) -join '')</columnset>"
+    fetchxml = $fetchXml
+    layoutxml = $layoutXml
+    columnsetxml = $columnSetXml
     description = "Council MVP curated app view: $ViewName."
+  }
+
+  if ($existing) {
+    $fetchChanged = (Get-NormalizedXml -Value ([string]$existing.fetchxml) -IgnoredAttributes @("savedqueryid")) -ne (Get-NormalizedXml -Value $fetchXml)
+    $layoutChanged = (Get-NormalizedXml -Value ([string]$existing.layoutxml)) -ne (Get-NormalizedXml -Value $layoutXml)
+    $columnSetChanged = (Get-NormalizedXml -Value ([string]$existing.columnsetxml)) -ne (Get-NormalizedXml -Value $columnSetXml)
+    $changed = $fetchChanged -or $layoutChanged -or $columnSetChanged
+    if ($changed) {
+      Write-Host "Updating curated view: $TableName / $ViewName"
+      $updateBody = @{
+        fetchxml = $fetchXml
+        layoutxml = $layoutXml
+        columnsetxml = $columnSetXml
+        description = "Council MVP curated app view: $ViewName."
+      }
+      Invoke-DataverseRequest -Method PATCH -Path "savedqueries($($existing.savedqueryid))" -Body $updateBody -IncludeSolutionHeader | Out-Null
+      $existing = Get-SavedQueryByName -TableName $TableName -ViewName $ViewName
+    }
+    else {
+      Write-Host "Curated view is current: $TableName / $ViewName"
+    }
+    return $existing
   }
 
   Write-Host "Creating curated view: $TableName / $ViewName"
@@ -359,7 +405,7 @@ function Get-ConditionSet {
     "com_councilworkitem|In Review" { return @(@{ attribute = "com_state_group"; operator = "eq"; value = (Get-GlobalChoiceValue -ChoiceName "com_workitemstategroup" -Label "in_review") }) }
     "com_councilworkitem|Completed Recently" { return @(@{ attribute = "com_state_group"; operator = "eq"; value = (Get-GlobalChoiceValue -ChoiceName "com_workitemstategroup" -Label "completed") }) }
     "com_councilworkitem|Failed Needs Review" { return @(@{ attribute = "com_state_group"; operator = "eq"; value = (Get-GlobalChoiceValue -ChoiceName "com_workitemstategroup" -Label "failed") }) }
-    "com_councilreceipt|Recent Receipts" { return @() }
+    "com_councilreceipt|Recent Receipts" { return @(@{ attribute = "com_occurred_at"; operator = "last-x-days"; value = "30" }) }
     "com_councilreceipt|Failed Receipts" { return @(@{ attribute = "com_result"; operator = "eq"; value = (Get-GlobalChoiceValue -ChoiceName "com_receiptresult" -Label "failed") }) }
     "com_councilreceipt|Policy Denials" { return @(@{ attribute = "com_verb"; operator = "eq"; value = (Get-GlobalChoiceValue -ChoiceName "com_receiptverb" -Label "policy_denied") }) }
     "com_councilreceipt|External Action Requests" { return @(@{ attribute = "com_verb"; operator = "in"; values = @((Get-GlobalChoiceValue -ChoiceName "com_receiptverb" -Label "external_action_requested"), (Get-GlobalChoiceValue -ChoiceName "com_receiptverb" -Label "external_action_completed")) }) }
@@ -399,7 +445,9 @@ function Invoke-AppCuration {
     foreach ($viewName in @($table.views)) {
       $fields = Get-ViewFields -TableName $tableName
       $jump = if ($tableName -eq "com_councilworkitem") { "com_title" } else { $fields[0] }
-      $view = New-CuratedView -TableName $tableName -ViewName ([string]$viewName) -Fields $fields -JumpField $jump -SortField $jump -Conditions (Get-ConditionSet -TableName $tableName -ViewName ([string]$viewName))
+      $isRecentReceipts = $tableName -eq "com_councilreceipt" -and [string]$viewName -eq "Recent Receipts"
+      $sortField = if ($isRecentReceipts) { "com_occurred_at" } else { $jump }
+      $view = Set-CuratedView -TableName $tableName -ViewName ([string]$viewName) -Fields $fields -JumpField $jump -SortField $sortField -SortDescending $isRecentReceipts -Conditions (Get-ConditionSet -TableName $tableName -ViewName ([string]$viewName))
       $curatedViews += [ordered]@{
         table = $tableName
         name = [string]$view.name
@@ -433,6 +481,18 @@ function Invoke-AppCuration {
 
   Write-Host "Publishing customizations"
   Invoke-DataverseRequest -Method POST -Path "PublishAllXml" -Body @{} | Out-Null
+  $publishParameter = "<importexportxml><appmodules><appmodule>$appId</appmodule></appmodules></importexportxml>"
+  Invoke-DataverseRequest -Method POST -Path "PublishXml" -Body @{ ParameterXml = $publishParameter } | Out-Null
+
+  $publishedComponents = Get-AppComponents -AppId $appId
+  $verifiedComponents = @()
+  foreach ($view in $curatedViews) {
+    $matches = @($publishedComponents | Where-Object { $_.componenttype -eq 26 -and [string]$_.objectid -eq [string]$view.id })
+    if ($matches.Count -ne 1) {
+      throw "Published app component verification failed for $($view.table) / $($view.name): expected 1, found $($matches.Count)."
+    }
+    $verifiedComponents += [ordered]@{ table = [string]$view.table; name = [string]$view.name; id = [string]$view.id }
+  }
 
   $validation = Invoke-DataverseRequest -Method GET -Path "ValidateApp(AppModuleId=$appId)"
   $issues = @($validation.AppValidationResponse.ValidationIssueList)
@@ -454,6 +514,8 @@ function Invoke-AppCuration {
     pinnedForms = $pinnedForms
     pinnedViews = $pinnedViews
     curatedViews = $curatedViews
+    publishedCuratedViewComponentCount = $verifiedComponents.Count
+    publishedCuratedViewComponents = $verifiedComponents
     validateAppSuccess = [bool]$validation.AppValidationResponse.ValidationSuccess
     validationIssueCount = $issues.Count
     validationIssues = @($issues | ForEach-Object { [ordered]@{ errorType = $_.ErrorType; message = $_.Message; componentType = $_.ComponentType; displayName = $_.DisplayName } })

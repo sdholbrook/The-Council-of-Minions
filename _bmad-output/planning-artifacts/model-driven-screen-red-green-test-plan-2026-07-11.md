@@ -34,7 +34,7 @@ Dataverse metadata checks can pass while the model-driven app still fails for Do
 ## Latest Live Gate Result
 
 Status: RED
-Run ID: `2026-07-11T19-02-38-175Z`
+Run ID: `2026-07-11T19-21-54-362Z`
 
 Passing screen evidence:
 
@@ -46,16 +46,19 @@ Passing screen evidence:
 - `In Review` renders by curated view ID.
 - `Completed Recently` renders by curated view ID.
 - `Failed Needs Review` renders by curated view ID.
+- `Failed Receipts` renders by curated view ID and shows the seeded failed receipt.
+- `Recent Receipts` renders by curated view ID and shows the seeded receipt rows without falling back to `Active Council Receipts`.
+- The baseline Council Briefs view renders.
 
 Current failing screen:
 
-- `recent-receipts-view` requested `Recent Receipts` by curated view ID.
-- The model-driven app rendered `Active Council Receipts` instead.
-- The screenshot and trace prove the app is usable for receipt rows, but the curated receipt view route is not yet green.
+- `source-record-form` opens the intended seeded Source Record and renders `Manual sample source record`.
+- The live main form exposes `Name` and `Owner` but not the required `manual-demo-source-001` identifier marker.
+- The suite stops at this first user-visible form defect with screenshot, trace, requested/final URL, title, browser diagnostics, and machine-readable results.
 
 Next product fix:
 
-- Correct the Receipt table app/view curation so `Recent Receipts` opens as a real user-visible view, or explicitly decide that `Active Council Receipts` is the MVP receipt screen and update the acceptance contract.
+- Curate the Source Record main form so the canonical Source Record identifier is visible, then rerun the strict suite through the Work Item, Receipt, and Brief forms.
 
 ## Acceptance Command
 

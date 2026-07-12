@@ -263,3 +263,51 @@ No Dataverse MVP write decisions remain pending. Outlook/Graph live reads remain
 - Organization ID matched in pac env who: True
 - pac env list-settings exit code: 0
 - pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-11T15:16:03.8454532-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-11T15:20:46.9948817-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
+
+### Preflight Evidence - 2026-07-11T22:36:18.0429903-04:00
+
+- Manifest: C:\repo\The-Council-of-Minions\_bmad-output\implementation-artifacts\dataverse-mvp-schema-manifest.json
+- Expected environment URL: https://sdhdev.crm.dynamics.com
+- Expected environment unique name: unq0c0fa4db8614ef119f83000d3a342
+- Expected environment ID: ba9a96b2-f562-40f6-931d-6b55873954ee
+- Expected organization ID: 0c0fa4db-8614-ef11-9f83-000d3a342d36
+- Web API endpoint: https://sdhdev.api.crm.dynamics.com/api/data/v9.2
+- Discovery endpoint: https://globaldisco.crm.dynamics.com/api/discovery/v2.0/Instances
+- pac auth who exit code: 0
+- pac env who exit code: 0
+- Environment ID matched in pac env who: True
+- Organization ID matched in pac env who: True
+- pac env list-settings exit code: 0
+- pac auth who, pac env who, and pac env list-settings output retained only as summaries to avoid storing raw tenant details.
