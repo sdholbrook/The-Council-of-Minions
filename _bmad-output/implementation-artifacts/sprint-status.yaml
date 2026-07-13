@@ -64,9 +64,9 @@ development_status:
   2-6-record-failures-and-policy-denials: done
   epic-2-retrospective: optional
   epic-3: backlog
-  3-1-create-a-minion-brief-snapshot: backlog
-  3-2-build-delegation-decision-support-packages: backlog
-  3-3-prepare-internal-handoff-and-external-reply-drafts: backlog
+  3-1-create-a-minion-brief-snapshot: ready-for-dev
+  3-2-build-delegation-decision-support-packages: ready-for-dev
+  3-3-prepare-internal-handoff-and-external-reply-drafts: ready-for-dev
   epic-3-retrospective: optional
   epic-4: backlog
   4-1-create-lightweight-meaning-graph-records: backlog

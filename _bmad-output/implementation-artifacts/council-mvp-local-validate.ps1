@@ -178,6 +178,40 @@ try {
     }
   }
 
+
+  Invoke-ValidationStep "Minion Brief slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\minion-brief-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Minion Brief slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "MINION_BRIEF_SLICE_VALIDATE_OK") {
+      throw "Minion Brief slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Delegation support slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\delegation-support-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Delegation support slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "DELEGATION_SUPPORT_SLICE_VALIDATE_OK") {
+      throw "Delegation support slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Handoff drafts slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\handoff-drafts-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Handoff drafts slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "HANDOFF_DRAFTS_SLICE_VALIDATE_OK") {
+      throw "Handoff drafts slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {

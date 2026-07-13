@@ -1,0 +1,193 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "3-2-build-delegation-decision-support-packages",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove delegation decision support locally (FR12, FR13): two delegation support packages — one delegable, one carrying a non-delegable exception — each carrying suggested owner, rationale, confidence, recommended stance (delegate|hold|handle), urgency, source references resolving to sibling-slice CSR/CWI ids, and risks; the non-delegable package preserves its exception reason. The delegate/hold/handle decision itself is receipt-backed: one approval (proposed to approved) and one rejection (proposed to held), each with decision rationale, human/Doug authority basis, before state, after state, and result. Receipts here are local contract evidence only; every live Work Item state mutation stays receipt-gated and deferred.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "delegationDecisionsAreReceiptBacked": true,
+    "nonDelegableExceptionsPreserveExceptionReason": true,
+    "sourceReferencesResolveToSiblingSlices": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnly": true,
+    "noStateChangeExecutionInThisSlice": true
+  },
+  "delegationSupportRun": {
+    "runId": "DELEG-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 3.2 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "delegationCandidatesArePackagedWithStanceAndRationale": true,
+      "nonDelegableExceptionsPreserveExceptionReason": true,
+      "delegateHoldHandleDecisionsAreReceiptBacked": true,
+      "decisionAuthorityBasisIsHumanDoug": true,
+      "beforeAfterStatesFormManifestValidTransitions": true,
+      "receiptsAreLocalContractEvidenceOnly": true,
+      "liveWorkItemMutationReceiptGatedToEpic2": true
+    },
+    "delegationPackages": [
+      {
+        "packageId": "DSP-LOCAL-DELEG-001",
+        "delegable": true,
+        "candidateWorkItem": "CWI-LOCAL-FOLLOWUP-001",
+        "suggestedOwner": "minion-followup-runner",
+        "rationale": "The proposed follow-up on the mock Outlook message reference is low-risk, well-scoped, and its only blocker is live Graph read authorization. Once that read is approved, the follow-up can be packaged for delegation to a Minion that performs the verified read and reports back; no human judgment is required on the follow-up content itself.",
+        "confidence": 0.75,
+        "recommendedStance": "delegate",
+        "urgency": "normal",
+        "sourceReferences": [
+          "CWI-LOCAL-FOLLOWUP-001",
+          "CSR-OUTLOOK-MESSAGE-MOCK-001"
+        ],
+        "risks": "The backing source CSR-OUTLOOK-MESSAGE-MOCK-001 is mock/manual and not tenant verified, so the follow-up may dissolve once a live Outlook read is authorized. Delegation should be gated on the live-read approval and on Doug's explicit delegation approval; the Minion must not act before both gates clear.",
+        "nonDelegable": false
+      },
+      {
+        "packageId": "DSP-LOCAL-DELEG-002",
+        "delegable": false,
+        "candidateWorkItem": "CWI-LOCAL-DECISION-001",
+        "suggestedOwner": "Doug",
+        "rationale": "The proposed decision on the manual summary source is a high-risk governance item: it determines whether the source becomes executable Council work. Delegating that judgment to a Minion would bypass the Council's judgment gate, so this candidate is packaged as non-delegable and must be handled by Doug.",
+        "confidence": 0.95,
+        "recommendedStance": "handle",
+        "urgency": "normal",
+        "sourceReferences": [
+          "CWI-LOCAL-DECISION-001",
+          "CSR-MANUAL-SUMMARY-001"
+        ],
+        "risks": "Decisions are a high-risk governance class. Delegating this item to a Minion would silently expand Minion authority beyond the approved scope and bypass human judgment on whether the source becomes executable work; the non-delegable exception must be preserved on any downstream packaging.",
+        "nonDelegable": true,
+        "exceptionReason": "Decisions are a high-risk governance class requiring human judgment before any execution; delegating CWI-LOCAL-DECISION-001 to a Minion would bypass the Council judgment gate, so this candidate is non-delegable and must be handled by Doug. This exception reason is preserved verbatim on the package and on the rejection decision receipt so no downstream packaging can drop it."
+      }
+    ],
+    "decisions": [
+      {
+        "decisionId": "DEC-LOCAL-DELEG-APPROVE-001",
+        "decisionType": "approve",
+        "package": "DSP-LOCAL-DELEG-001",
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "decisionReceipt": "CR-LOCAL-DELEG-APPROVE-001",
+        "decisionRationale": "Doug approves delegating the proposed follow-up CWI-LOCAL-FOLLOWUP-001 to the suggested Minion owner, moving it from proposed to approved for delegation. The approval authorizes only the proposed-to-approved transition; the Minion may not act until the live Outlook read is separately approved.",
+        "authorityBasis": "Doug explicit human approval of delegation for CWI-LOCAL-FOLLOWUP-001 only (local contract evidence only)",
+        "actorType": "human",
+        "actorId": "Doug",
+        "beforeState": "proposed",
+        "afterState": "approved",
+        "result": "accepted"
+      },
+      {
+        "decisionId": "DEC-LOCAL-DELEG-REJECT-001",
+        "decisionType": "reject",
+        "package": "DSP-LOCAL-DELEG-002",
+        "workItem": "CWI-LOCAL-DECISION-001",
+        "decisionReceipt": "CR-LOCAL-DELEG-REJECT-001",
+        "decisionRationale": "Doug rejects delegating the proposed decision CWI-LOCAL-DECISION-001 because it is a non-delegable high-risk governance item; the rejection holds the item for human handling and preserves the non-delegable exception reason on the receipt so no downstream packaging can drop it.",
+        "authorityBasis": "Doug explicit human rejection of delegation for CWI-LOCAL-DECISION-001 (non-delegable exception; local contract evidence only)",
+        "actorType": "human",
+        "actorId": "Doug",
+        "beforeState": "proposed",
+        "afterState": "held",
+        "result": "rejected",
+        "nonDelegableExceptionReason": "Decisions are a high-risk governance class requiring human judgment before any execution; delegating CWI-LOCAL-DECISION-001 to a Minion would bypass the Council judgment gate, so this candidate is non-delegable and must be handled by Doug. This exception reason is preserved verbatim on the package and on the rejection decision receipt so no downstream packaging can drop it."
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-DELEG-APPROVE-001",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human approval of delegation for CWI-LOCAL-FOLLOWUP-001 only (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T13:05:00-04:00",
+        "com_idempotency_key": "deleg:approve:CWI-LOCAL-FOLLOWUP-001:proposed:approved",
+        "com_before_state": "proposed",
+        "com_after_state": "approved",
+        "com_evidence_refs": "decisions[DEC-LOCAL-DELEG-APPROVE-001]; delegationPackages[DSP-LOCAL-DELEG-001]; CWI-LOCAL-FOLLOWUP-001; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "Doug approved delegating CWI-LOCAL-FOLLOWUP-001 from proposed to approved. The approval authorizes only the delegation of this follow-up; it does not authorize the live Outlook read or any outbound action, both of which require their own separate approval.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; delegation_decision",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-DELEG-REJECT-001",
+        "com_work_item": "CWI-LOCAL-DECISION-001",
+        "com_verb": "held",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human rejection of delegation for CWI-LOCAL-DECISION-001 (non-delegable exception; local contract evidence only)",
+        "com_occurred_at": "2026-07-13T13:20:00-04:00",
+        "com_idempotency_key": "deleg:reject:CWI-LOCAL-DECISION-001:proposed:held",
+        "com_before_state": "proposed",
+        "com_after_state": "held",
+        "com_evidence_refs": "decisions[DEC-LOCAL-DELEG-REJECT-001]; delegationPackages[DSP-LOCAL-DELEG-002]; CWI-LOCAL-DECISION-001; CSR-MANUAL-SUMMARY-001",
+        "com_decision_rationale": "Doug rejected delegating CWI-LOCAL-DECISION-001 and held it for human handling because it is a non-delegable high-risk governance decision. The rejection preserves the non-delegable exception reason on this receipt so no downstream packaging can drop it; the original proposed Work Item and its extraction rationale stay unchanged.",
+        "com_confidence": 0.95,
+        "com_result": "rejected",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; delegation_decision; non_delegable_exception_preserved",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-DELEG-APPROVE-001 approval evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-DELEG-APPROVE-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "approval"
+      },
+      {
+        "com_name": "CR-LOCAL-DELEG-REJECT-001 supporting evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-DELEG-REJECT-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "deferredUpdate": "Applying the projected com_state_group approved (the delegation approval) to the live Dataverse Work Item row for CWI-LOCAL-FOLLOWUP-001 requires a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice. Gate: CR-LOCAL-DELEG-APPROVE-001."
+      },
+      {
+        "workItem": "CWI-LOCAL-DECISION-001",
+        "deferredUpdate": "Applying the projected com_state_group held (the delegation rejection) to the live Dataverse Work Item row for CWI-LOCAL-DECISION-001 requires a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice. Gate: CR-LOCAL-DELEG-REJECT-001."
+      },
+      {
+        "target": "com_councilreceipt ledger (all CR-LOCAL-DELEG-*)",
+        "targetKind": "receipt_ledger",
+        "deferredUpdate": "Persisting the Story 3.2 local delegation decision receipts into the live com_councilreceipt ledger is receipt-gated tenant write work outside this slice; these receipts are local contract evidence only."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "delegationSupportRun.delegationPackages DSP-LOCAL-DELEG-001 (delegable, recommendedStance delegate) and DSP-LOCAL-DELEG-002 (non-delegable, recommendedStance handle) each carry suggestedOwner, rationale, confidence (numeric in [0,1]), urgency, sourceReferences resolving to sibling-slice CSR/CWI ids, and risks",
+        "delegationSupportRun.delegationPackages[DSP-LOCAL-DELEG-002] preserves its non-delegable exceptionReason verbatim and sets nonDelegable=true; guards.nonDelegableExceptionsPreserveExceptionReason=true",
+        "delegationSupportRun.delegationPackages sourceReferences resolve to existing CSR/CWI ids from the Story 1.1/1.2/1.3 sibling slices; guards.sourceReferencesResolveToSiblingSlices=true"
+      ],
+      "tenantEvidenceRequired": "Packaging live delegation candidates from tenant Work Items and surfacing the delegate/hold/handle recommendation in the Council Queue remain gated to Epic 2 receipt-backed mutation semantics; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "delegationSupportRun.decisions DEC-LOCAL-DELEG-APPROVE-001 (approve) and DEC-LOCAL-DELEG-REJECT-001 (reject) are each bound to a receipt (CR-LOCAL-DELEG-APPROVE-001 / CR-LOCAL-DELEG-REJECT-001) with decisionRationale, authorityBasis (human/Doug), beforeState, afterState, and result",
+        "Receipt CR-LOCAL-DELEG-APPROVE-001 (verb approved, result accepted) records the transition proposed to approved; Receipt CR-LOCAL-DELEG-REJECT-001 (verb held, result rejected) records the transition proposed to held; both before/after states are in manifest com_workitemstategroup vocabulary and form valid transitions",
+        "Receipt CR-LOCAL-DELEG-REJECT-001 preserves the nonDelegableExceptionReason on its decision record; both receipts are append-only (com_append_only_locked=true) and carry local_contract_evidence_only/no_tenant_write/no_outbound_action policy flags"
+      ],
+      "tenantEvidenceRequired": "Applying the approved delegation and the held rejection to live tenant Work Items and emitting the backing receipts into the live com_councilreceipt ledger remain VERIFY IN TENANT; this slice is local contract evidence only (workItemStateChangesDeferred)."
+    }
+  ]
+}
