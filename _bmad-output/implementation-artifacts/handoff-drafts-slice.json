@@ -1,0 +1,375 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "3-3-prepare-internal-handoff-and-external-reply-drafts",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove internal-handoff and external-reply draft preparation locally: one internal handoff draft and two external reply drafts are each linked to a sibling-slice Work Item and source evidence and marked draftOnly=true with outboundApproved=false. An unapproved-outbound scenario records a policy-denial receipt (reusing the Story 2.6 failure receipt field set) for an attempted send without approval, with a noOutboundWithoutApproval guard proving no outbound action occurred. An approved-outbound scenario records an explicit approval receipt whose declared scope names exactly one external reply draft, after which that draft alone is marked releasable; the other two drafts stay draft-only. Drafts are prepared but never sent in this slice; any live external send stays receipt-gated and deferred. Receipts here are local contract evidence only.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "noOutboundWithoutApproval": true,
+    "draftsAreDraftOnlyUntilApproved": true,
+    "approvalsAuthorizeOnlyDeclaredDraftScope": true,
+    "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "draftRun": {
+    "runId": "HANDOFF-DRAFTS-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 3.3 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "inputWorkItemsFrom": [
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "draftsAreDraftOnlyUntilApproved": true,
+      "noOutboundWithoutApproval": true,
+      "approvalsAuthorizeOnlyDeclaredDraftScope": true,
+      "unapprovedOutboundSendIsPolicyDenied": true,
+      "approvalOfOneDraftDoesNotReleaseAnother": true,
+      "liveExternalSendReceiptGatedToEpic2": true,
+      "liveWorkItemStateChangeReceiptGatedToStory23": true,
+      "receiptsAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "failureCodeVocabulary": {
+      "basis": "Manifest com_councilreceipt.com_failure_code is a free-text column with no enumerated choice set. Story 2.6 established a local extension pattern naming failure codes with kind, retry allowance, and human-review semantics; this slice reuses that vocabulary shape and adds one Story 3.3 code for the outbound-without-approval denial. Codes are reproducible local-contract identifiers, not tenant enums; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2.",
+      "codes": [
+        {
+          "code": "outbound_send_without_approval",
+          "kind": "policy_denial",
+          "retryAllowed": false,
+          "humanReviewRequired": false,
+          "definition": "An outbound send was attempted on a draft whose outboundApproved flag is false. The send is denied as a policy denial (non-retryable without a policy change or an explicit approval receipt scoping that draft); no external action occurs. This mirrors the Story 2.6 auto_create_policy_denied shape: the affected artifact stays in a draft-only (reviewable) state until a human explicitly approves the outbound scope."
+        }
+      ]
+    },
+    "drafts": [
+      {
+        "draftId": "CWD-LOCAL-HANDOFF-INTERNAL-001",
+        "draftKind": "internal_handoff",
+        "com_name": "Internal handoff draft - ratify Fabric ontology deferral",
+        "linkedWorkItem": "CWI-LOCAL-DECISION-002",
+        "linkedSourceRecord": "CSR-MANUAL-MEETING-001",
+        "draftBodyRef": "draft:internal-handoff:CWD-LOCAL-HANDOFF-INTERNAL-001",
+        "draftOnly": true,
+        "outboundApproved": false,
+        "releasable": false,
+        "draftPreparedReceipt": "CR-LOCAL-HANDOFF-DRAFT-CREATED-001",
+        "approvalReceipt": null,
+        "denialReceipt": null,
+        "rationale": "An internal handoff draft is prepared from the Story 1.4 deferral decision (CWI-LOCAL-DECISION-002) for Doug to hand the Fabric ontology projection deferral to Epic 4 planning. The draft is draft-only and not approved for any outbound action; handing it off internally is itself a separate approval-gated step. No external recipient is involved."
+      },
+      {
+        "draftId": "CWD-LOCAL-REPLY-EXTERNAL-001",
+        "draftKind": "external_reply",
+        "com_name": "External reply draft - follow up on mock Outlook message (unapproved)",
+        "linkedWorkItem": "CWI-LOCAL-FOLLOWUP-001",
+        "linkedSourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "draftBodyRef": "draft:external-reply:CWD-LOCAL-REPLY-EXTERNAL-001",
+        "draftOnly": true,
+        "outboundApproved": false,
+        "releasable": false,
+        "draftPreparedReceipt": "CR-LOCAL-REPLY-DRAFT-CREATED-001",
+        "approvalReceipt": null,
+        "denialReceipt": "CR-LOCAL-OUTBOUND-DENIED-001",
+        "rationale": "An external reply draft is prepared from the Story 1.3 follow-up (CWI-LOCAL-FOLLOWUP-001) sourced from the mock Outlook message reference. The draft is draft-only and outboundApproved=false. An attempted send of this draft without approval is denied (see CR-LOCAL-OUTBOUND-DENIED-001); the draft stays unreleased and no outbound action occurred."
+      },
+      {
+        "draftId": "CWD-LOCAL-REPLY-EXTERNAL-002",
+        "draftKind": "external_reply",
+        "com_name": "External reply draft - send revised tenant readiness checklist to Priya (approved)",
+        "linkedWorkItem": "CWI-LOCAL-MEETING-ACTION-001",
+        "linkedSourceRecord": "CSR-MANUAL-MEETING-001",
+        "draftBodyRef": "draft:external-reply:CWD-LOCAL-REPLY-EXTERNAL-002",
+        "draftOnly": true,
+        "outboundApproved": true,
+        "releasable": true,
+        "draftPreparedReceipt": "CR-LOCAL-REPLY-DRAFT-CREATED-002",
+        "approvalReceipt": "CR-LOCAL-OUTBOUND-APPROVED-001",
+        "denialReceipt": null,
+        "rationale": "A second external reply draft is prepared from the Story 1.4 meeting action (CWI-LOCAL-MEETING-ACTION-001) to send the revised tenant readiness checklist to Priya. Doug explicitly approved the outbound scope for this draft only (see CR-LOCAL-OUTBOUND-APPROVED-001), so outboundApproved=true and releasable=true; the draft remains draft-only (it is eligible to be sent but is not sent in this slice) and the live external send is receipt-gated and deferred. The other two drafts stay draft-only and unreleased; approval of this draft does not release them."
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-HANDOFF-DRAFT-CREATED-001",
+        "com_work_item": "CWI-LOCAL-DECISION-002",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 3.3 contract validation; draft preparation is receipt-gated and not authorized against a live tenant",
+        "attemptedAction": "Prepare internal handoff draft CWD-LOCAL-HANDOFF-INTERNAL-001 from CWI-LOCAL-DECISION-002 and CSR-MANUAL-MEETING-001.",
+        "com_occurred_at": "2026-07-13T13:05:00-04:00",
+        "com_idempotency_key": "draft-prepare:internal-handoff:CWD-LOCAL-HANDOFF-INTERNAL-001:2026-07-13T13:05",
+        "com_before_state": "no internal handoff draft for CWI-LOCAL-DECISION-002",
+        "com_after_state": "draft CWD-LOCAL-HANDOFF-INTERNAL-001 prepared as draftOnly=true, outboundApproved=false, releasable=false; no outbound action",
+        "com_evidence_refs": "drafts[CWD-LOCAL-HANDOFF-INTERNAL-001]; CWI-LOCAL-DECISION-002; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "The internal handoff draft is recorded as a proposed (draft-only) artifact. No internal handoff is executed and no outbound action occurs; the draft stays draft-only until a separate approval authorizes the handoff scope.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; draft_only",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-REPLY-DRAFT-CREATED-001",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 3.3 contract validation; draft preparation is receipt-gated and not authorized against a live tenant",
+        "attemptedAction": "Prepare external reply draft CWD-LOCAL-REPLY-EXTERNAL-001 from CWI-LOCAL-FOLLOWUP-001 and CSR-OUTLOOK-MESSAGE-MOCK-001.",
+        "com_occurred_at": "2026-07-13T13:10:00-04:00",
+        "com_idempotency_key": "draft-prepare:external-reply:CWD-LOCAL-REPLY-EXTERNAL-001:2026-07-13T13:10",
+        "com_before_state": "no external reply draft for CWI-LOCAL-FOLLOWUP-001",
+        "com_after_state": "draft CWD-LOCAL-REPLY-EXTERNAL-001 prepared as draftOnly=true, outboundApproved=false, releasable=false; no outbound action",
+        "com_evidence_refs": "drafts[CWD-LOCAL-REPLY-EXTERNAL-001]; CWI-LOCAL-FOLLOWUP-001; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "The external reply draft is recorded as a proposed (draft-only) artifact. The mock Outlook source is hash/link-only mock evidence with no authorized body content, so the draft stays outboundApproved=false and no send occurs.",
+        "com_confidence": 0.85,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; draft_only; mock_manual_not_tenant_verified",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-REPLY-DRAFT-CREATED-002",
+        "com_work_item": "CWI-LOCAL-MEETING-ACTION-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 3.3 contract validation; draft preparation is receipt-gated and not authorized against a live tenant",
+        "attemptedAction": "Prepare external reply draft CWD-LOCAL-REPLY-EXTERNAL-002 from CWI-LOCAL-MEETING-ACTION-001 and CSR-MANUAL-MEETING-001.",
+        "com_occurred_at": "2026-07-13T13:15:00-04:00",
+        "com_idempotency_key": "draft-prepare:external-reply:CWD-LOCAL-REPLY-EXTERNAL-002:2026-07-13T13:15",
+        "com_before_state": "no external reply draft for CWI-LOCAL-MEETING-ACTION-001",
+        "com_after_state": "draft CWD-LOCAL-REPLY-EXTERNAL-002 prepared as draftOnly=true, outboundApproved=false, releasable=false; pending explicit approval before any outbound action",
+        "com_evidence_refs": "drafts[CWD-LOCAL-REPLY-EXTERNAL-002]; CWI-LOCAL-MEETING-ACTION-001; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "The external reply draft is recorded as a proposed (draft-only) artifact. It starts outboundApproved=false and releasable=false; Doug's later explicit approval (CR-LOCAL-OUTBOUND-APPROVED-001) flips outboundApproved and releasable to true for this draft only, but the live send stays receipt-gated and deferred.",
+        "com_confidence": 0.88,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; draft_only",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-OUTBOUND-DENIED-001",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "trusted_rule",
+        "com_actor_id": "local-outbound-approval-policy-rule",
+        "com_authority_basis": "local non-tenant Story 3.3 contract validation; outbound approval policy is evaluated locally and any live denial write is receipt-gated to Epic 2",
+        "attemptedAction": "Send external reply draft CWD-LOCAL-REPLY-EXTERNAL-001 to its external recipient without an explicit approval receipt scoping that draft.",
+        "com_occurred_at": "2026-07-13T13:20:00-04:00",
+        "com_idempotency_key": "policy-deny:outbound-send:CWD-LOCAL-REPLY-EXTERNAL-001:2026-07-13T13:20",
+        "com_before_state": "draft CWD-LOCAL-REPLY-EXTERNAL-001 draftOnly=true, outboundApproved=false, releasable=false",
+        "com_after_state": "outbound send denied; draft CWD-LOCAL-REPLY-EXTERNAL-001 stays draftOnly=true, outboundApproved=false, releasable=false; no outbound action occurred",
+        "com_evidence_refs": "drafts[CWD-LOCAL-REPLY-EXTERNAL-001]; CWI-LOCAL-FOLLOWUP-001; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "An outbound send was attempted on a draft whose outboundApproved flag is false. The send is denied as a non-retryable policy denial without an explicit approval receipt scoping this draft; the draft stays draft-only and reviewable. No message was sent and no external system was called. This reuses the Story 2.6 policy-denial receipt shape (attemptedAction, com_failure_code, retryAllowed, humanReviewRequired) so the denial is recorded, not silent.",
+        "com_confidence": 0.95,
+        "com_result": "rejected",
+        "com_failure_code": "outbound_send_without_approval",
+        "retryAllowed": false,
+        "humanReviewRequired": false,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; outbound_send_without_approval; draft_only; human_approval_required; mock_manual_not_tenant_verified",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-OUTBOUND-APPROVED-001",
+        "com_work_item": "CWI-LOCAL-MEETING-ACTION-001",
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human approval of the outbound send scope for draft CWD-LOCAL-REPLY-EXTERNAL-002 only",
+        "attemptedAction": "Approve the outbound send scope for external reply draft CWD-LOCAL-REPLY-EXTERNAL-002 so it may be released (sent) under a later receipt-gated external action.",
+        "com_occurred_at": "2026-07-13T13:35:00-04:00",
+        "com_idempotency_key": "approved:outbound-send:CWD-LOCAL-REPLY-EXTERNAL-002:2026-07-13T13:35",
+        "com_before_state": "draft CWD-LOCAL-REPLY-EXTERNAL-002 draftOnly=true, outboundApproved=false, releasable=false",
+        "com_after_state": "draft CWD-LOCAL-REPLY-EXTERNAL-002 draftOnly=true, outboundApproved=true, releasable=true; approval authorizes only this draft; no external send executed in this slice",
+        "com_evidence_refs": "drafts[CWD-LOCAL-REPLY-EXTERNAL-002].approvalRecord; CR-LOCAL-REPLY-DRAFT-CREATED-002; CWI-LOCAL-MEETING-ACTION-001; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "Doug approved the outbound send scope for draft CWD-LOCAL-REPLY-EXTERNAL-002 only. The approval scope is explicit and narrow: it authorizes releasing (sending) this one draft and does NOT authorize sending any other draft, any internal handoff execution, any tenant write, or any state change. The other two drafts stay draft-only and unreleased. The live external send itself stays receipt-gated and deferred to Epic 2.",
+        "approvedScope": "Authorize the outbound send (release) for external reply draft CWD-LOCAL-REPLY-EXTERNAL-002 only. This approval does NOT authorize sending CWD-LOCAL-REPLY-EXTERNAL-001 or CWD-LOCAL-HANDOFF-INTERNAL-001, executing any internal handoff, performing any tenant write, or changing any Work Item state group.",
+        "approvedDraftId": "CWD-LOCAL-REPLY-EXTERNAL-002",
+        "outOfScopeDraftIds": [
+          "CWD-LOCAL-REPLY-EXTERNAL-001",
+          "CWD-LOCAL-HANDOFF-INTERNAL-001"
+        ],
+        "outOfScopeActions": [
+          "send any other draft",
+          "execute the internal handoff",
+          "perform any tenant write",
+          "change any Work Item state group"
+        ],
+        "com_confidence": 0.95,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; approval_scope_narrow; approvals_authorize_only_declared_draft_scope",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-HANDOFF-DRAFT-CREATED-001 supporting evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-HANDOFF-DRAFT-CREATED-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-REPLY-DRAFT-CREATED-001 supporting evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-REPLY-DRAFT-CREATED-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-REPLY-DRAFT-CREATED-002 supporting evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-REPLY-DRAFT-CREATED-002",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-OUTBOUND-DENIED-001 failure evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-OUTBOUND-DENIED-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "failure_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-OUTBOUND-APPROVED-001 approval evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-OUTBOUND-APPROVED-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "approval"
+      }
+    ],
+    "outboundDenials": [
+      {
+        "receipt": "CR-LOCAL-OUTBOUND-DENIED-001",
+        "deniedDraft": "CWD-LOCAL-REPLY-EXTERNAL-001",
+        "denialRationale": "An outbound send was attempted on a draft whose outboundApproved flag is false. The send is denied as a non-retryable policy denial; no outbound action occurred and the draft stays draft-only and reviewable.",
+        "policyFlagsTraced": [
+          "policy_denied",
+          "outbound_send_without_approval",
+          "draft_only",
+          "human_approval_required",
+          "mock_manual_not_tenant_verified"
+        ],
+        "evidenceRefsTraced": [
+          "CWD-LOCAL-REPLY-EXTERNAL-001",
+          "CWI-LOCAL-FOLLOWUP-001",
+          "CSR-OUTLOOK-MESSAGE-MOCK-001"
+        ],
+        "noOutboundWithoutApproval": true,
+        "outboundOccurred": false,
+        "draftRemainsDraftOnly": true
+      }
+    ],
+    "approvedOutboundScopes": [
+      {
+        "receipt": "CR-LOCAL-OUTBOUND-APPROVED-001",
+        "approvedDraft": "CWD-LOCAL-REPLY-EXTERNAL-002",
+        "approvedScope": "Authorize the outbound send (release) for external reply draft CWD-LOCAL-REPLY-EXTERNAL-002 only.",
+        "outOfScopeDraftIds": [
+          "CWD-LOCAL-REPLY-EXTERNAL-001",
+          "CWD-LOCAL-HANDOFF-INTERNAL-001"
+        ],
+        "releasedDraftIds": [
+          "CWD-LOCAL-REPLY-EXTERNAL-002"
+        ],
+        "unreleasedDraftIds": [
+          "CWD-LOCAL-REPLY-EXTERNAL-001",
+          "CWD-LOCAL-HANDOFF-INTERNAL-001"
+        ],
+        "outboundOccurred": false,
+        "liveSendDeferredToEpic2": true
+      }
+    ],
+    "noOutboundWithoutApprovalProof": [
+      {
+        "draft": "CWD-LOCAL-HANDOFF-INTERNAL-001",
+        "guard": "noOutboundWithoutApproval",
+        "value": true,
+        "proof": "CWD-LOCAL-HANDOFF-INTERNAL-001 is an internal handoff draft with outboundApproved=false and releasable=false. No external_action_requested or external_action_completed receipt was emitted for this draft. No approval receipt scopes this draft. Absence of any external-action-verb receipt binding this draft is the negative evidence that no outbound action occurred without approval."
+      },
+      {
+        "draft": "CWD-LOCAL-REPLY-EXTERNAL-001",
+        "guard": "noOutboundWithoutApproval",
+        "value": true,
+        "proof": "CWD-LOCAL-REPLY-EXTERNAL-001 has outboundApproved=false and releasable=false. An attempted send was denied by CR-LOCAL-OUTBOUND-DENIED-001 (verb policy_denied, result rejected); the denial is recorded, not the send. No external_action_requested or external_action_completed receipt was emitted for this draft. Absence of any external-action-verb receipt binding this draft is the negative evidence that no outbound action occurred without approval."
+      },
+      {
+        "draft": "CWD-LOCAL-REPLY-EXTERNAL-002",
+        "guard": "noOutboundWithoutApproval",
+        "value": true,
+        "proof": "CWD-LOCAL-REPLY-EXTERNAL-002 has outboundApproved=true and releasable=true after Doug's explicit approval (CR-LOCAL-OUTBOUND-APPROVED-001), but no external_action_requested or external_action_completed receipt was emitted in this slice; the live send is recorded as deferred. The draft became releasable only after approval, so no outbound action occurred without approval. Absence of any external-action-verb receipt binding this draft is the negative evidence that the (deferred) send has not yet occurred."
+      }
+    ],
+    "deferredOutboundActions": [
+      {
+        "draft": "CWD-LOCAL-REPLY-EXTERNAL-002",
+        "deferredAction": "Executing the approved outbound send for CWD-LOCAL-REPLY-EXTERNAL-002 (the revised tenant readiness checklist to Priya) is a receipt-backed external action gated to Epic 2; this slice records the approval and releasable flag only and performs no live external send.",
+        "receiptGatedTo": "Epic 2 receipt-backed external action semantics"
+      },
+      {
+        "draft": "CWD-LOCAL-REPLY-EXTERNAL-001",
+        "deferredAction": "Any future send of CWD-LOCAL-REPLY-EXTERNAL-001 requires a separate explicit approval receipt scoping this draft; the policy denial CR-LOCAL-OUTBOUND-DENIED-001 is non-retryable without such an approval. No live external send is performed in this slice.",
+        "receiptGatedTo": "Epic 2 receipt-backed external action semantics"
+      },
+      {
+        "draft": "CWD-LOCAL-HANDOFF-INTERNAL-001",
+        "deferredAction": "Any internal handoff execution for CWD-LOCAL-HANDOFF-INTERNAL-001 requires a separate explicit approval receipt scoping the handoff; this slice records the draft only and performs no handoff execution or outbound action.",
+        "receiptGatedTo": "Epic 2 receipt-backed external action semantics"
+      }
+    ],
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-DECISION-002",
+        "deferredUpdate": "Any com_state_group move on CWI-LOCAL-DECISION-002 driven by the internal handoff draft requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the draft only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "deferredUpdate": "Any com_state_group move on CWI-LOCAL-FOLLOWUP-001 driven by the external reply draft or its denial requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the draft and denial only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+        "deferredUpdate": "Any com_state_group move on CWI-LOCAL-MEETING-ACTION-001 driven by the approved external reply draft requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the approval only and performs no state change."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "draftRun.drafts CWD-LOCAL-HANDOFF-INTERNAL-001 (draftKind internal_handoff) and CWD-LOCAL-REPLY-EXTERNAL-001 (draftKind external_reply), each linked to a sibling-slice Work Item (CWI-LOCAL-DECISION-002, CWI-LOCAL-FOLLOWUP-001) and source evidence (CSR-MANUAL-MEETING-001, CSR-OUTLOOK-MESSAGE-MOCK-001)",
+        "draftRun.drafts CWD-LOCAL-HANDOFF-INTERNAL-001 and CWD-LOCAL-REPLY-EXTERNAL-001 each carry draftOnly=true, outboundApproved=false (strict booleans) and a draftPreparedReceipt binding to a slice receipt",
+        "draftRun.receiptSourceLinks binds each draft-prepared receipt to its source evidence with the manifest com_evidence_role supporting",
+        "guards.draftsAreDraftOnlyUntilApproved=true and guards.noOutboundWithoutApproval=true"
+      ],
+      "tenantEvidenceRequired": "Persisting drafts and their linkage to live tenant Work Items / Source Records is receipt-gated to Epic 2; this slice is local contract evidence only and no tenant write or outbound action occurred."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "draftRun.receipts CR-LOCAL-OUTBOUND-DENIED-001 (verb policy_denied, result rejected) carries the Story 2.6 failure receipt field set: attemptedAction, com_failure_code (outbound_send_without_approval), retryAllowed=false, humanReviewRequired=false, com_before_state, com_after_state, com_evidence_refs, com_decision_rationale, com_policy_flags, com_append_only_locked",
+        "draftRun.failureCodeVocabulary declares outbound_send_without_approval with kind policy_denial, retryAllowed=false, humanReviewRequired=false as a Story 3.3 local extension reusing the 2.6 vocabulary shape",
+        "draftRun.outboundDenials for CR-LOCAL-OUTBOUND-DENIED-001 sets noOutboundWithoutApproval=true, outboundOccurred=false, and draftRemainsDraftOnly=true for CWD-LOCAL-REPLY-EXTERNAL-001",
+        "draftRun.noOutboundWithoutApprovalProof binds each draft's noOutboundWithoutApproval guard to a proof entry; no external_action_requested or external_action_completed receipt was emitted for any draft"
+      ],
+      "tenantEvidenceRequired": "Recording the policy denial against a live tenant Receipt table and adopting the failure code as a tenant-wide choice value are receipt-gated to Epic 2; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "draftRun.receipts CR-LOCAL-OUTBOUND-APPROVED-001 (verb approved, actor human/Doug) carries an approvedScope and approvedDraftId naming CWD-LOCAL-REPLY-EXTERNAL-002 plus outOfScopeDraftIds listing the other two drafts",
+        "draftRun.drafts CWD-LOCAL-REPLY-EXTERNAL-002 has outboundApproved=true and releasable=true (strict booleans) after that approval receipt, while CWD-LOCAL-REPLY-EXTERNAL-001 and CWD-LOCAL-HANDOFF-INTERNAL-001 stay outboundApproved=false and releasable=false",
+        "draftRun.approvedOutboundScopes for CR-LOCAL-OUTBOUND-APPROVED-001 lists releasedDraftIds=[CWD-LOCAL-REPLY-EXTERNAL-002] and unreleasedDraftIds=[CWD-LOCAL-REPLY-EXTERNAL-001, CWD-LOCAL-HANDOFF-INTERNAL-001], with outboundOccurred=false and liveSendDeferredToEpic2=true",
+        "guards.approvalsAuthorizeOnlyDeclaredDraftScope=true; the second and third drafts remain unreleased because the approval scope names only CWD-LOCAL-REPLY-EXTERNAL-002"
+      ],
+      "tenantEvidenceRequired": "Executing the approved outbound send and any receipt-backed Work Item state change remain gated to Epic 2; this slice records the approval boundary and releasable flag only and performs no live external send."
+    }
+  ]
+}
