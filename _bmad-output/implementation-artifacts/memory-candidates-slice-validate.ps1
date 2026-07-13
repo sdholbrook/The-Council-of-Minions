@@ -127,6 +127,59 @@ function Invoke-CollectSiblingIds {
   }
 }
 
+function Invoke-CollectSiblingObjects {
+  # Recursively walk a parsed sibling slice JSON and harvest the FULL object for
+  # every canonical Council id encountered, keyed by that id. This complements
+  # Invoke-CollectSiblingIds (which only keeps id presence) so origin-pattern
+  # content checks can prove facts against actual sibling structure — CWI
+  # com_primary_source_record / com_type, sibling receipt com_verb /
+  # com_before_state / com_after_state — rather than id membership alone.
+  param(
+    [Parameter(Mandatory = $false)][AllowNull()]$Node,
+    [Parameter(Mandatory = $true)][hashtable]$WorkItemsById,
+    [Parameter(Mandatory = $true)][hashtable]$ReceiptsById,
+    [Parameter(Mandatory = $true)][hashtable]$SourceRecordsById
+  )
+
+  if ($null -eq $Node) { return }
+  if ($Node -is [System.Collections.IList]) {
+    foreach ($item in $Node) {
+      Invoke-CollectSiblingObjects -Node $item -WorkItemsById $WorkItemsById -ReceiptsById $ReceiptsById -SourceRecordsById $SourceRecordsById
+    }
+    return
+  }
+  if ($Node -is [pscustomobject]) {
+    foreach ($prop in $Node.PSObject.Properties) {
+      switch ($prop.Name) {
+        "com_council_work_item_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id) -and -not $WorkItemsById.ContainsKey($id)) {
+            $WorkItemsById[$id] = $Node
+          }
+          break
+        }
+        "com_receipt_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id) -and -not $ReceiptsById.ContainsKey($id)) {
+            $ReceiptsById[$id] = $Node
+          }
+          break
+        }
+        "com_council_source_record_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id) -and -not $SourceRecordsById.ContainsKey($id)) {
+            $SourceRecordsById[$id] = $Node
+          }
+          break
+        }
+        default {
+          Invoke-CollectSiblingObjects -Node $prop.Value -WorkItemsById $WorkItemsById -ReceiptsById $ReceiptsById -SourceRecordsById $SourceRecordsById
+        }
+      }
+    }
+  }
+}
+
 function Test-HasNonEmptyField {
   param(
     [Parameter(Mandatory = $true)]$Record,
@@ -347,6 +400,16 @@ foreach ($guardProperty in @($slice.guards.PSObject.Properties)) {
     Add-Issue $issues "Slice guard must be boolean true: $($guardProperty.Name)."
   }
 }
+# Guards are contract labels only; every fact they name is independently proven
+# below by a structural join — no memory_promoted receipt / no instruction id
+# (noMemoryPromotionInThisSlice, noInstructionCreatedInThisSlice,
+# memoryCandidatesRemainDistinctFromInstructions, actsAsInstruction...),
+# actsAsInstruction=false per candidate + no instruction mint
+# (actsAsInstructionStrictlyFalseForNonPromotedCandidates), append-only locked
+# receipts + unique idempotency keys (receiptsAreAppendOnly), and the live-write
+# field ban + deferred blocks (noTenantWrites/noOutboundAction/...). A flipped
+# boolean fails here as a contract-presence break; the structural proof is the
+# join, not the boolean.
 
 # Named sibling structural loads (for deep per-slice tripwires + runId collision).
 $manualSources = @($manualSlice.manualCapture.sampleRecords | Where-Object { $null -ne $_ })
@@ -397,6 +460,9 @@ $siblingReceiptIds = @{}
 $siblingIdempotencyKeys = @{}
 $siblingSourceRecordIds = @{}
 $siblingMemoryCandidateIds = @{}
+$siblingWorkItemById = @{}
+$siblingReceiptById = @{}
+$siblingSourceRecordById = @{}
 $siblingSliceFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*.json" |
   Where-Object { $_.Name -ne "dataverse-mvp-schema-manifest.json" -and $_.Name -ne "memory-candidates-slice.json" } |
   ForEach-Object { $_.FullName })
@@ -406,6 +472,7 @@ if ($siblingSliceFiles.Count -eq 0) {
 foreach ($siblingFile in $siblingSliceFiles) {
   $siblingJson = Read-JsonInput -Path $siblingFile
   Invoke-CollectSiblingIds -Node $siblingJson -WorkItems $siblingWorkItemIds -Receipts $siblingReceiptIds -Keys $siblingIdempotencyKeys -SourceRecords $siblingSourceRecordIds -MemoryCandidates $siblingMemoryCandidateIds
+  Invoke-CollectSiblingObjects -Node $siblingJson -WorkItemsById $siblingWorkItemById -ReceiptsById $siblingReceiptById -SourceRecordsById $siblingSourceRecordById
 }
 
 # Fold harvested source-record ids into the named prior-source set used for
@@ -618,6 +685,13 @@ foreach ($candidate in $candidates) {
     }
   }
 
+  # Story 4.3 AC1 requires a recall/use policy on every candidate even though
+  # the manifest marks com_recall_use_policy as required:false; field
+  # completeness must enforce it here, not lean on manifest required=true.
+  if (-not (Test-HasNonEmptyField -Record $candidate -Field "com_recall_use_policy")) {
+    Add-Issue $issues "$subject must carry a non-empty com_recall_use_policy (Story 4.3 AC1 requires a recall/use policy on every candidate)."
+  }
+
   if ([string]::IsNullOrWhiteSpace($candidateId)) {
     Add-Issue $issues "Memory Candidate must declare com_council_memory_candidate_id."
   }
@@ -695,8 +769,47 @@ foreach ($candidate in $candidates) {
           if ($siblingSourceRecordIds.ContainsKey($refStr)) { continue }
           Add-Issue $issues "$subject sourceRecordPattern.sourceRefs entry '$refStr' must resolve to a known sibling Source Record or Work Item."
         }
+        # Prove the multi-item distinct-type pattern against sibling work-item
+        # structure (not id presence + a non-empty patternNote). Each referenced
+        # work item must be primary-linked to this candidate's com_source_record,
+        # and the referenced work items must span at least two distinct com_type
+        # values — that is the durable pattern the candidate claims to observe.
+        $patternWorkItemRefs = @($refs | ForEach-Object { [string]$_ } | Where-Object { $_ -ne $candidateSource -and $siblingWorkItemById.ContainsKey($_) })
+        if ($patternWorkItemRefs.Count -lt 2) {
+          Add-Issue $issues "$subject sourceRecordPattern.sourceRefs must reference at least two sibling work items primary-linked to $candidateSource to prove the multi-item pattern, found $($patternWorkItemRefs.Count) resolving work-item ref(s)."
+        }
+        $patternDistinctTypes = @{}
+        foreach ($ref in $patternWorkItemRefs) {
+          $refStr = [string]$ref
+          $workItemObj = $siblingWorkItemById[$refStr]
+          if ([string]$workItemObj.com_primary_source_record -ne $candidateSource) {
+            Add-Issue $issues "$subject sourceRecordPattern.sourceRefs work item '$refStr' must be primary-linked (com_primary_source_record) to $candidateSource to prove it was produced from this source, found: $($workItemObj.com_primary_source_record)."
+          }
+          $workItemType = [string]$workItemObj.com_type
+          if (-not [string]::IsNullOrWhiteSpace($workItemType)) {
+            $patternDistinctTypes[$workItemType] = $true
+          }
+        }
+        if ($patternDistinctTypes.Count -lt 2) {
+          Add-Issue $issues "$subject sourceRecordPattern must observe at least two distinct com_type values across its referenced work items to prove a multi-item distinct-type pattern, found $($patternDistinctTypes.Count) type(s): $(($patternDistinctTypes.Keys) -join ', ')."
+        }
+        # patternNote must be derived from observed evidence, not a self-asserted
+        # non-empty string: it must mention at least one of the distinct types
+        # actually observed on the referenced sibling work items.
         if (-not (Test-HasNonEmptyField -Record $pattern -Field "patternNote")) {
           Add-Issue $issues "$subject sourceRecordPattern.patternNote must state the observed pattern (not self-asserted)."
+        }
+        elseif ($patternDistinctTypes.Count -ge 1) {
+          $patternNoteText = [string]$pattern.patternNote
+          $noteMentionsObservedType = $false
+          foreach ($observedType in @($patternDistinctTypes.Keys)) {
+            if ($patternNoteText -match [regex]::Escape($observedType)) {
+              $noteMentionsObservedType = $true
+            }
+          }
+          if (-not $noteMentionsObservedType) {
+            Add-Issue $issues "$subject sourceRecordPattern.patternNote must mention at least one observed com_type value ($(($patternDistinctTypes.Keys) -join ', ')) drawn from the referenced sibling work items; a non-empty self-asserted note is not proof."
+          }
         }
       }
     }
@@ -713,11 +826,41 @@ foreach ($candidate in $candidates) {
         if ($receiptRefs.Count -lt 1) {
           Add-Issue $issues "$subject receiptPatternOrigin.receipts must list at least one resolving sibling receipt, found $($receiptRefs.Count)."
         }
+        # Prove the receipt pattern against sibling receipt content (not id
+        # presence + a non-empty patternNote). Each referenced sibling receipt
+        # must carry a manifest verb and a real before/after delta; the observed
+        # verbs constitute the pattern the candidate claims to have seen.
+        $patternObservedVerbs = @{}
         foreach ($ref in $receiptRefs) {
           $refStr = [string]$ref
           if (-not $siblingReceiptIds.ContainsKey($refStr)) {
             Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' must resolve to a known sibling Receipt."
+            continue
           }
+          $siblingReceiptObj = $siblingReceiptById[$refStr]
+          if ($null -eq $siblingReceiptObj) {
+            Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' resolved an id but no sibling receipt object could be harvested; pattern content cannot be proven."
+            continue
+          }
+          $observedVerb = [string]$siblingReceiptObj.com_verb
+          if ([string]::IsNullOrWhiteSpace($observedVerb)) {
+            Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' sibling receipt carries no com_verb; pattern verb cannot be proven."
+          }
+          elseif ($receiptVerbs -notcontains $observedVerb) {
+            Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' sibling receipt verb '$observedVerb' is not in manifest com_receiptverb vocabulary."
+          }
+          else {
+            $patternObservedVerbs[$observedVerb] = $true
+          }
+          if (-not (Test-HasNonEmptyField -Record $siblingReceiptObj -Field "com_before_state") -or -not (Test-HasNonEmptyField -Record $siblingReceiptObj -Field "com_after_state")) {
+            Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' sibling receipt must carry non-empty com_before_state and com_after_state to prove a real observed delta."
+          }
+          elseif ([string]$siblingReceiptObj.com_before_state -eq [string]$siblingReceiptObj.com_after_state) {
+            Add-Issue $issues "$subject receiptPatternOrigin.receipts entry '$refStr' sibling receipt com_before_state and com_after_state must differ (real observed delta), found: $($siblingReceiptObj.com_before_state)."
+          }
+        }
+        if ($patternObservedVerbs.Count -eq 0) {
+          Add-Issue $issues "$subject receiptPatternOrigin must observe at least one manifest receipt verb across its referenced sibling receipts; id presence alone is not a pattern."
         }
         $sourceRefs = @($pattern.sourceRefs | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
         foreach ($ref in $sourceRefs) {
@@ -726,8 +869,22 @@ foreach ($candidate in $candidates) {
           if ($siblingSourceRecordIds.ContainsKey($refStr)) { continue }
           Add-Issue $issues "$subject receiptPatternOrigin.sourceRefs entry '$refStr' must resolve to a known sibling Source Record."
         }
+        # patternNote must be derived from observed evidence: it must mention at
+        # least one observed verb drawn from the referenced sibling receipts.
         if (-not (Test-HasNonEmptyField -Record $pattern -Field "patternNote")) {
           Add-Issue $issues "$subject receiptPatternOrigin.patternNote must state the observed pattern (not self-asserted)."
+        }
+        elseif ($patternObservedVerbs.Count -ge 1) {
+          $patternNoteText = [string]$pattern.patternNote
+          $noteMentionsObservedVerb = $false
+          foreach ($observedVerb in @($patternObservedVerbs.Keys)) {
+            if ($patternNoteText -match [regex]::Escape($observedVerb)) {
+              $noteMentionsObservedVerb = $true
+            }
+          }
+          if (-not $noteMentionsObservedVerb) {
+            Add-Issue $issues "$subject receiptPatternOrigin.patternNote must mention at least one observed receipt verb ($(($patternObservedVerbs.Keys) -join ', ')) drawn from the referenced sibling receipts; a non-empty self-asserted note is not proof."
+          }
         }
       }
     }
@@ -746,6 +903,34 @@ foreach ($candidate in $candidates) {
     }
     else {
       $historyReceiptIds[$entryReceipt] = $true
+      # Join history fromState/toState/role to the bound slice receipt so the
+      # history rows are a content delta, not ornamental id pointers. role must
+      # match the bound receipt verb; fromState/toState must equal the bound
+      # receipt com_before_state/com_after_state (proven, not self-asserted).
+      $boundHistoryReceipt = $sliceReceiptById[$entryReceipt]
+      $entryRole = [string]$entry.role
+      $boundVerb = [string]$boundHistoryReceipt.com_verb
+      if ($boundVerb -eq "memory_proposed") {
+        if ($entryRole -ne "creation") {
+          Add-Issue $issues "$subject receiptHistory entry for receipt $entryReceipt (verb memory_proposed) must carry role 'creation', found: $entryRole."
+        }
+      }
+      elseif ($boundVerb -eq "reviewed") {
+        if ($entryRole -ne "review_transition") {
+          Add-Issue $issues "$subject receiptHistory entry for receipt $entryReceipt (verb reviewed) must carry role 'review_transition', found: $entryRole."
+        }
+      }
+      else {
+        if ([string]::IsNullOrWhiteSpace($entryRole)) {
+          Add-Issue $issues "$subject receiptHistory entry for receipt $entryReceipt must carry a non-empty role."
+        }
+      }
+      if ([string]$entry.fromState -ne [string]$boundHistoryReceipt.com_before_state) {
+        Add-Issue $issues "$subject receiptHistory entry for receipt $entryReceipt fromState must equal the bound receipt com_before_state ($($boundHistoryReceipt.com_before_state)), found: $($entry.fromState)."
+      }
+      if ([string]$entry.toState -ne [string]$boundHistoryReceipt.com_after_state) {
+        Add-Issue $issues "$subject receiptHistory entry for receipt $entryReceipt toState must equal the bound receipt com_after_state ($($boundHistoryReceipt.com_after_state)), found: $($entry.toState)."
+      }
     }
   }
   # com_created_receipt and com_review_receipt must exist and be in history.

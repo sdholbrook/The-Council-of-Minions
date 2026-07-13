@@ -231,7 +231,13 @@ function Test-NoAuthorityFields {
     "approvalStatus",
     "workflowState",
     "com_owner",
-    "stateGroup"
+    "stateGroup",
+    "com_status",
+    "com_recordstatus",
+    "recordStatus",
+    "com_record_status",
+    "com_review_state",
+    "reviewState"
   )
   foreach ($field in $forbidden) {
     if ($Record.PSObject.Properties.Name -contains $field) {
@@ -282,10 +288,16 @@ foreach ($vocabulary in @(
   }
 }
 
-$vocabularyByName = @{
-  "com_graphedgetype"  = $graphEdgeTypes
-  "com_graphentitytype" = $graphEntityTypes
-  "com_workitemtype"   = $workItemTypes
+# Derive allowed projection vocabularies from the full manifest choice surface
+# (not a hardcoded three-name subset the fixture happens to use).
+$vocabularyByName = @{}
+foreach ($choice in @($manifest.choices | Where-Object { $null -ne $_ })) {
+  $choiceName = [string]$choice.name
+  if ([string]::IsNullOrWhiteSpace($choiceName)) { continue }
+  $vocabularyByName[$choiceName] = @($choice.values | Where-Object { $null -ne $_ })
+}
+if ($vocabularyByName.Count -eq 0) {
+  Add-Issue $issues "Manifest choices yielded no projection vocabularies; term-resolution checks would silently no-op."
 }
 
 # ---------------------------------------------------------------------------
@@ -321,13 +333,6 @@ foreach ($guardProperty in @($slice.guards.PSObject.Properties)) {
   if ($guardProperty.Value -isnot [bool] -or -not $guardProperty.Value) {
     Add-Issue $issues "Projection guard must be boolean true: $($guardProperty.Name)."
   }
-}
-
-if ($slice.guards.planesAreProjectionsOnly -isnot [bool] -or -not $slice.guards.planesAreProjectionsOnly) {
-  Add-Issue $issues "Guard planesAreProjectionsOnly must be strict boolean true."
-}
-if ($slice.guards.driftNeverEditsPlaneInPlace -isnot [bool] -or -not $slice.guards.driftNeverEditsPlaneInPlace) {
-  Add-Issue $issues "Guard driftNeverEditsPlaneInPlace must be strict boolean true."
 }
 
 # ---------------------------------------------------------------------------
@@ -410,11 +415,17 @@ elseif ($allSliceRunIds.ContainsKey([string]$run.runId)) {
   Add-Issue $issues "Projection run runId collides with a runId harvested from a sibling slice: $($run.runId)."
 }
 
-if ([string]$run.actorType -cne "system" -and $actorTypes -notcontains [string]$run.actorType) {
+if ($actorTypes -notcontains [string]$run.actorType) {
   Add-Issue $issues "Projection run actorType is not in manifest com_actortype vocabulary: $($run.actorType)."
 }
-elseif ($actorTypes -notcontains [string]$run.actorType) {
-  Add-Issue $issues "Projection run actorType is not in manifest com_actortype vocabulary: $($run.actorType)."
+if (-not (Test-HasNonEmptyField -Record $run -Field "actorId")) {
+  Add-Issue $issues "Projection run must carry a non-empty actorId."
+}
+if (-not (Test-HasNonEmptyField -Record $run -Field "authorityBasis")) {
+  Add-Issue $issues "Projection run must carry a non-empty authorityBasis."
+}
+if (-not (Test-HasNonEmptyField -Record $run -Field "semanticContractVersion")) {
+  Add-Issue $issues "Projection run must carry a non-empty semanticContractVersion."
 }
 
 if ([string]$run.canonicalSource -ne "council-semantic-contract") {
@@ -505,7 +516,7 @@ foreach ($proj in $projections) {
   $vocabName = [string]$proj.canonicalVocabulary
   $canonValue = [string]$proj.canonicalValue
   if ([string]::IsNullOrWhiteSpace($vocabName) -or -not $vocabularyByName.ContainsKey($vocabName)) {
-    Add-Issue $issues "$subject canonicalVocabulary must be one of com_graphedgetype|com_graphentitytype|com_workitemtype, found: $vocabName."
+    Add-Issue $issues "$subject canonicalVocabulary must name a manifest choices[] entry, found: $vocabName (known: $((@($vocabularyByName.Keys) | Sort-Object) -join ', '))."
   }
   else {
     $allowed = @($vocabularyByName[$vocabName])
@@ -514,6 +525,14 @@ foreach ($proj in $projections) {
     }
     else {
       $canonicalValuesSeen[$canonValue] = $true
+    }
+  }
+
+  # canonicalTermId must be structurally consistent with vocabulary + value (not freeform)
+  if ((Test-HasNonEmptyField -Record $proj -Field "canonicalTermId") -and -not [string]::IsNullOrWhiteSpace($canonValue)) {
+    $termId = [string]$proj.canonicalTermId
+    if ($termId -notmatch [regex]::Escape($canonValue)) {
+      Add-Issue $issues "$subject canonicalTermId '$termId' must contain its canonicalValue '$canonValue'."
     }
   }
 
@@ -591,7 +610,7 @@ else {
     }
   }
   elseif (-not [string]::IsNullOrWhiteSpace($driftVocab)) {
-    Add-Issue $issues "$driftSubject.canonicalVocabulary is not a supported projection vocabulary: $driftVocab."
+    Add-Issue $issues "$driftSubject.canonicalVocabulary must name a manifest choices[] entry, found: $driftVocab."
   }
 }
 
@@ -688,61 +707,66 @@ foreach ($receipt in $receipts) {
   }
 }
 
-# Required story receipts: projection + drift (reconciliation optional but we require all three in this slice fixture presence check as soft: at least projection + drift)
-if (-not $sliceReceiptIdMap.ContainsKey("CR-LOCAL-SCPROJ-PROJECT-001")) {
-  Add-Issue $issues "Projection slice must include projection receipt CR-LOCAL-SCPROJ-PROJECT-001."
+# Role-based receipt requirements (semantic role over collections — never bind to fixture ids)
+$projectionRoleReceipts = @($receipts | Where-Object {
+  [string]$_.com_verb -eq "reviewed" -and [string]$_.com_policy_flags -match "planes_are_projections_only"
+})
+if ($projectionRoleReceipts.Count -lt 1) {
+  Add-Issue $issues "Projection slice must include ≥1 projection-role receipt (com_verb=reviewed AND com_policy_flags contains planes_are_projections_only)."
 }
 else {
-  $projReceipt = $sliceReceiptIdMap["CR-LOCAL-SCPROJ-PROJECT-001"]
-  if ([string]$projReceipt.com_verb -ne "reviewed") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-PROJECT-001 com_verb must be reviewed, found: $($projReceipt.com_verb)."
-  }
-  if ([string]$projReceipt.com_policy_flags -notmatch "planes_are_projections_only") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-PROJECT-001 com_policy_flags must include planes_are_projections_only."
-  }
-  if ([string]$projReceipt.com_policy_flags -notmatch "local_contract_evidence_only") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-PROJECT-001 com_policy_flags must include local_contract_evidence_only."
-  }
-  if ([string]$projReceipt.com_policy_flags -notmatch "no_tenant_write") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-PROJECT-001 com_policy_flags must include no_tenant_write."
+  foreach ($projReceipt in $projectionRoleReceipts) {
+    $roleSubject = "Projection-role receipt $([string]$projReceipt.com_receipt_id)"
+    if ([string]$projReceipt.com_policy_flags -notmatch "local_contract_evidence_only") {
+      Add-Issue $issues "$roleSubject com_policy_flags must include local_contract_evidence_only."
+    }
+    if ([string]$projReceipt.com_policy_flags -notmatch "no_tenant_write") {
+      Add-Issue $issues "$roleSubject com_policy_flags must include no_tenant_write."
+    }
   }
 }
 
-if (-not $sliceReceiptIdMap.ContainsKey("CR-LOCAL-SCPROJ-DRIFT-001")) {
-  Add-Issue $issues "Projection slice must include drift receipt CR-LOCAL-SCPROJ-DRIFT-001."
+$driftRoleReceipts = @($receipts | Where-Object {
+  [string]$_.com_verb -eq "source_drifted" -and [string]$_.com_policy_flags -match "drift_never_edits_plane_in_place"
+})
+if ($driftRoleReceipts.Count -lt 1) {
+  Add-Issue $issues "Projection slice must include ≥1 drift-role receipt (com_verb=source_drifted AND com_policy_flags contains drift_never_edits_plane_in_place)."
 }
 else {
-  $driftReceipt = $sliceReceiptIdMap["CR-LOCAL-SCPROJ-DRIFT-001"]
-  if ([string]$driftReceipt.com_verb -ne "source_drifted") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-DRIFT-001 com_verb must be source_drifted, found: $($driftReceipt.com_verb)."
+  $driftRoleReceiptIds = @{}
+  foreach ($driftReceipt in $driftRoleReceipts) {
+    $roleSubject = "Drift-role receipt $([string]$driftReceipt.com_receipt_id)"
+    $driftRoleReceiptIds[[string]$driftReceipt.com_receipt_id] = $true
+    if ([string]$driftReceipt.com_policy_flags -notmatch "reconciliation_flagged") {
+      Add-Issue $issues "$roleSubject com_policy_flags must include reconciliation_flagged."
+    }
+    if ([string]$driftReceipt.com_policy_flags -notmatch "local_contract_evidence_only") {
+      Add-Issue $issues "$roleSubject com_policy_flags must include local_contract_evidence_only."
+    }
   }
-  if ([string]$driftReceipt.com_policy_flags -notmatch "drift_never_edits_plane_in_place") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-DRIFT-001 com_policy_flags must include drift_never_edits_plane_in_place."
-  }
-  if ([string]$driftReceipt.com_policy_flags -notmatch "reconciliation_flagged") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-DRIFT-001 com_policy_flags must include reconciliation_flagged."
-  }
-  if ([string]$driftReceipt.com_policy_flags -notmatch "local_contract_evidence_only") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-DRIFT-001 com_policy_flags must include local_contract_evidence_only."
-  }
-  if ($null -ne $drift -and [string]$drift.flaggedByReceipt -ne "CR-LOCAL-SCPROJ-DRIFT-001") {
-    Add-Issue $issues "driftDetection.flaggedByReceipt must be CR-LOCAL-SCPROJ-DRIFT-001, found: $($drift.flaggedByReceipt)."
+  if ($null -ne $drift -and (Test-HasNonEmptyField -Record $drift -Field "flaggedByReceipt")) {
+    $flaggedId = [string]$drift.flaggedByReceipt
+    if (-not $driftRoleReceiptIds.ContainsKey($flaggedId)) {
+      Add-Issue $issues "driftDetection.flaggedByReceipt must resolve to a drift-role receipt in this slice (verb=source_drifted + drift_never_edits_plane_in_place), found: $flaggedId."
+    }
+    if (-not $sliceReceiptIdMap.ContainsKey($flaggedId)) {
+      Add-Issue $issues "driftDetection.flaggedByReceipt must be a receipt id declared in this slice, found: $flaggedId."
+    }
   }
 }
 
-if (-not $sliceReceiptIdMap.ContainsKey("CR-LOCAL-SCPROJ-RECONCILE-001")) {
-  Add-Issue $issues "Projection slice must include reconciliation proposal receipt CR-LOCAL-SCPROJ-RECONCILE-001."
+$reconcileRoleReceipts = @($receipts | Where-Object {
+  [string]$_.com_verb -eq "proposed" -and [string]$_.com_policy_flags -match "reconciliation_is_receipt_backed"
+})
+if ($reconcileRoleReceipts.Count -lt 1) {
+  Add-Issue $issues "Projection slice must include ≥1 reconciliation-role receipt (com_verb=proposed AND com_policy_flags contains reconciliation_is_receipt_backed)."
 }
 else {
-  $recReceipt = $sliceReceiptIdMap["CR-LOCAL-SCPROJ-RECONCILE-001"]
-  if ([string]$recReceipt.com_verb -ne "proposed") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-RECONCILE-001 com_verb must be proposed, found: $($recReceipt.com_verb)."
-  }
-  if ([string]$recReceipt.com_policy_flags -notmatch "reconciliation_is_receipt_backed") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-RECONCILE-001 com_policy_flags must include reconciliation_is_receipt_backed."
-  }
-  if ([string]$recReceipt.com_policy_flags -notmatch "platform_inferred_terms_propose_only") {
-    Add-Issue $issues "CR-LOCAL-SCPROJ-RECONCILE-001 com_policy_flags must include platform_inferred_terms_propose_only."
+  foreach ($recReceipt in $reconcileRoleReceipts) {
+    $roleSubject = "Reconciliation-role receipt $([string]$recReceipt.com_receipt_id)"
+    if ([string]$recReceipt.com_policy_flags -notmatch "platform_inferred_terms_propose_only") {
+      Add-Issue $issues "$roleSubject com_policy_flags must include platform_inferred_terms_propose_only."
+    }
   }
 }
 

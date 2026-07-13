@@ -234,10 +234,20 @@ foreach ($guardProperty in @($slice.guards.PSObject.Properties)) {
   }
 }
 
-# Cross-slice ID inventories (siblings 1-1..1-5 + demo) — harvested and ACTIVELY used for collision tripwires
+# Cross-slice ID inventories — harvested from the named sibling slices (1-1..1-5 + demo) AND
+# from EVERY *-slice.json in $PSScriptRoot, so collision tripwires are live and not coupled
+# to a hardcoded filename list. The slice under test is excluded.
+$selfName = Split-Path -Leaf $SlicePath
 $siblingRaw = @()
 foreach ($siblingPath in @($ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $Story15DriftPath, $DemoEvidencePath)) {
   $siblingRaw += Get-Content -LiteralPath $siblingPath -Raw
+}
+foreach ($sibFile in (Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File)) {
+  if ($sibFile.Name -eq $selfName) { continue }
+  $sibRaw = Get-Content -LiteralPath $sibFile.FullName -Raw
+  if ($siblingRaw -notcontains $sibRaw) {
+    $siblingRaw += $sibRaw
+  }
 }
 $siblingText = $siblingRaw -join "`n"
 
@@ -325,6 +335,20 @@ function Register-WorkItemStates {
 }
 Register-WorkItemStates -SliceData $story13Extraction -HomeSlice "proposed-work-item-extraction-slice.json"
 Register-WorkItemStates -SliceData $story14Extraction -HomeSlice "zero-multi-item-extraction-slice.json"
+
+# Live state harvest: register Work-Item state groups from EVERY sibling *-slice.json in
+# $PSScriptRoot, not only the two named extraction slices, so the unchanged-state cross-check
+# proves coordination against actual sibling structure rather than a hardcoded slice list.
+foreach ($sibFile in (Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File)) {
+  if ($sibFile.Name -eq $selfName) { continue }
+  try {
+    $sibData = Get-Content -LiteralPath $sibFile.FullName -Raw | ConvertFrom-Json
+    Register-WorkItemStates -SliceData $sibData -HomeSlice $sibFile.Name
+  }
+  catch {
+    # Skip unparseable sibling slices; the explicitly loaded siblings carry the structured load.
+  }
+}
 
 # Also union in drift-flagged Work Items (state unchanged in drift slice) for collision purposes.
 $story13Items = @($story13Extraction.extractionRun.proposedWorkItems | Where-Object { $null -ne $_ })

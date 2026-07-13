@@ -2,7 +2,7 @@
   "artifactVersion": "2026-07-13",
   "storyKey": "4-1-create-lightweight-meaning-graph-records",
   "status": "local-contract-not-tenant-verified",
-  "purpose": "Prove a lightweight Meaning Graph that links Council objects for explanation only — never for workflow authority. Graph Entities cover two Work Items, two Source Records, a person, a role, a project, and a topic (Work Item / Source Record / receipt bindings resolve to sibling Story 1.x slices; net-new person/role/project/topic entities use fresh GE-LOCAL-* identity). Graph Edges (GEDGE-LOCAL-*) link them with vocabulary-valid edge types, rationale, confidence in [0,1], source/receipt grounding refs, and a declared retained-value tag. An explicit authority guard states edgesOwnNoWorkflowState=true and a demonstration entry proves a Work Item state group is identical before and after edge creation, with no state field on any edge.",
+  "purpose": "Prove a lightweight Meaning Graph that links Council objects for explanation only \u2014 never for workflow authority. Graph Entities cover two Work Items, two Source Records, a person, a role, a project, and a topic (Work Item / Source Record / receipt bindings resolve to sibling Story 1.x slices; net-new person/role/project/topic entities use fresh GE-LOCAL-* identity). Graph Edges (GEDGE-LOCAL-*) link them with vocabulary-valid edge types, rationale, confidence in [0,1], source/receipt grounding refs, and a declared retained-value tag. An explicit authority guard states edgesOwnNoWorkflowState=true and a demonstration entry proves a Work Item state group is identical before and after edge creation, with no state field on any edge.",
   "guards": {
     "noTenantWrites": true,
     "noOutboundAction": true,
@@ -223,23 +223,25 @@
     "authorityGuard": {
       "edgesOwnNoWorkflowState": true,
       "guardStatement": "Meaning Graph edges carry no workflow state. No edge holds a com_state_group, com_work_item_state, status, state, or any field that would make the graph the workflow authority. Work Item state lives only on the Work Item and moves only through receipts gated to Epic 2.",
-      "noStateFieldsOnAnyEdge": true,
       "demonstration": {
         "workItem": "CWI-LOCAL-DECISION-001",
         "boundGraphEntity": "GE-LOCAL-DECISION-001",
         "beforeStateGroup": "proposed",
         "afterStateGroup": "proposed",
-        "stateGroupIdenticalBeforeAndAfterEdgeCreation": true,
         "edgesTouchingThisWorkItem": [
           "GEDGE-LOCAL-001",
           "GEDGE-LOCAL-003"
         ],
-        "note": "CWI-LOCAL-DECISION-001 is bound to graph entity GE-LOCAL-DECISION-001 and is touched by edges GEDGE-LOCAL-001 and GEDGE-LOCAL-003. Neither edge carries a state field; the Work Item's com_state_group is proposed before edge creation and proposed after edge creation — identical. The graph records explanation links only."
-      }
+        "note": "CWI-LOCAL-DECISION-001 is bound to graph entity GE-LOCAL-DECISION-001 and is touched by edges GEDGE-LOCAL-001 (com_from_entity=GE-LOCAL-DECISION-001) and GEDGE-LOCAL-003 (com_from_entity=GE-LOCAL-DECISION-001). Neither edge carries a state field. The Work Item's com_state_group is proposed in the sibling Story 1.3 proposedWorkItems array (the structured harvest target); beforeStateGroup and afterStateGroup both equal that harvested value, so the state group is identical before and after edge creation. The graph records explanation links only.",
+        "stateGroupIdenticalBeforeAndAfterEdgeCreation": true
+      },
+      "noStateFieldsOnAnyEdge": true
     },
     "liveGraphMutationDeferred": [
       {
         "subject": "meaning-graph-records-slice",
+        "targetKind": "graph-rows",
+        "receiptGate": "epic-2-receipt-backed-mutation",
         "deferredUpdate": "Persisting these Graph Entity and Graph Edge rows to live Dataverse is a receipt-backed mutation gated to Epic 2; this slice records local contract evidence only and performs no live tenant write."
       }
     ]
@@ -267,8 +269,8 @@
       "acceptanceCriterion": 3,
       "localEvidence": [
         "guards.edgesOwnNoWorkflowState=true (strict boolean) and meaningGraphRun.authorityGuard.edgesOwnNoWorkflowState=true (strict boolean).",
-        "meaningGraphRun.authorityGuard.demonstration proves CWI-LOCAL-DECISION-001 has com_state_group proposed before and proposed after edge creation (stateGroupIdenticalBeforeAndAfterEdgeCreation=true), touched by GEDGE-LOCAL-001 and GEDGE-LOCAL-003.",
-        "No edge carries a state field: the no-state-fields scan over every edge in meaningGraphRun.graphEdges finds no com_state_group, com_work_item_state, state, status, or workflow-state field."
+        "meaningGraphRun.authorityGuard.demonstration names Work Item CWI-LOCAL-DECISION-001 (harvested from sibling Story 1.3 proposedWorkItems), whose com_state_group is proposed in that sibling array; beforeStateGroup and afterStateGroup both equal that harvested value, so the state group is identical before and after edge creation. The demonstration names edges GEDGE-LOCAL-001 and GEDGE-LOCAL-003, each of which touches the bound graph entity GE-LOCAL-DECISION-001 (com_from_entity=GE-LOCAL-DECISION-001).",
+        "No edge carries a state field: the no-state-fields scan over every edge in meaningGraphRun.graphEdges finds no com_state_group, com_work_item_state, state, status, or any property whose name contains 'state' or 'status' (except the manifest record-status field com_status, which is workflow-state-neutral)."
       ],
       "tenantEvidenceRequired": "Authority separation is a contract invariant verified locally; live edge persistence that preserves it remains receipt-gated to Epic 2."
     }
