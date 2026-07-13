@@ -89,6 +89,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Zero/multi-item extraction slice validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\zero-multi-item-extraction-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Zero/multi-item extraction slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "ZERO_MULTI_ITEM_EXTRACTION_SLICE_VALIDATE_OK") {
+      throw "Zero/multi-item extraction slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
