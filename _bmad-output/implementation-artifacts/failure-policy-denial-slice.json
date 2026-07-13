@@ -1,0 +1,233 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-6-record-failures-and-policy-denials",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove failure and policy-denial recording locally: three distinct failure receipts cover a retryable system error, a non-retryable policy denial, and a failure requiring human review, each carrying attempted action, actor, authority basis, source evidence refs, retry allowance, failure code, result, and human-review-required flag. For the policy denial, the affected Work Item remains in a reviewable state group and the denial rationale traces to specific policy flags plus evidence references that resolve within the slice. Failure codes are declared as a Story 2.6 local extension of the manifest's free-text com_failure_code column. No tenant writes occur; any live Work Item state move stays receipt-gated to Epic 2 Story 2.3.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "failuresAreRecordedNotSilent": true,
+    "policyDenialsKeepAffectedWorkItemReviewable": true,
+    "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "failureRun": {
+    "runId": "FAILURE-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.6 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSlicesFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "failuresAppendReceiptsNeverEditPriorReceipts": true,
+      "systemErrorsMayBeRetriedUnderANewReceipt": true,
+      "policyDenialsAreNonRetryableWithoutPolicyChange": true,
+      "humanReviewFailuresHoldUntilReviewed": true,
+      "affectedWorkItemsStayReviewableUntilCleared": true,
+      "liveWorkItemStateChangeReceiptGatedToStory23": true
+    },
+    "failureCodeVocabulary": {
+      "basis": "Manifest com_councilreceipt.com_failure_code is a free-text column with no enumerated choice set, so this slice declares a Story 2.6 local extension naming the failure codes used here together with their kind, retry allowance, and human-review semantics. Codes are reproducible local-contract identifiers, not tenant enums; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2.",
+      "codes": [
+        {
+          "code": "source_read_failed",
+          "kind": "system_error",
+          "retryAllowed": true,
+          "humanReviewRequired": false,
+          "definition": "An attempted source read could not complete because of a transient system error (for example, a connector timeout or throttled Graph call). The action may be retried under a new receipt; no human review is required for the retry gate."
+        },
+        {
+          "code": "auto_create_policy_denied",
+          "kind": "policy_denial",
+          "retryAllowed": false,
+          "humanReviewRequired": false,
+          "definition": "Auto-creation policy denied creating or auto-approving a Work Item because the candidate failed a risk or approval threshold (for example, mock/manual evidence with no authorized source body). The affected Work Item stays in a reviewable state group and the denial is non-retryable without a policy change."
+        },
+        {
+          "code": "extraction_uncertain_needs_review",
+          "kind": "human_review",
+          "retryAllowed": false,
+          "humanReviewRequired": true,
+          "definition": "Extraction could not reach sufficient confidence to either propose or ignore a candidate; the outcome is held for human review before any state move, and the affected Work Item stays reviewable until cleared."
+        }
+      ]
+    },
+    "failureReceipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-FAILURE-001",
+        "com_work_item": null,
+        "com_verb": "failed",
+        "com_actor_type": "connector",
+        "com_actor_id": "mock-outlook-connector-local",
+        "com_authority_basis": "local non-tenant Story 2.6 contract validation; attempted source read is receipt-gated and not authorized against a live tenant",
+        "attemptedAction": "Read CSR-OUTLOOK-MESSAGE-MOCK-001 from the mock Outlook connector to refresh its captured snapshot for extraction review.",
+        "com_occurred_at": "2026-07-13T10:10:00-04:00",
+        "com_idempotency_key": "failure:source_read:CSR-OUTLOOK-MESSAGE-MOCK-001:2026-07-13T10:10",
+        "com_before_state": "source_read_not_attempted",
+        "com_after_state": "source_read_failed_retry_allowed",
+        "com_evidence_refs": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "The mock Outlook connector returned a transient timeout on the read attempt. This is a retryable system error, not a policy denial; the source record stays hash-only and no Work Item state changed. A retry may be attempted later under a new receipt gated to Epic 2.",
+        "com_confidence": 0.95,
+        "com_result": "failed",
+        "com_failure_code": "source_read_failed",
+        "retryAllowed": true,
+        "humanReviewRequired": false,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; system_error_retryable",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-FAILURE-002",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "trusted_rule",
+        "com_actor_id": "local-auto-creation-policy-rule",
+        "com_authority_basis": "local non-tenant Story 2.6 contract validation; auto-creation policy is evaluated locally and any live denial write is receipt-gated to Epic 2",
+        "attemptedAction": "Auto-create and auto-approve CWI-LOCAL-FOLLOWUP-001 from CSR-OUTLOOK-MESSAGE-MOCK-001 without human approval.",
+        "com_occurred_at": "2026-07-13T10:25:00-04:00",
+        "com_idempotency_key": "policy_deny:auto_create:CWI-LOCAL-FOLLOWUP-001:2026-07-13T10:25",
+        "com_before_state": "proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "CSR-OUTLOOK-MESSAGE-MOCK-001; CWI-LOCAL-FOLLOWUP-001",
+        "com_decision_rationale": "Auto-creation policy denied auto-approving the follow-up because its primary source is mock/manual, hash-only evidence with no authorized source body, and low-risk follow-ups still require human approval before any external action. The denial is non-retryable without a policy change. The affected Work Item remains proposed (a reviewable state group) so Doug can still review, hold, or reassign it; no state changed in this slice.",
+        "com_confidence": 0.92,
+        "com_result": "rejected",
+        "com_failure_code": "auto_create_policy_denied",
+        "retryAllowed": false,
+        "humanReviewRequired": false,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; auto_create_policy_denied; mock_manual_not_tenant_verified; source_body_not_stored; human_approval_required",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-FAILURE-003",
+        "com_work_item": "CWI-LOCAL-DECISION-002",
+        "com_verb": "failed",
+        "com_actor_type": "minion",
+        "com_actor_id": "local-extraction-minion",
+        "com_authority_basis": "local non-tenant Story 2.6 contract validation; extraction confidence is evaluated locally and any live hold write is receipt-gated to Epic 2",
+        "attemptedAction": "Extract a confident decision candidate from CSR-MANUAL-MEETING-001 for CWI-LOCAL-DECISION-002 without human review.",
+        "com_occurred_at": "2026-07-13T10:40:00-04:00",
+        "com_idempotency_key": "review:extraction:CSR-MANUAL-MEETING-001:CWI-LOCAL-DECISION-002:2026-07-13T10:40",
+        "com_before_state": "proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "CSR-MANUAL-MEETING-001; CWI-LOCAL-DECISION-002",
+        "com_decision_rationale": "Extraction could not reach sufficient confidence to either promote or ignore the deferral decision candidate: the meeting summary is pending ratification and the sample does not state who holds final decision authority. This is a failure requiring human review, not a policy denial; the affected Work Item stays proposed (a reviewable state group) and no state changed in this slice. The item is held for human review until a reviewer clears the uncertainty.",
+        "com_confidence": 0.58,
+        "com_result": "failed",
+        "com_failure_code": "extraction_uncertain_needs_review",
+        "retryAllowed": false,
+        "humanReviewRequired": true,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; human_review_required; extraction_confidence_below_threshold",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-FAILURE-001 failure evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-FAILURE-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "failure_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-FAILURE-002 failure evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-FAILURE-002",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "failure_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-FAILURE-003 failure evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-FAILURE-003",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "failure_evidence"
+      }
+    ],
+    "policyDenialTrace": [
+      {
+        "receipt": "CR-LOCAL-FAILURE-002",
+        "affectedWorkItem": "CWI-LOCAL-FOLLOWUP-001",
+        "denialRationale": "Auto-creation policy denied auto-approving the follow-up because its primary source is mock/manual, hash-only evidence with no authorized source body, and low-risk follow-ups still require human approval before any external action.",
+        "policyFlagsTraced": [
+          "policy_denied",
+          "auto_create_policy_denied",
+          "mock_manual_not_tenant_verified",
+          "source_body_not_stored",
+          "human_approval_required"
+        ],
+        "evidenceRefsTraced": [
+          "CSR-OUTLOOK-MESSAGE-MOCK-001",
+          "CWI-LOCAL-FOLLOWUP-001"
+        ],
+        "reviewableStateGroup": "proposed",
+        "stateGroupChangedInThisSlice": false
+      }
+    ],
+    "affectedWorkItems": [
+      {
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "loadedFrom": "proposed-work-item-extraction-slice.json",
+        "com_state_group": "proposed",
+        "reviewable": true,
+        "stateGroupChangedInThisSlice": false,
+        "note": "The policy-denied follow-up stays proposed (a reviewable state group) so Doug can still review, hold, or reassign it; no state changed in this slice."
+      },
+      {
+        "workItem": "CWI-LOCAL-DECISION-002",
+        "loadedFrom": "zero-multi-item-extraction-slice.json",
+        "com_state_group": "proposed",
+        "reviewable": true,
+        "stateGroupChangedInThisSlice": false,
+        "note": "The uncertain extraction candidate stays proposed (a reviewable state group) and is held for human review; no state changed in this slice."
+      }
+    ],
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "deferredUpdate": "Any com_state_group move driven by the policy denial (for example proposed to blocked or held) requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the denial only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-DECISION-002",
+        "deferredUpdate": "Any com_state_group move driven by the human-review failure (for example proposed to in_review) requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the review-required flag only and performs no state change."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "failureRun.failureReceipts CR-LOCAL-FAILURE-001 (system error, retryAllowed=true, humanReviewRequired=false, failureCode source_read_failed, verb failed, result failed)",
+        "failureRun.failureReceipts CR-LOCAL-FAILURE-002 (policy denial, retryAllowed=false, humanReviewRequired=false, failureCode auto_create_policy_denied, verb policy_denied, result rejected)",
+        "failureRun.failureReceipts CR-LOCAL-FAILURE-003 (human review, retryAllowed=false, humanReviewRequired=true, failureCode extraction_uncertain_needs_review, verb failed, result failed)",
+        "each receipt carries attemptedAction, com_actor_type, com_actor_id, com_authority_basis, com_evidence_refs, retryAllowed, com_failure_code, com_result, and humanReviewRequired",
+        "failureRun.failureCodeVocabulary declares each code with kind, retryAllowed, humanReviewRequired, and definition as a Story 2.6 local extension of the manifest free-text com_failure_code column"
+      ],
+      "tenantEvidenceRequired": "Recording failures against a live tenant Receipt table and adopting these failure codes as tenant-wide choice values are receipt-gated to Epic 2; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "failureRun.policyDenialTrace for CR-LOCAL-FAILURE-002 lists policyFlagsTraced (policy_denied, auto_create_policy_denied, mock_manual_not_tenant_verified, source_body_not_stored, human_approval_required) and evidenceRefsTraced (CSR-OUTLOOK-MESSAGE-MOCK-001, CWI-LOCAL-FOLLOWUP-001) that both resolve within the slice and cross-slice",
+        "failureRun.affectedWorkItems records CWI-LOCAL-FOLLOWUP-001 with com_state_group proposed (a reviewable state group), reviewable=true, and stateGroupChangedInThisSlice=false",
+        "guards.policyDenialsKeepAffectedWorkItemReviewable=true and guards.noWorkItemStateChangeInThisSlice=true"
+      ],
+      "tenantEvidenceRequired": "Surfacing the policy denial on the live Council Queue and any receipt-backed com_state_group change remain gated to Epic 2 Story 2.3; no tenant Work Item was modified for this slice."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "failureRun.failureCodeVocabulary.basis states the manifest com_failure_code column is free-text with no enumerated choice set and declares this slice's codes as a Story 2.6 local extension",
+        "every failureReceipt.com_failure_code is declared in failureRun.failureCodeVocabulary.codes with a matching kind, retryAllowed, and humanReviewRequired"
+      ],
+      "tenantEvidenceRequired": "Adopting these failure codes as tenant-wide Dataverse choice values is a deferred, receipt-gated decision for Epic 2; this slice proves local contract traceability only."
+    }
+  ]
+}

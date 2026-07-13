@@ -1,0 +1,401 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-2-enforce-human-approval-boundaries",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove human approval boundaries locally: one candidate Work Item per high-risk class (decision, delegation, risk, sensitive, outbound, memory promotion, skill authority expansion, tenant-affecting) stays proposed with approvalRequired and a no-pre-approval-external-action guard until explicitly approved; one approved Work Item carries an approval record whose declared scope authorizes only the proposed-to-approved state transition, while a second desired action on the same item (delegation) is shown as requiring a separate approval via a deferred entry. Approval events are receipt-backed (CR-LOCAL-*, manifest verbs, actor = human/Doug, authority basis). Receipts here are local contract evidence only, and every live mutation or external action stays receipt-gated and deferred.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "approvalsAuthorizeOnlyDeclaredScope": true,
+    "highRiskClassesStayProposedUntilApproved": true,
+    "outOfScopeActionsRequireSeparateApproval": true,
+    "noExternalActionBeforeApproval": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAppendOnly": true,
+    "noStateChangeExecutionInThisSlice": true
+  },
+  "approvalBoundariesRun": {
+    "runId": "APPROVAL-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.2 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "highRiskClassesRequireExplicitApproval": true,
+      "approvalsAuthorizeOnlyDeclaredScope": true,
+      "outOfScopeActionRequiresSeparateApproval": true,
+      "noExternalActionBeforeApproval": true,
+      "receiptsAreLocalContractEvidenceOnly": true,
+      "liveMutationAndExternalActionReceiptGatedToEpic2": true
+    },
+    "candidateWorkItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-DECISION-001",
+        "com_title": "Decision requiring human approval before it may be acted on",
+        "com_type": "decision",
+        "com_summary": "A governance decision extracted from a manual summary source. It must stay proposed until Doug explicitly approves it; no external action, delegation, or memory promotion may occur pre-approval.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "high",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "Decisions are a high-risk class: acting on a decision without explicit human approval would bypass the Council's judgment gate. This candidate stays proposed and approval-required.",
+        "com_recommended_next_action": "Doug reviews the decision rationale and either approves the proposed-to-approved transition or holds/blocks it.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "decision",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No external action, tenant write, outbound send, delegation, memory promotion, skill authority expansion, or state transition occurred before explicit human approval; this decision candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-DELEGATION-001",
+        "com_title": "Delegation requiring human approval before a Minion may act",
+        "com_type": "delegation",
+        "com_summary": "A delegation extracted from a manual summary source. Delegating authority to a Minion is high-risk and must stay proposed until Doug explicitly approves the delegation scope.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "high",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "Delegation grants a Minion authority to act on the human's behalf, so it requires explicit human approval of the declared delegation scope before any Minion action.",
+        "com_recommended_next_action": "Doug reviews the delegation target and scope, then approves only that scope or declines.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "delegation",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No Minion was granted authority, no delegated action executed, and no outbound action occurred before explicit human approval; this delegation candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-RISK-001",
+        "com_title": "Risk item requiring human approval before mitigation or escalation",
+        "com_type": "risk",
+        "com_summary": "A delivery risk surfaced from a meeting note source. Acting on the risk (mitigation or escalation) is high-risk and must stay proposed until Doug explicitly approves the response.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "high",
+        "com_risk_class": "delivery",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "Risks may require outbound escalation or commitment changes, so the risk response is a high-risk class requiring explicit human approval before any mitigation or escalation action.",
+        "com_recommended_next_action": "Doug reviews the risk and approves a specific mitigation or escalation scope, or holds it.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "risk",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No mitigation, escalation, outbound notification, or state transition occurred before explicit human approval; this risk candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-SENSITIVE-001",
+        "com_title": "Sensitive handling item requiring human approval before any action",
+        "com_type": "request",
+        "com_summary": "A sensitive-handling request extracted from a meeting note source. Sensitive items may involve confidential or restricted data and must stay proposed until Doug explicitly approves the handling action.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "critical",
+        "com_risk_class": "sensitive",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "Sensitive handling is a high-risk class because the underlying content may carry confidentiality or retention constraints; no handling action may occur before explicit human approval.",
+        "com_recommended_next_action": "Doug reviews the sensitivity context and approves a specific handling action, or holds it.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "sensitive",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No sensitive content was handled, copied, forwarded, or otherwise acted on before explicit human approval; this sensitive candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-OUTBOUND-001",
+        "com_title": "Outbound action requiring human approval before any external send",
+        "com_type": "request",
+        "com_summary": "An outbound action (e.g., sending a message or making an external call) extracted from a mock Outlook message reference. Outbound action is high-risk and must stay proposed until Doug explicitly approves the specific external action.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "critical",
+        "com_risk_class": "relationship",
+        "com_primary_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_rationale": "Outbound action reaches an external system or recipient, so it is a high-risk class requiring explicit human approval of the specific send before any external action is requested or completed.",
+        "com_recommended_next_action": "Doug reviews the outbound payload and recipient and approves the specific external action, or declines.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "outbound",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No message was sent, no external system was called, and no external_action_requested or external_action_completed receipt was emitted before explicit human approval; this outbound candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-MEMORY-001",
+        "com_title": "Memory promotion requiring human approval before a memory candidate is promoted",
+        "com_type": "artifact_task",
+        "com_summary": "A memory candidate extracted from a manual summary source that is proposed for promotion to approved instruction memory. Memory promotion is high-risk and must stay proposed until Doug explicitly approves the promotion scope.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "Promoting a memory candidate to an approved instruction changes future Minion behavior, so memory promotion is a high-risk class requiring explicit human approval of the promotion scope before any memory_promoted receipt is emitted.",
+        "com_recommended_next_action": "Doug reviews the memory candidate scope and recall-use policy and approves the promotion, or rejects it.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "memory_promotion",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No memory candidate was promoted, no approved instruction was created, and no memory_promoted receipt was emitted before explicit human approval; this memory promotion candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-SKILL-001",
+        "com_title": "Skill authority expansion requiring human approval before a skill is broadened",
+        "com_type": "artifact_task",
+        "com_summary": "A proposed expansion of a Council Skill's authority class or allowed context, extracted from a manual summary source. Skill authority expansion is high-risk and must stay proposed until Doug explicitly approves the expansion scope.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "high",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "Expanding a skill's authority class broadens what a Minion may do autonomously, so skill authority expansion is a high-risk class requiring explicit human approval of the expansion scope before any skill record is updated.",
+        "com_recommended_next_action": "Doug reviews the proposed authority expansion and approves only the declared scope, or declines.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "skill_authority_expansion",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No skill authority class was broadened, no allowed context was expanded, and no skill record was updated before explicit human approval; this skill authority expansion candidate stays proposed and receipt-gated."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-TENANT-001",
+        "com_title": "Tenant-affecting change requiring human approval before any tenant mutation",
+        "com_type": "request",
+        "com_summary": "A tenant-affecting change request extracted from a meeting note source (e.g., a Dataverse solution or environment configuration change). Tenant-affecting action is high-risk and must stay proposed until Doug explicitly approves the specific tenant change.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_urgency": "critical",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "Tenant-affecting changes mutate the live Dataverse environment or its configuration, so they are a high-risk class requiring explicit human approval of the specific change before any tenant write is performed.",
+        "com_recommended_next_action": "Doug reviews the tenant-affecting change and approves only the specific declared change, or declines.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only",
+        "riskClassLabel": "tenant_affecting",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No tenant write, solution publish, environment configuration change, or other tenant-affecting mutation occurred before explicit human approval; this tenant-affecting candidate stays proposed and receipt-gated."
+      }
+    ],
+    "approvedWorkItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-APPROVAL-SCOPE-001",
+        "com_title": "Approve decision to adopt the com publisher prefix convention",
+        "com_type": "decision",
+        "com_summary": "A decision item that Doug explicitly approved, moving it from proposed to approved. The approval authorizes only that state transition; delegating the decision to a Minion for execution is a separate action requiring its own approval.",
+        "com_state_group": "approved",
+        "com_owner_candidate": "Doug",
+        "com_approved_owner": "Doug",
+        "com_urgency": "high",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "The decision to adopt the com publisher prefix convention was proposed from a manual summary source and required explicit human approval before it could be considered actionable Council work.",
+        "com_recommended_next_action": "If Doug wants a Minion to execute this decision, a separate delegation approval with its own declared scope is required; the current approval does not authorize delegation or execution.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; high_risk_class; no_outbound_action; local_contract_evidence_only; approval_scope_narrow",
+        "riskClassLabel": "decision",
+        "noPreApprovalExternalAction": true,
+        "externalActionGuard": "No external action, tenant write, outbound send, delegation, memory promotion, skill authority expansion, or execution occurred before the explicit human approval that moved this item from proposed to approved; the approval authorizes only that state transition.",
+        "approvalRecord": {
+          "approvalReceipt": "CR-LOCAL-APPROVAL-001",
+          "approvedScope": "Authorize the com_state_group transition proposed to approved for CWI-LOCAL-APPROVAL-SCOPE-001 only. This approval does NOT authorize delegation of this decision to a Minion, any outbound or external action, memory promotion, skill authority expansion, or any tenant write.",
+          "authorizedTransition": "proposed to approved",
+          "actorType": "human",
+          "actorId": "Doug",
+          "authorityBasis": "Doug explicit human approval of this decision item's state transition only",
+          "outOfScopeActions": [
+            "delegate this decision to a Minion for execution",
+            "send any outbound message",
+            "promote this decision to approved instruction memory",
+            "expand any skill authority class",
+            "perform any tenant write"
+          ]
+        }
+      }
+    ],
+    "deferredActions": [
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-SCOPE-001",
+        "deferredAction": "Delegate this approved decision to a Minion for execution",
+        "requiredSeparateApproval": "CR-LOCAL-APPROVAL-002 (not granted in this slice)",
+        "rationale": "Delegation is a distinct high-risk action. The approval of CWI-LOCAL-APPROVAL-SCOPE-001 authorized only the proposed-to-approved state transition; it did not authorize delegation. A separate approval receipt with its own declared scope is required before a Minion may be granted authority to execute this decision.",
+        "stateChangeInThisSlice": false,
+        "receiptGatedTo": "Epic 2 Story 2.3 receipt-backed mutation semantics"
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-APPROVAL-PROPOSED-001",
+        "com_work_item": "CWI-LOCAL-APPROVAL-SCOPE-001",
+        "com_verb": "proposed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human proposal of this decision item; local non-tenant Story 2.2 contract validation",
+        "com_occurred_at": "2026-07-13T10:05:00-04:00",
+        "com_idempotency_key": "proposed:CWI-LOCAL-APPROVAL-SCOPE-001:2026-07-13T10:05:00-04:00",
+        "com_before_state": "not_proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "candidateWorkItems[decision]; approvedWorkItems[CWI-LOCAL-APPROVAL-SCOPE-001]; CSR-MANUAL-SUMMARY-001",
+        "com_decision_rationale": "Doug proposed this decision item from a manual summary source; it stayed proposed and approval-required until explicitly approved.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; high_risk_class",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-APPROVAL-001",
+        "com_work_item": "CWI-LOCAL-APPROVAL-SCOPE-001",
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human approval of the proposed-to-approved state transition for this decision item only",
+        "com_occurred_at": "2026-07-13T11:20:00-04:00",
+        "com_idempotency_key": "approved:CWI-LOCAL-APPROVAL-SCOPE-001:proposed:approved",
+        "com_before_state": "proposed",
+        "com_after_state": "approved",
+        "com_evidence_refs": "approvedWorkItems[CWI-LOCAL-APPROVAL-SCOPE-001].approvalRecord; CR-LOCAL-APPROVAL-PROPOSED-001; CSR-MANUAL-SUMMARY-001",
+        "com_decision_rationale": "Doug approved the proposed-to-approved state transition for this decision item only. The approval scope is explicit and narrow: it does not authorize delegation, outbound action, memory promotion, skill authority expansion, or any tenant write. The second desired action (delegation) is recorded as a deferred entry requiring a separate approval receipt.",
+        "com_confidence": 0.95,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; high_risk_class; approval_scope_narrow",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-APPROVAL-PROPOSED-001 approval evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-APPROVAL-PROPOSED-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "approval"
+      },
+      {
+        "com_name": "CR-LOCAL-APPROVAL-001 approval evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-APPROVAL-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "approval"
+      }
+    ],
+    "noPreApprovalExternalActionProof": [
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-DECISION-001",
+        "riskClassLabel": "decision",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-DECISION-001].noPreApprovalExternalAction=true; the item stays proposed with approval_required and no external action, delegation, or memory promotion occurred."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-DELEGATION-001",
+        "riskClassLabel": "delegation",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-DELEGATION-001].noPreApprovalExternalAction=true; no Minion was granted authority and no delegated action executed."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-RISK-001",
+        "riskClassLabel": "risk",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-RISK-001].noPreApprovalExternalAction=true; no mitigation, escalation, or outbound notification occurred."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-SENSITIVE-001",
+        "riskClassLabel": "sensitive",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-SENSITIVE-001].noPreApprovalExternalAction=true; no sensitive content was handled, copied, or forwarded."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-OUTBOUND-001",
+        "riskClassLabel": "outbound",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-OUTBOUND-001].noPreApprovalExternalAction=true; no message was sent and no external_action_requested or external_action_completed receipt was emitted."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-MEMORY-001",
+        "riskClassLabel": "memory_promotion",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-MEMORY-001].noPreApprovalExternalAction=true; no memory candidate was promoted and no memory_promoted receipt was emitted."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-SKILL-001",
+        "riskClassLabel": "skill_authority_expansion",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-SKILL-001].noPreApprovalExternalAction=true; no skill authority class was broadened and no skill record was updated."
+      },
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-TENANT-001",
+        "riskClassLabel": "tenant_affecting",
+        "guard": "noPreApprovalExternalAction",
+        "value": true,
+        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-TENANT-001].noPreApprovalExternalAction=true; no tenant write, solution publish, or environment configuration change occurred."
+      }
+    ],
+    "sourceUpdatesDeferred": [
+      {
+        "sourceRecord": "CSR-MANUAL-SUMMARY-001",
+        "deferredUpdate": "Applying any approval-driven extraction_status or state_group change to the live record is a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice."
+      }
+    ],
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-APPROVAL-SCOPE-001",
+        "deferredUpdate": "Any further com_state_group move on this item beyond the approved transition (for example approved to in_review or completed) requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the approval boundary only and performs no further state change."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "approvalBoundariesRun.candidateWorkItems contains exactly one candidate per high-risk class (decision, delegation, risk, sensitive, outbound, memory_promotion, skill_authority_expansion, tenant_affecting), each with com_approval_required=true (strict bool) and a noPreApprovalExternalAction=true guard plus an externalActionGuard rationale",
+        "approvalBoundariesRun.noPreApprovalExternalActionProof binds each candidate's guard to a proof entry",
+        "guards.highRiskClassesStayProposedUntilApproved=true and guards.noExternalActionBeforeApproval=true"
+      ],
+      "tenantEvidenceRequired": "Enforcing these boundaries against live tenant Work Items and surfacing the Needs Human Approval view in the Council Queue remain gated to Epic 2 receipt-backed mutation semantics; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "approvalBoundariesRun.approvedWorkItems[CWI-LOCAL-APPROVAL-SCOPE-001].approvalRecord declares an explicit approvedScope authorizing only the proposed-to-approved transition and listing outOfScopeActions",
+        "approvalBoundariesRun.deferredActions records a second desired action (delegation) on the same item as requiring a separate approval (CR-LOCAL-APPROVAL-002 not granted) with rationale and stateChangeInThisSlice=false",
+        "guards.approvalsAuthorizeOnlyDeclaredScope=true and guards.outOfScopeActionsRequireSeparateApproval=true"
+      ],
+      "tenantEvidenceRequired": "Applying the approved state transition and any separately-approved action to live tenant Work Items remains gated to Epic 2 Story 2.3; no tenant Work Item was modified for this slice."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "approvalBoundariesRun.receipts CR-LOCAL-APPROVAL-PROPOSED-001 (verb proposed) and CR-LOCAL-APPROVAL-001 (verb approved) are manifest-verb receipts with actor_type=human, actor_id=Doug, authority_basis, and com_append_only_locked=true",
+        "approvalBoundariesRun.receiptSourceLinks binds each approval receipt to its source evidence with the approval evidence role",
+        "guards.receiptsAppendOnly=true and guards.receiptsAreLocalContractEvidenceOnly=true; no live-write marker fields appear on any receipt"
+      ],
+      "tenantEvidenceRequired": "Live approval receipts emitted by the tenant receipt subsystem remain VERIFY IN TENANT; this slice's receipts are local contract evidence only and no tenant receipt row was created."
+    }
+  ]
+}

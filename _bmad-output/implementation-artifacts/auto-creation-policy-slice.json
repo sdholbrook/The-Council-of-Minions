@@ -1,0 +1,338 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-5-apply-safe-auto-creation-policy",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove the safe auto-creation policy locally: only low-risk follow_up and meeting_action candidates with all confidence thresholds met are auto-created as proposed Work Items, while candidates failing a confidence threshold or the low-risk class check stay proposed-only with visible policy rationale. Auto-creation is separate from approved external action; every would-be live Dataverse create is receipt-gated and deferred. No tenant writes occur in this slice.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "autoCreationSeparateFromApprovedExternalAction": true,
+    "onlyLowRiskFollowUpAndMeetingActionAutoCreate": true,
+    "deniedCandidatesStayProposedOnly": true,
+    "noExternalActionFromAutoCreation": true,
+    "siblingWorkItemsNotModifiedInThisSlice": true
+  },
+  "policyRun": {
+    "runId": "POLICY-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.5 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputWorkItemsFrom": [
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "policyThresholds": {
+      "sourceIdentificationConfidenceMin": 0.80,
+      "typeConfidenceMin": 0.80,
+      "lowRiskClassConfidenceMin": 0.80,
+      "ownerConfidenceMin": 0.70,
+      "nextActionConfidenceMin": 0.70,
+      "allowedAutoCreateTypes": [
+        "follow_up",
+        "meeting_action"
+      ],
+      "lowRiskClasses": [
+        "none"
+      ]
+    },
+    "decisionPolicy": {
+      "onlyLowRiskFollowUpAndMeetingActionAutoCreate": true,
+      "autoCreationSeparateFromApprovedExternalAction": true,
+      "deniedCandidatesStayProposedOnly": true,
+      "noExternalActionFromAutoCreation": true,
+      "nonAllowedTypesStayProposalOnly": true,
+      "receiptsAreLocalContractEvidenceOnly": true,
+      "liveDataverseCreateReceiptGatedToEpic2": true
+    },
+    "candidates": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-AUTO-FOLLOWUP-001",
+        "com_title": "Auto-created follow-up: confirm tenant readiness checklist delivery",
+        "com_type": "follow_up",
+        "com_summary": "Low-risk follow-up auto-created from the manual summary source: Doug committed to send the revised tenant readiness checklist to Priya. All policy thresholds were met, so the item is auto-proposed; external action remains separately gated to human approval.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.88,
+        "com_urgency": "low",
+        "com_risk_class": "none",
+        "com_confidence_summary": "Source identification 0.95; type 0.90; low-risk classification 0.92; owner 0.88; next-action 0.85. All thresholds met; local sample evidence, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "The manual summary source explicitly states a follow-up commitment with a named owner and concrete artifact. The source is local summary-allowed evidence; auto-creation proposes the item without external action.",
+        "com_recommended_next_action": "Doug approves the auto-proposed follow-up and sends the checklist, or reassigns the commitment. External action requires separate human approval.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "auto_created",
+        "com_policy_flags": "auto_created; low_risk; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "policyEvaluation": {
+          "source_identification_confidence": 0.95,
+          "type_confidence": 0.90,
+          "low_risk_classification_confidence": 0.92,
+          "owner_confidence": 0.88,
+          "next_action_confidence": 0.85,
+          "evaluated_risk_class": "none",
+          "type_allowed_for_auto_create": true,
+          "all_thresholds_met": true,
+          "decision": "auto_created",
+          "policy_rationale": "All thresholds met: source identification 0.95 >= 0.80, type 0.90 >= 0.80, low-risk classification 0.92 >= 0.80, owner 0.88 >= 0.70, next-action 0.85 >= 0.70. Type follow_up is in the allowed auto-create set and risk class is none (low-risk). Auto-created as proposed; external action remains separately gated to human approval."
+        }
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-AUTO-MEETING-ACTION-001",
+        "com_title": "Auto-created meeting action: send revised checklist to Priya",
+        "com_type": "meeting_action",
+        "com_summary": "Low-risk meeting action auto-created from the manual meeting note source: Doug committed in the platform sync to send the revised tenant readiness checklist to Priya by Friday. All policy thresholds were met, so the item is auto-proposed; external action remains separately gated to human approval.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.90,
+        "com_urgency": "normal",
+        "com_risk_class": "none",
+        "com_confidence_summary": "Source identification 0.92; type 0.91; low-risk classification 0.89; owner 0.90; next-action 0.87. All thresholds met; local sample evidence, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary states an explicit personal commitment with a named recipient, a concrete artifact, and a deadline. The risk class is none and all confidence thresholds are met, so the meeting action is auto-proposed without external action.",
+        "com_recommended_next_action": "Doug approves the auto-proposed meeting action and sends the checklist to Priya before Friday, or reassigns the commitment. External action requires separate human approval.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "auto_created",
+        "com_policy_flags": "auto_created; low_risk; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "policyEvaluation": {
+          "source_identification_confidence": 0.92,
+          "type_confidence": 0.91,
+          "low_risk_classification_confidence": 0.89,
+          "owner_confidence": 0.90,
+          "next_action_confidence": 0.87,
+          "evaluated_risk_class": "none",
+          "type_allowed_for_auto_create": true,
+          "all_thresholds_met": true,
+          "decision": "auto_created",
+          "policy_rationale": "All thresholds met: source identification 0.92 >= 0.80, type 0.91 >= 0.80, low-risk classification 0.89 >= 0.80, owner 0.90 >= 0.70, next-action 0.87 >= 0.70. Type meeting_action is in the allowed auto-create set and risk class is none (low-risk). Auto-created as proposed; external action remains separately gated to human approval."
+        }
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-DENIED-CONFIDENCE-001",
+        "com_title": "Denied auto-creation: follow-up from unverified Outlook reference",
+        "com_type": "follow_up",
+        "com_summary": "A follow_up candidate derived from the mock Outlook message reference was denied auto-creation because source identification confidence 0.60 is below the policy minimum 0.80. The candidate stays proposed-only until a human reviews the source.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.60,
+        "com_urgency": "unknown",
+        "com_risk_class": "none",
+        "com_confidence_summary": "Source identification 0.60; type 0.85; low-risk classification 0.90; owner 0.75; next-action 0.72. Source identification below threshold; local mock evidence, not tenant verified.",
+        "com_primary_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_rationale": "The Outlook Source Record proves message/conversation reference shape, but live Graph reads are not authorized and the source is mock evidence. Source identification confidence is too low for auto-creation; the candidate stays proposed-only.",
+        "com_recommended_next_action": "After live-read approval, compare against a verified Outlook message and decide whether to keep, replace, or ignore the proposed follow-up. A human may manually propose it if desired.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "policy_denied",
+        "com_policy_flags": "policy_denied; confidence_threshold_not_met; proposal_only; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "policyEvaluation": {
+          "source_identification_confidence": 0.60,
+          "type_confidence": 0.85,
+          "low_risk_classification_confidence": 0.90,
+          "owner_confidence": 0.75,
+          "next_action_confidence": 0.72,
+          "evaluated_risk_class": "none",
+          "type_allowed_for_auto_create": true,
+          "all_thresholds_met": false,
+          "failing_thresholds": [
+            "source_identification_confidence"
+          ],
+          "decision": "policy_denied",
+          "policy_rationale": "Source identification confidence 0.60 is below the policy minimum 0.80; the mock Outlook source is not tenant-verified and its body content is not authorized. The candidate stays proposed-only until a human reviews the source and confirms identification."
+        }
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-DENIED-RISK-001",
+        "com_title": "Denied auto-creation: meeting action with delivery risk",
+        "com_type": "meeting_action",
+        "com_summary": "A meeting_action candidate derived from the manual meeting note was denied auto-creation because the risk class is delivery, which is not in the low-risk set. The candidate stays proposed-only until a human reviews the delivery risk.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.82,
+        "com_urgency": "high",
+        "com_risk_class": "delivery",
+        "com_confidence_summary": "Source identification 0.90; type 0.88; low-risk classification 0.30; owner 0.82; next-action 0.80. Risk class delivery is not low-risk; local sample evidence, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary contains a commitment with a deadline, but the risk class is delivery and not none. Auto-creation is restricted to low-risk items, so this candidate stays proposed-only until a human reviews the delivery risk and approves it.",
+        "com_recommended_next_action": "Doug reviews the delivery risk, confirms whether auto-creation is appropriate, and either manually approves the proposed item or adjusts the risk classification. External action requires separate human approval.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "policy_denied",
+        "com_policy_flags": "policy_denied; risk_class_not_low_risk; proposal_only; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "policyEvaluation": {
+          "source_identification_confidence": 0.90,
+          "type_confidence": 0.88,
+          "low_risk_classification_confidence": 0.30,
+          "owner_confidence": 0.82,
+          "next_action_confidence": 0.80,
+          "evaluated_risk_class": "delivery",
+          "type_allowed_for_auto_create": true,
+          "all_thresholds_met": false,
+          "failing_check": "risk_class_not_low_risk",
+          "decision": "policy_denied",
+          "policy_rationale": "Risk class is delivery, which is not in the low-risk set (none). Auto-creation is restricted to low-risk items; this candidate stays proposed-only until a human reviews the delivery risk and approves it."
+        }
+      }
+    ],
+    "siblingProposalOnlyItems": [
+      {
+        "workItem": "CWI-LOCAL-DECISION-001",
+        "note": "Sibling Story 1.3 Work Item of type decision remains proposal_only in its own slice; decision is not in the allowed auto-create set, so no auto-creation is evaluated or performed in this slice."
+      },
+      {
+        "workItem": "CWI-LOCAL-DECISION-002",
+        "note": "Sibling Story 1.4 Work Item of type decision remains proposal_only in its own slice; decision is not in the allowed auto-create set, so no auto-creation is evaluated or performed in this slice."
+      },
+      {
+        "workItem": "CWI-LOCAL-RISK-001",
+        "note": "Sibling Story 1.4 Work Item of type risk remains proposal_only in its own slice; risk is not in the allowed auto-create set, so no auto-creation is evaluated or performed in this slice."
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-AUTO-CREATE-001",
+        "com_work_item": "CWI-LOCAL-AUTO-FOLLOWUP-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:00:00-04:00",
+        "com_idempotency_key": "auto-create:CWI-LOCAL-AUTO-FOLLOWUP-001:POLICY-LOCAL-2026-07-13-001",
+        "com_before_state": "not_evaluated",
+        "com_after_state": "auto_created",
+        "com_evidence_refs": "candidates[CWI-LOCAL-AUTO-FOLLOWUP-001].policyEvaluation; CSR-MANUAL-SUMMARY-001",
+        "com_decision_rationale": "All confidence thresholds met and risk class is none for a follow_up candidate; the item is auto-created as proposed. External action remains separately gated to human approval.",
+        "com_confidence": 0.90,
+        "com_result": "accepted",
+        "com_policy_flags": "auto_created; low_risk; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-AUTO-CREATE-002",
+        "com_work_item": "CWI-LOCAL-AUTO-MEETING-ACTION-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:05:00-04:00",
+        "com_idempotency_key": "auto-create:CWI-LOCAL-AUTO-MEETING-ACTION-001:POLICY-LOCAL-2026-07-13-001",
+        "com_before_state": "not_evaluated",
+        "com_after_state": "auto_created",
+        "com_evidence_refs": "candidates[CWI-LOCAL-AUTO-MEETING-ACTION-001].policyEvaluation; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "All confidence thresholds met and risk class is none for a meeting_action candidate; the item is auto-created as proposed. External action remains separately gated to human approval.",
+        "com_confidence": 0.91,
+        "com_result": "accepted",
+        "com_policy_flags": "auto_created; low_risk; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-POLICY-DENY-001",
+        "com_work_item": "CWI-LOCAL-DENIED-CONFIDENCE-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:10:00-04:00",
+        "com_idempotency_key": "policy-deny:CWI-LOCAL-DENIED-CONFIDENCE-001:POLICY-LOCAL-2026-07-13-001",
+        "com_before_state": "not_evaluated",
+        "com_after_state": "proposal_only",
+        "com_evidence_refs": "candidates[CWI-LOCAL-DENIED-CONFIDENCE-001].policyEvaluation; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "Source identification confidence 0.60 is below the policy minimum 0.80; the candidate stays proposed-only with visible policy rationale. No external action is triggered.",
+        "com_confidence": 0.60,
+        "com_result": "rejected",
+        "com_policy_flags": "policy_denied; confidence_threshold_not_met; proposal_only; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-POLICY-DENY-002",
+        "com_work_item": "CWI-LOCAL-DENIED-RISK-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:15:00-04:00",
+        "com_idempotency_key": "policy-deny:CWI-LOCAL-DENIED-RISK-001:POLICY-LOCAL-2026-07-13-001",
+        "com_before_state": "not_evaluated",
+        "com_after_state": "proposal_only",
+        "com_evidence_refs": "candidates[CWI-LOCAL-DENIED-RISK-001].policyEvaluation; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "Risk class is delivery, which is not in the low-risk set (none); the candidate stays proposed-only with visible policy rationale. No external action is triggered.",
+        "com_confidence": 0.30,
+        "com_result": "rejected",
+        "com_policy_flags": "policy_denied; risk_class_not_low_risk; proposal_only; no_external_action; local_contract_evidence_only; no_tenant_write",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-AUTO-CREATE-001 supporting source - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-AUTO-CREATE-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-AUTO-CREATE-002 supporting source - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-AUTO-CREATE-002",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-POLICY-DENY-001 failure evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-POLICY-DENY-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "failure_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-POLICY-DENY-002 failure evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-POLICY-DENY-002",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "failure_evidence"
+      }
+    ],
+    "liveCreatesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-AUTO-FOLLOWUP-001",
+        "deferredUpdate": "Creating the auto-created follow_up Work Item row in the live Dataverse is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "workItem": "CWI-LOCAL-AUTO-MEETING-ACTION-001",
+        "deferredUpdate": "Creating the auto-created meeting_action Work Item row in the live Dataverse is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "policyRun.candidates CWI-LOCAL-AUTO-FOLLOWUP-001 (type follow_up) and CWI-LOCAL-AUTO-MEETING-ACTION-001 (type meeting_action) each carry com_auto_creation_policy_result=auto_created and a policyEvaluation block with source_identification_confidence, type_confidence, low_risk_classification_confidence, owner_confidence, next_action_confidence — all numeric values in [0,1] meeting the declared policyThresholds minimums",
+        "guards.autoCreationSeparateFromApprovedExternalAction=true and guards.noExternalActionFromAutoCreation=true; both auto-created items carry com_approval_required=true and com_state_group=proposed, proving auto-creation is separate from approved external action",
+        "policyRun.policyThresholds declares allowedAutoCreateTypes=[follow_up, meeting_action] and lowRiskClasses=[none]; both auto-created items have evaluated_risk_class=none and type in the allowed set"
+      ],
+      "tenantEvidenceRequired": "Live Dataverse row creation for auto-created Work Items is receipt-gated to Epic 2 and recorded in liveCreatesDeferred; this slice is local contract evidence only. Whether the auto-creation policy fires correctly against live tenant sources remains VERIFY IN TENANT."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "policyRun.candidates CWI-LOCAL-DENIED-CONFIDENCE-001 (type follow_up) is denied because source_identification_confidence 0.60 < 0.80; it carries com_auto_creation_policy_result=policy_denied, com_state_group=proposed, and a non-empty policyEvaluation.policy_rationale",
+        "policyRun.candidates CWI-LOCAL-DENIED-RISK-001 (type meeting_action) is denied because evaluated_risk_class delivery is not in lowRiskClasses [none]; it carries com_auto_creation_policy_result=policy_denied, com_state_group=proposed, and a non-empty policyEvaluation.policy_rationale",
+        "guards.deniedCandidatesStayProposedOnly=true; both denied candidates have com_state_group=proposed and com_approval_required=true"
+      ],
+      "tenantEvidenceRequired": "Whether denied candidates surface correctly in the live Council Queue with visible policy rationale remains VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "policyRun.receipts CR-LOCAL-AUTO-CREATE-001 and CR-LOCAL-AUTO-CREATE-002 (verb proposed, result accepted) back the two auto-creation events with com_policy_flags declaring auto_created and no_external_action",
+        "policyRun.receipts CR-LOCAL-POLICY-DENY-001 and CR-LOCAL-POLICY-DENY-002 (verb policy_denied, result rejected) back the two denial events with com_policy_flags declaring policy_denied and proposal_only",
+        "Every receipt carries the full manifest-required field set including com_append_only_locked=true; each receipt is bound to its source evidence by a receiptSourceLinks entry"
+      ],
+      "tenantEvidenceRequired": "Live receipt persistence in Dataverse is gated to Epic 2; this slice records receipts as local contract evidence only. No tenant write was performed."
+    }
+  ]
+}

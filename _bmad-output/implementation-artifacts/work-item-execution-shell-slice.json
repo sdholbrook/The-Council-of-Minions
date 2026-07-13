@@ -1,0 +1,382 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-1-maintain-the-work-item-execution-shell",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove the canonical Work Item execution shell locally: each Work Item carries stable Council-level identity, type, summary, state group, owner candidate, approved owner where known, source references to existing sibling-slice CSR ids, rationale, approval requirement, semantic contract version, and a creation receipt; no Microsoft platform identifier is used as primary product identity (platform ids appear only inside source references); and the Council Queue queueView exposes all seven state groups. Receipts here are local contract evidence only, and every live mutation stays receipt-gated to Epic 2 Story 2.3.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "primaryIdIsCouncilLevelNotPlatform": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "executionShell": {
+    "runId": "SHELL-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.1 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json",
+      "source-drift-supersession-slice.json"
+    ],
+    "decisionPolicy": {
+      "workItemIdentityIsCouncilLevelNotPlatform": true,
+      "platformIdsOnlyInsideSourceReferences": true,
+      "creationReceiptRequiredPerWorkItem": true,
+      "stateTransitionsReceiptGatedToStory23": true,
+      "queueViewExposesAllSevenStateGroups": true,
+      "receiptsAreLocalContractEvidenceOnly": true
+    },
+    "workItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-SHELL-DECISION-001",
+        "com_title": "Decide whether the manual summary source produces executable Council work",
+        "com_type": "decision",
+        "com_summary": "Review the summary-allowed manual source and decide whether it should become approved Council work, be held, or be ignored after extraction review.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.82,
+        "com_approved_owner": "Doug",
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Owner candidate confidence 0.82. Source is local sample evidence, not tenant verified; approved owner reflects the known single human operator only.",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "The manual summary source explicitly says it can be reviewed later for zero, one, or many proposed Work Items. A decision Work Item is proposed because human judgment is required before any execution, and the Work Item identity is Council-level (CWI-LOCAL-*) independent of the source system.",
+        "com_recommended_next_action": "Doug reviews the source rationale and either approves, holds, ignores, or asks for a more specific extraction.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_created_receipt": "CR-LOCAL-SHELL-CREATE-001",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; governance; no_outbound_action; local_sample_not_tenant_verified; primary_id_is_council_level_not_platform"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-SHELL-DELEGATION-001",
+        "com_title": "Delegate follow-up on the mock Outlook message reference once live reads are approved",
+        "com_type": "delegation",
+        "com_summary": "Determine whether the mock Outlook message reference represents a real follow-up that can be delegated once live Microsoft Graph reads are authorized; no external action until then.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.7,
+        "com_approved_owner": null,
+        "com_urgency": "unknown",
+        "com_risk_class": "unknown",
+        "com_confidence_summary": "Owner candidate confidence 0.70. The source is explicitly mock/manual evidence; approved owner is unknown until a verified Outlook message and a delegate are confirmed.",
+        "com_primary_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_rationale": "The Outlook Source Record proves message/conversation reference shape, but live Graph reads are not authorized. A delegation Work Item is proposed and cannot trigger external action; its primary identity is Council-level (CWI-LOCAL-*) and the Graph-style source object ref stays inside the source reference, never as the Work Item identity.",
+        "com_recommended_next_action": "After live-read approval, compare against a verified Outlook message, confirm a delegate, and decide whether to keep, replace, or ignore the proposed delegation.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_created_receipt": "CR-LOCAL-SHELL-CREATE-002",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "mock_manual_not_tenant_verified; human_approval_required; no_outbound_action; source_body_not_stored; primary_id_is_council_level_not_platform"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-SHELL-RISK-001",
+        "com_title": "Track risk that publisher prefix approval may slip past the Epic 5 readiness gate",
+        "com_type": "risk",
+        "com_summary": "The 2026-07-13 platform sync raised the risk that Dataverse publisher prefix approval could slip past the Epic 5 tenant readiness gate; this Work Item tracks that risk as proposed Council work.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.75,
+        "com_approved_owner": null,
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Owner candidate confidence 0.75. Source is a local sample meeting summary, not tenant verified; approved owner is unknown until risk ownership is confirmed by a human.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary explicitly flags a schedule risk against a readiness gate; risk items always require human approval before any mitigation work is created. The Work Item identity is Council-level (CWI-LOCAL-*) and independent of the manual meeting source system.",
+        "com_recommended_next_action": "Doug reviews the risk, confirms the Epic 5 gate dependency, and decides whether to track mitigation as separate work.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_created_receipt": "CR-LOCAL-SHELL-CREATE-003",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; governance; no_outbound_action; local_sample_not_tenant_verified; primary_id_is_council_level_not_platform"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-SHELL-REQUEST-001",
+        "com_title": "Request richer capture policy for the hash-only manual source before extraction",
+        "com_type": "request",
+        "com_summary": "The hash-only manual source is held because its source body policy is unknown or sensitive; this Work Item requests a richer capture decision before extraction can proceed.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.68,
+        "com_approved_owner": null,
+        "com_urgency": "low",
+        "com_risk_class": "sensitive",
+        "com_confidence_summary": "Owner candidate confidence 0.68. The source is hash-only with unknown sensitivity; approved owner is unknown until the capture-policy decision is made by a human.",
+        "com_primary_source_record": "CSR-MANUAL-HASH-001",
+        "com_rationale": "The hash-only manual source retains only a content hash until Doug approves richer capture, so extraction cannot be decided. A request Work Item is proposed to drive the capture-policy decision; its identity is Council-level (CWI-LOCAL-*) and the source content hash stays inside the source reference.",
+        "com_recommended_next_action": "Doug reviews the sensitivity label and retention flags, then approves a richer data boundary policy or keeps the source held.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_created_receipt": "CR-LOCAL-SHELL-CREATE-004",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; sensitive; no_outbound_action; local_sample_not_tenant_verified; primary_id_is_council_level_not_platform"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-SHELL-FOLLOWUP-001",
+        "com_title": "Follow up on the superseding mock Outlook thread snapshot once live reads are approved",
+        "com_type": "follow_up",
+        "com_summary": "The superseding mock Outlook thread snapshot (CSR-OUTLOOK-THREAD-MOCK-002) supersedes the held hash-only thread; this Work Item proposes a follow-up once live Outlook reads and source body policy are approved.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.66,
+        "com_approved_owner": null,
+        "com_urgency": "unknown",
+        "com_risk_class": "unknown",
+        "com_confidence_summary": "Owner candidate confidence 0.66. The source is mock/manual evidence from the Story 1.5 supersession; approved owner is unknown until a verified thread and a follow-up owner are confirmed.",
+        "com_primary_source_record": "CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_rationale": "The superseding mock thread snapshot was captured because the prior held hash-only record no longer represented the thread as observed. A follow-up Work Item is proposed and stays Council-level (CWI-LOCAL-*); the Outlook conversation and version refs stay inside the source reference, never as the Work Item identity.",
+        "com_recommended_next_action": "After live-read approval, compare against a verified Outlook thread and decide whether to keep, replace, or ignore the proposed follow-up.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_created_receipt": "CR-LOCAL-SHELL-CREATE-005",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "mock_manual_not_tenant_verified; human_approval_required; no_outbound_action; source_body_not_stored; primary_id_is_council_level_not_platform"
+      }
+    ],
+    "workItemSourceLinks": [
+      {
+        "com_name": "CWI-LOCAL-SHELL-DECISION-001 primary source",
+        "com_work_item": "CWI-LOCAL-SHELL-DECISION-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_source_role": "primary",
+        "com_rationale": "The summary-allowed manual source from Story 1.1 is the sole evidence for this proposed decision Work Item.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-SHELL-DELEGATION-001 primary source",
+        "com_work_item": "CWI-LOCAL-SHELL-DELEGATION-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_source_role": "primary",
+        "com_rationale": "The mock Outlook message reference from Story 1.2 is the source reference being tested for proposed delegation.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-SHELL-RISK-001 primary source",
+        "com_work_item": "CWI-LOCAL-SHELL-RISK-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_source_role": "primary",
+        "com_rationale": "The embedded meeting summary from Story 1.4 is the sole evidence for this proposed risk Work Item.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-SHELL-REQUEST-001 primary source",
+        "com_work_item": "CWI-LOCAL-SHELL-REQUEST-001",
+        "com_source_record": "CSR-MANUAL-HASH-001",
+        "com_source_role": "primary",
+        "com_rationale": "The hash-only manual source from Story 1.1 is the source reference driving the richer-capture request.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-SHELL-FOLLOWUP-001 primary source",
+        "com_work_item": "CWI-LOCAL-SHELL-FOLLOWUP-001",
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_source_role": "superseding",
+        "com_rationale": "The superseding mock thread snapshot from Story 1.5 is the source reference for this proposed follow-up; it supersedes the held hash-only thread CSR-OUTLOOK-THREAD-MOCK-001 via com_parent_ref.",
+        "com_confidence": 1.0
+      }
+    ],
+    "creationReceipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-SHELL-CREATE-001",
+        "com_work_item": "CWI-LOCAL-SHELL-DECISION-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.1 contract validation",
+        "com_occurred_at": "2026-07-13T17:05:00-04:00",
+        "com_idempotency_key": "shell-create:CWI-LOCAL-SHELL-DECISION-001",
+        "com_before_state": "no prior Work Item",
+        "com_after_state": "CWI-LOCAL-SHELL-DECISION-001 created in proposed state group; primary source CSR-MANUAL-SUMMARY-001",
+        "com_evidence_refs": "CWI-LOCAL-SHELL-DECISION-001; CSR-MANUAL-SUMMARY-001; CR-LOCAL-SHELL-CREATE-001",
+        "com_decision_rationale": "A decision Work Item is proposed into existence with a Council-level identity; the manual summary source is referenced, not restated, and no platform identifier is used as primary identity.",
+        "com_confidence": 0.82,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SHELL-CREATE-002",
+        "com_work_item": "CWI-LOCAL-SHELL-DELEGATION-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.1 contract validation",
+        "com_occurred_at": "2026-07-13T17:10:00-04:00",
+        "com_idempotency_key": "shell-create:CWI-LOCAL-SHELL-DELEGATION-001",
+        "com_before_state": "no prior Work Item",
+        "com_after_state": "CWI-LOCAL-SHELL-DELEGATION-001 created in proposed state group; primary source CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_refs": "CWI-LOCAL-SHELL-DELEGATION-001; CSR-OUTLOOK-MESSAGE-MOCK-001; CR-LOCAL-SHELL-CREATE-002",
+        "com_decision_rationale": "A delegation Work Item is proposed into existence with a Council-level identity; the Outlook message reference (including any Graph-style object ref) stays inside the source reference and is never used as the Work Item primary identity.",
+        "com_confidence": 0.7,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SHELL-CREATE-003",
+        "com_work_item": "CWI-LOCAL-SHELL-RISK-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.1 contract validation",
+        "com_occurred_at": "2026-07-13T17:15:00-04:00",
+        "com_idempotency_key": "shell-create:CWI-LOCAL-SHELL-RISK-001",
+        "com_before_state": "no prior Work Item",
+        "com_after_state": "CWI-LOCAL-SHELL-RISK-001 created in proposed state group; primary source CSR-MANUAL-MEETING-001",
+        "com_evidence_refs": "CWI-LOCAL-SHELL-RISK-001; CSR-MANUAL-MEETING-001; CR-LOCAL-SHELL-CREATE-003",
+        "com_decision_rationale": "A risk Work Item is proposed into existence with a Council-level identity; the manual meeting source is referenced, not restated, and no platform identifier is used as primary identity.",
+        "com_confidence": 0.75,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SHELL-CREATE-004",
+        "com_work_item": "CWI-LOCAL-SHELL-REQUEST-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.1 contract validation",
+        "com_occurred_at": "2026-07-13T17:20:00-04:00",
+        "com_idempotency_key": "shell-create:CWI-LOCAL-SHELL-REQUEST-001",
+        "com_before_state": "no prior Work Item",
+        "com_after_state": "CWI-LOCAL-SHELL-REQUEST-001 created in proposed state group; primary source CSR-MANUAL-HASH-001",
+        "com_evidence_refs": "CWI-LOCAL-SHELL-REQUEST-001; CSR-MANUAL-HASH-001; CR-LOCAL-SHELL-CREATE-004",
+        "com_decision_rationale": "A request Work Item is proposed into existence with a Council-level identity; the hash-only manual source and its content hash stay inside the source reference and are never used as the Work Item primary identity.",
+        "com_confidence": 0.68,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SHELL-CREATE-005",
+        "com_work_item": "CWI-LOCAL-SHELL-FOLLOWUP-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.1 contract validation",
+        "com_occurred_at": "2026-07-13T17:25:00-04:00",
+        "com_idempotency_key": "shell-create:CWI-LOCAL-SHELL-FOLLOWUP-001",
+        "com_before_state": "no prior Work Item",
+        "com_after_state": "CWI-LOCAL-SHELL-FOLLOWUP-001 created in proposed state group; primary source CSR-OUTLOOK-THREAD-MOCK-002 (superseding CSR-OUTLOOK-THREAD-MOCK-001)",
+        "com_evidence_refs": "CWI-LOCAL-SHELL-FOLLOWUP-001; CSR-OUTLOOK-THREAD-MOCK-002; CR-LOCAL-SHELL-CREATE-005",
+        "com_decision_rationale": "A follow-up Work Item is proposed into existence with a Council-level identity; the Outlook conversation and version refs stay inside the source reference and are never used as the Work Item primary identity.",
+        "com_confidence": 0.66,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      }
+    ],
+    "queueView": {
+      "stateGroups": {
+        "proposed": {
+          "declaredEmpty": false,
+          "workItems": [
+            "CWI-LOCAL-SHELL-DECISION-001",
+            "CWI-LOCAL-SHELL-DELEGATION-001",
+            "CWI-LOCAL-SHELL-RISK-001",
+            "CWI-LOCAL-SHELL-REQUEST-001",
+            "CWI-LOCAL-SHELL-FOLLOWUP-001"
+          ]
+        },
+        "approved": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item has moved to approved in this slice; moving from proposed to approved requires a new approved-verb receipt gated to Epic 2 Story 2.3."
+        },
+        "blocked": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item is blocked in this slice; moving from proposed to blocked requires a new blocked-verb receipt gated to Epic 2 Story 2.3."
+        },
+        "held": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item is held in this slice; moving from proposed to held requires a new held-verb receipt gated to Epic 2 Story 2.3."
+        },
+        "in_review": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item is in review in this slice; moving from proposed to in_review requires a new reviewed-verb receipt gated to Epic 2 Story 2.3."
+        },
+        "completed": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item is completed in this slice; moving from proposed to completed requires a new completed-verb receipt gated to Epic 2 Story 2.3."
+        },
+        "failed": {
+          "declaredEmpty": true,
+          "workItems": [],
+          "note": "No Work Item is failed in this slice; moving from proposed to failed requires a new failed-verb receipt gated to Epic 2 Story 2.3."
+        }
+      }
+    },
+    "primaryIdentityProof": {
+      "primaryIdPattern": "CWI-LOCAL-*",
+      "primaryIdsAreCouncilLevelNotPlatform": true,
+      "platformIdsAppearOnlyInsideSourceReferences": true,
+      "platformIdFieldsAllowedOnlyInSourceReferences": [
+        "com_source_object_ref",
+        "com_source_object_url",
+        "com_conversation_ref",
+        "com_source_version_ref",
+        "com_content_hash",
+        "com_parent_ref"
+      ],
+      "primaryIdShape": "Council Work Item primary identity is CWI-LOCAL-* and never a GUID, Dataverse row id, Microsoft Graph id, Outlook message id, or activity id. Microsoft platform identifiers appear only inside source references carried by sibling-slice CSR-* records, never as the Work Item primary identity.",
+      "noWorkItemPrimaryIdIsGuidShaped": true
+    },
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-SHELL-DECISION-001",
+        "deferredUpdate": "Any com_state_group move from proposed (for example to approved or in_review) requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the creation shell only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-SHELL-DELEGATION-001",
+        "deferredUpdate": "Any com_state_group move from proposed requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the creation shell only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-SHELL-RISK-001",
+        "deferredUpdate": "Any com_state_group move from proposed requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the creation shell only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-SHELL-REQUEST-001",
+        "deferredUpdate": "Any com_state_group move from proposed requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the creation shell only and performs no state change."
+      },
+      {
+        "workItem": "CWI-LOCAL-SHELL-FOLLOWUP-001",
+        "deferredUpdate": "Any com_state_group move from proposed requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the creation shell only and performs no state change."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "executionShell.workItems (5 Work Items of 5 distinct types: decision, delegation, risk, request, follow_up) each carrying com_council_work_item_id (CWI-LOCAL-*), com_type, com_summary, com_state_group, com_owner_candidate, com_approved_owner (where known), com_primary_source_record, com_rationale, com_approval_required, com_semantic_contract_version, and com_created_receipt (CR-LOCAL-SHELL-CREATE-*)",
+        "executionShell.creationReceipts CR-LOCAL-SHELL-CREATE-001..005 (verb proposed) bound to each Work Item with full manifest receipt fields",
+        "executionShell.primaryIdentityProof: primary ids are CWI-LOCAL-* and no Work Item primary id is GUID-shaped; platform ids appear only inside source references",
+        "guards.primaryIdIsCouncilLevelNotPlatform=true; guards.noWorkItemStateChangeInThisSlice=true"
+      ],
+      "tenantEvidenceRequired": "Persisting the Work Item execution shell to live Dataverse rows and emitting creation receipts against a tenant record remain receipt-gated to Epic 2 Story 2.3; this slice is local contract evidence only and performs no tenant write."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "executionShell.queueView.stateGroups declares all seven state groups: proposed, approved, blocked, held, in_review, completed, failed",
+        "proposed is populated with the five CWI-LOCAL-SHELL-* Work Items; approved, blocked, held, in_review, completed, and failed are explicitly declaredEmpty with a note that any move from proposed is receipt-gated to Epic 2 Story 2.3",
+        "guards.noWorkItemStateChangeInThisSlice=true"
+      ],
+      "tenantEvidenceRequired": "Surfacing the live Council Queue with populated non-proposed state groups remains gated to Epic 2 Story 2.3 receipt-backed state transitions; no tenant Work Item state was modified for this slice."
+    }
+  ]
+}

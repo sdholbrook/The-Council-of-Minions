@@ -1,0 +1,321 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-4-enforce-idempotent-mutations",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove connector, scheduled, and agent mutations are idempotent locally: each trigger kind carries an idempotency key, a duplicate attempt with an already-used key is handled as a no-op with exactly one rejection receipt referencing the original and no second Work Item/Receipt minted for the payload, and an unverifiable-key attempt records a policy-denial receipt plus a humanReviewRequired flag before any retry. Every would-be live Dataverse write stays receipt-gated to Epic 2; receipts here are local contract evidence only.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "mutationsAreIdempotent": true,
+    "everyMutationCarriesIdempotencyKey": true,
+    "duplicateKeysRejectedWithoutSecondWorkItem": true,
+    "unverifiableKeysRequireHumanReviewBeforeRetry": true,
+    "receiptsAreAppendOnly": true
+  },
+  "idempotencyRun": {
+    "runId": "IDEMPOTENT-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.4 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "everyMutationMustCarryIdempotencyKey": true,
+      "duplicateKeyHandlingIsNoOpOrRejectedWithOneReceiptReferencingOriginal": true,
+      "duplicateKeyHandlingMintsNoSecondWorkItemOrPayloadReceipt": true,
+      "unverifiableKeyYieldsFailureOrPolicyDenialReceiptAndHumanReviewFlag": true,
+      "noRetryBeforeHumanReviewOnUnverifiableKey": true,
+      "liveWorkItemCreationReceiptGatedToEpic2": true,
+      "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "triggerKinds": ["connector", "schedule", "agent"],
+    "mutations": [
+      {
+        "mutationId": "MUT-LOCAL-CONNECTOR-001",
+        "triggerKind": "connector",
+        "actorType": "connector",
+        "actorId": "mock-outlook-connector:2026-07-13",
+        "idempotencyKey": "mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001",
+        "payloadIntent": "Propose a follow-up Work Item from the mock Outlook message reference.",
+        "targetSourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "producesWorkItem": "CWI-LOCAL-IDEMPOTENT-CONNECTOR-001",
+        "producesReceipt": "CR-LOCAL-IDEMPOTENT-001",
+        "outcome": "accepted",
+        "isDuplicate": false,
+        "unverifiableKey": false
+      },
+      {
+        "mutationId": "MUT-LOCAL-SCHEDULE-001",
+        "triggerKind": "schedule",
+        "actorType": "system",
+        "actorId": "scheduled-extractor:2026-07-13T16:00:00-04:00",
+        "idempotencyKey": "mut:schedule:CSR-MANUAL-MEETING-001:propose:001",
+        "payloadIntent": "Propose a meeting-action Work Item from the manual meeting note on a scheduled cadence.",
+        "targetSourceRecord": "CSR-MANUAL-MEETING-001",
+        "producesWorkItem": "CWI-LOCAL-IDEMPOTENT-SCHEDULE-001",
+        "producesReceipt": "CR-LOCAL-IDEMPOTENT-002",
+        "outcome": "accepted",
+        "isDuplicate": false,
+        "unverifiableKey": false
+      },
+      {
+        "mutationId": "MUT-LOCAL-AGENT-001",
+        "triggerKind": "agent",
+        "actorType": "minion",
+        "actorId": "council-minion-agent:proposer",
+        "idempotencyKey": "mut:agent:CSR-MANUAL-SUMMARY-001:propose:001",
+        "payloadIntent": "Propose a decision Work Item from the manual summary source via an agent.",
+        "targetSourceRecord": "CSR-MANUAL-SUMMARY-001",
+        "producesWorkItem": "CWI-LOCAL-IDEMPOTENT-AGENT-001",
+        "producesReceipt": "CR-LOCAL-IDEMPOTENT-003",
+        "outcome": "accepted",
+        "isDuplicate": false,
+        "unverifiableKey": false
+      },
+      {
+        "mutationId": "MUT-LOCAL-CONNECTOR-DUP-001",
+        "triggerKind": "connector",
+        "actorType": "connector",
+        "actorId": "mock-outlook-connector:2026-07-13",
+        "idempotencyKey": "mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001",
+        "payloadIntent": "Retried propose of the same follow-up Work Item from the mock Outlook message reference.",
+        "targetSourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "isDuplicate": true,
+        "isDuplicateOf": "MUT-LOCAL-CONNECTOR-001",
+        "duplicateOutcome": "no_op",
+        "producesWorkItem": null,
+        "producesReceipt": "CR-LOCAL-IDEMPOTENT-DUP-001",
+        "referencesOriginalReceipt": "CR-LOCAL-IDEMPOTENT-001",
+        "referencesOriginalAttempt": "MUT-LOCAL-CONNECTOR-001",
+        "outcome": "no_op",
+        "unverifiableKey": false
+      },
+      {
+        "mutationId": "MUT-LOCAL-AGENT-UNVERIFIABLE-001",
+        "triggerKind": "agent",
+        "actorType": "minion",
+        "actorId": "council-minion-agent:retry",
+        "idempotencyKey": "mut:agent:CSR-MANUAL-SUMMARY-001:retry:unverifiable-001",
+        "payloadIntent": "Agent retry of a Work Item mutation whose prior attempt cannot be verified against any recorded receipt.",
+        "targetSourceRecord": "CSR-MANUAL-SUMMARY-001",
+        "targetsWorkItem": "CWI-LOCAL-IDEMPOTENT-AGENT-001",
+        "isDuplicate": false,
+        "unverifiableKey": true,
+        "unverifiableReason": "The retry key claims a prior agent attempt that has no matching recorded receipt; idempotency cannot be confirmed, so the mutation is denied and the item is flagged for human review before any further retry.",
+        "producesWorkItem": null,
+        "producesReceipt": "CR-LOCAL-IDEMPOTENT-FAIL-001",
+        "outcome": "rejected",
+        "flagsWorkItemForHumanReview": "CWI-LOCAL-IDEMPOTENT-AGENT-001"
+      }
+    ],
+    "proposedWorkItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-IDEMPOTENT-CONNECTOR-001",
+        "com_title": "Idempotent connector-proposed follow-up from mock Outlook message",
+        "com_type": "follow_up",
+        "com_summary": "A connector-triggered mutation proposes a follow-up from the mock Outlook message reference; the proposal is idempotent under key mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.7,
+        "com_urgency": "unknown",
+        "com_risk_class": "unknown",
+        "com_confidence_summary": "Idempotent proposal from a connector trigger; the source is explicitly mock/manual evidence and not tenant verified.",
+        "com_primary_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_rationale": "The connector mutation is idempotent: a duplicate retry under the same key is handled as a no-op with one rejection receipt and no second Work Item. The item remains proposed and cannot trigger external action.",
+        "com_recommended_next_action": "After live-read approval, verify against a real Outlook message and decide whether to keep, replace, or ignore the proposed follow-up.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "idempotent_mutation; connector_trigger; mock_manual_not_tenant_verified; human_approval_required; no_outbound_action"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-IDEMPOTENT-SCHEDULE-001",
+        "com_title": "Idempotent scheduled meeting-action from manual meeting note",
+        "com_type": "meeting_action",
+        "com_summary": "A schedule-triggered mutation proposes a meeting action from the manual meeting note; the proposal is idempotent under key mut:schedule:CSR-MANUAL-MEETING-001:propose:001.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.8,
+        "com_urgency": "normal",
+        "com_risk_class": "delivery",
+        "com_confidence_summary": "Idempotent proposal from a scheduled trigger; the source is local sample evidence and not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The scheduled mutation is idempotent: a duplicate retry under the same key would be handled as a no-op with one rejection receipt and no second Work Item. The item remains proposed and cannot trigger external action.",
+        "com_recommended_next_action": "Review the meeting note rationale and either approve, hold, ignore, or ask for a more specific extraction.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "idempotent_mutation; schedule_trigger; human_approval_required; no_outbound_action; local_sample_not_tenant_verified"
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-IDEMPOTENT-AGENT-001",
+        "com_title": "Idempotent agent-proposed decision from manual summary",
+        "com_type": "decision",
+        "com_summary": "An agent-triggered mutation proposes a decision from the manual summary source; the proposal is idempotent under key mut:agent:CSR-MANUAL-SUMMARY-001:propose:001. A later unverifiable retry of this item is denied and flagged for human review.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.82,
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Idempotent proposal from an agent trigger; the source is local sample evidence and not tenant verified. An unverifiable retry of this item is denied, not retried, until human review.",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "The agent mutation is idempotent: a duplicate retry under the same key would be handled as a no-op with one rejection receipt and no second Work Item, and an unverifiable retry is denied with a humanReviewRequired flag before any further attempt.",
+        "com_recommended_next_action": "Review the summary rationale and either approve, hold, ignore, or ask for a more specific extraction; clear the humanReviewRequired flag before any agent retry.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "idempotent_mutation; agent_trigger; human_approval_required; human_review_required_on_unverifiable_retry; no_outbound_action"
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-IDEMPOTENT-001",
+        "com_verb": "proposed",
+        "com_actor_type": "connector",
+        "com_actor_id": "mock-outlook-connector:2026-07-13",
+        "com_authority_basis": "local non-tenant Story 2.4 contract validation",
+        "com_occurred_at": "2026-07-13T16:20:00-04:00",
+        "com_idempotency_key": "mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001",
+        "com_before_state": "no Work Item for connector mutation MUT-LOCAL-CONNECTOR-001",
+        "com_after_state": "proposed CWI-LOCAL-IDEMPOTENT-CONNECTOR-001 from CSR-OUTLOOK-MESSAGE-MOCK-001 under idempotency key mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001",
+        "com_evidence_refs": "mutations[MUT-LOCAL-CONNECTOR-001]; CWI-LOCAL-IDEMPOTENT-CONNECTOR-001; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "Connector trigger accepted: a follow-up Work Item is proposed and bound to a unique idempotency key so a duplicate retry is detectable. Live Work Item creation stays receipt-gated to Epic 2.",
+        "com_confidence": 0.8,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; idempotent_mutation",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-IDEMPOTENT-002",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "scheduled-extractor:2026-07-13T16:00:00-04:00",
+        "com_authority_basis": "local non-tenant Story 2.4 contract validation",
+        "com_occurred_at": "2026-07-13T16:20:30-04:00",
+        "com_idempotency_key": "mut:schedule:CSR-MANUAL-MEETING-001:propose:001",
+        "com_before_state": "no Work Item for scheduled mutation MUT-LOCAL-SCHEDULE-001",
+        "com_after_state": "proposed CWI-LOCAL-IDEMPOTENT-SCHEDULE-001 from CSR-MANUAL-MEETING-001 under idempotency key mut:schedule:CSR-MANUAL-MEETING-001:propose:001",
+        "com_evidence_refs": "mutations[MUT-LOCAL-SCHEDULE-001]; CWI-LOCAL-IDEMPOTENT-SCHEDULE-001; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "Schedule trigger accepted: a meeting-action Work Item is proposed and bound to a unique idempotency key so a duplicate retry is detectable. Live Work Item creation stays receipt-gated to Epic 2.",
+        "com_confidence": 0.82,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; idempotent_mutation",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-IDEMPOTENT-003",
+        "com_verb": "proposed",
+        "com_actor_type": "minion",
+        "com_actor_id": "council-minion-agent:proposer",
+        "com_authority_basis": "local non-tenant Story 2.4 contract validation",
+        "com_occurred_at": "2026-07-13T16:21:00-04:00",
+        "com_idempotency_key": "mut:agent:CSR-MANUAL-SUMMARY-001:propose:001",
+        "com_before_state": "no Work Item for agent mutation MUT-LOCAL-AGENT-001",
+        "com_after_state": "proposed CWI-LOCAL-IDEMPOTENT-AGENT-001 from CSR-MANUAL-SUMMARY-001 under idempotency key mut:agent:CSR-MANUAL-SUMMARY-001:propose:001",
+        "com_evidence_refs": "mutations[MUT-LOCAL-AGENT-001]; CWI-LOCAL-IDEMPOTENT-AGENT-001; CSR-MANUAL-SUMMARY-001",
+        "com_decision_rationale": "Agent trigger accepted: a decision Work Item is proposed and bound to a unique idempotency key so a duplicate retry is detectable. Live Work Item creation stays receipt-gated to Epic 2.",
+        "com_confidence": 0.85,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; idempotent_mutation",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-IDEMPOTENT-DUP-001",
+        "com_verb": "proposed",
+        "com_actor_type": "connector",
+        "com_actor_id": "mock-outlook-connector:2026-07-13",
+        "com_authority_basis": "local non-tenant Story 2.4 contract validation",
+        "com_occurred_at": "2026-07-13T16:25:00-04:00",
+        "com_idempotency_key": "mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001:dup-handling",
+        "com_before_state": "CWI-LOCAL-IDEMPOTENT-CONNECTOR-001 already proposed under idempotency key mut:connector:CSR-OUTLOOK-MESSAGE-MOCK-001:propose:001 by CR-LOCAL-IDEMPOTENT-001",
+        "com_after_state": "duplicate attempt MUT-LOCAL-CONNECTOR-DUP-001 handled as no_op; original CR-LOCAL-IDEMPOTENT-001 and CWI-LOCAL-IDEMPOTENT-CONNECTOR-001 unchanged; no second Work Item or payload receipt minted",
+        "com_evidence_refs": "mutations[MUT-LOCAL-CONNECTOR-DUP-001]; references original attempt MUT-LOCAL-CONNECTOR-001 and receipt CR-LOCAL-IDEMPOTENT-001; CWI-LOCAL-IDEMPOTENT-CONNECTOR-001",
+        "com_decision_rationale": "The retry carried an already-used idempotency key, so the mutation is handled as a no-op: exactly one rejection/no-op receipt is appended referencing the original attempt, and no second Work Item is minted for the payload. This is the only receipt minted by the duplicate handling.",
+        "com_confidence": 0.9,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; idempotent_mutation; duplicate_key_no_op",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-IDEMPOTENT-FAIL-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "minion",
+        "com_actor_id": "council-minion-agent:retry",
+        "com_authority_basis": "local non-tenant Story 2.4 contract validation",
+        "com_occurred_at": "2026-07-13T16:30:00-04:00",
+        "com_idempotency_key": "mut:agent:CSR-MANUAL-SUMMARY-001:retry:unverifiable-001",
+        "com_before_state": "CWI-LOCAL-IDEMPOTENT-AGENT-001 proposed; no verifiable prior receipt for the claimed agent retry",
+        "com_after_state": "agent retry MUT-LOCAL-AGENT-UNVERIFIABLE-001 denied; CWI-LOCAL-IDEMPOTENT-AGENT-001 flagged humanReviewRequired=true; no retry attempted before human review",
+        "com_evidence_refs": "mutations[MUT-LOCAL-AGENT-UNVERIFIABLE-001]; CWI-LOCAL-IDEMPOTENT-AGENT-001; no matching prior receipt found for key mut:agent:CSR-MANUAL-SUMMARY-001:retry:unverifiable-001",
+        "com_decision_rationale": "The retry idempotency key could not be verified against any recorded prior attempt, so idempotency cannot be confirmed. The mutation is policy-denied, the targeted Work Item is flagged for human review, and no retry is permitted before that review. No Work Item is minted or changed by this denial.",
+        "com_confidence": 0.95,
+        "com_result": "rejected",
+        "com_failure_code": "unverifiable_idempotency_key",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; idempotent_mutation; unverifiable_key_denied; human_review_required_before_retry",
+        "com_append_only_locked": true
+      }
+    ],
+    "workItemsFlaggedForHumanReview": [
+      {
+        "workItem": "CWI-LOCAL-IDEMPOTENT-AGENT-001",
+        "humanReviewRequired": true,
+        "flaggedBy": "CR-LOCAL-IDEMPOTENT-FAIL-001",
+        "reason": "An agent retry carried an idempotency key that could not be verified against any recorded prior attempt; the mutation is denied and the item is flagged for human review before any further retry.",
+        "flagMechanism": "Local humanReviewRequired flag recorded in this slice; intended to surface in the Council Queue once that review surface lands (no app curation changes in this slice). Any retry requires the flag to be cleared by human review first.",
+        "stateGroupChangedInThisSlice": false
+      }
+    ],
+    "deferredMutations": [
+      {
+        "mutation": "MUT-LOCAL-CONNECTOR-001",
+        "deferredUpdate": "Creating CWI-LOCAL-IDEMPOTENT-CONNECTOR-001 as a live Dataverse Work Item is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "mutation": "MUT-LOCAL-SCHEDULE-001",
+        "deferredUpdate": "Creating CWI-LOCAL-IDEMPOTENT-SCHEDULE-001 as a live Dataverse Work Item is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "mutation": "MUT-LOCAL-AGENT-001",
+        "deferredUpdate": "Creating CWI-LOCAL-IDEMPOTENT-AGENT-001 as a live Dataverse Work Item is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "idempotencyRun.mutations includes one mutation for each trigger kind (connector MUT-LOCAL-CONNECTOR-001, schedule MUT-LOCAL-SCHEDULE-001, agent MUT-LOCAL-AGENT-001), and every mutation carries a non-empty idempotencyKey",
+        "idempotencyRun.triggerKinds lists connector, schedule, and agent",
+        "idempotencyRun.decisionPolicy.everyMutationMustCarryIdempotencyKey=true and guards.everyMutationCarriesIdempotencyKey=true"
+      ],
+      "tenantEvidenceRequired": "Enforcing idempotency on live connector, scheduled, and agent mutations against a Dataverse tenant remains VERIFY IN TENANT; this slice is local contract evidence only and every live Work Item creation stays receipt-gated to Epic 2."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "idempotencyRun.mutations includes MUT-LOCAL-CONNECTOR-DUP-001 with isDuplicate=true and the same idempotencyKey as MUT-LOCAL-CONNECTOR-001 (the declared duplicate pair)",
+        "the duplicate's duplicateOutcome is no_op, producesWorkItem is null, and it produces exactly one receipt CR-LOCAL-IDEMPOTENT-DUP-001 (result no_op) that references original attempt MUT-LOCAL-CONNECTOR-001 and original receipt CR-LOCAL-IDEMPOTENT-001",
+        "no second Work Item id is minted for the duplicate payload; the only Work Item from this key remains CWI-LOCAL-IDEMPOTENT-CONNECTOR-001",
+        "idempotencyRun.receipts CR-LOCAL-IDEMPOTENT-DUP-001 is append-only (com_append_only_locked=true) and references the original attempt; guards.duplicateKeysRejectedWithoutSecondWorkItem=true"
+      ],
+      "tenantEvidenceRequired": "Rejecting a live duplicate mutation without minting a second tenant Work Item remains VERIFY IN TENANT; this slice records the no-op rejection as local contract evidence only and performs no live tenant write."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "idempotencyRun.mutations includes MUT-LOCAL-AGENT-UNVERIFIABLE-001 with unverifiableKey=true and outcome rejected",
+        "the unverifiable attempt produces a policy-denial receipt CR-LOCAL-IDEMPOTENT-FAIL-001 (verb policy_denied, result rejected, failure_code unverifiable_idempotency_key)",
+        "idempotencyRun.workItemsFlaggedForHumanReview flags CWI-LOCAL-IDEMPOTENT-AGENT-001 with humanReviewRequired=true (strict boolean) backed by CR-LOCAL-IDEMPOTENT-FAIL-001, with no retry before human review",
+        "guards.unverifiableKeysRequireHumanReviewBeforeRetry=true and decisionPolicy.noRetryBeforeHumanReviewOnUnverifiableKey=true"
+      ],
+      "tenantEvidenceRequired": "Recording a live policy-denial receipt and surfacing the humanReviewRequired flag in the tenant Council Queue remain VERIFY IN TENANT; this slice records the denial as local contract evidence only and performs no live tenant write."
+    }
+  ]
+}

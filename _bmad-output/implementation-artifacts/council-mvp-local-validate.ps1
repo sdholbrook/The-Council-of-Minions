@@ -111,6 +111,73 @@ try {
     }
   }
 
+
+  Invoke-ValidationStep "Work Item execution shell slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\work-item-execution-shell-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Work Item execution shell slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "WORK_ITEM_EXECUTION_SHELL_SLICE_VALIDATE_OK") {
+      throw "Work Item execution shell slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Approval boundaries slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\approval-boundaries-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Approval boundaries slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "APPROVAL_BOUNDARIES_SLICE_VALIDATE_OK") {
+      throw "Approval boundaries slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Receipt-backed state changes slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\receipt-backed-state-changes-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Receipt-backed state changes slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "RECEIPT_BACKED_STATE_CHANGES_SLICE_VALIDATE_OK") {
+      throw "Receipt-backed state changes slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Idempotent mutations slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\idempotent-mutations-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Idempotent mutations slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "IDEMPOTENT_MUTATIONS_SLICE_VALIDATE_OK") {
+      throw "Idempotent mutations slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Auto-creation policy slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\auto-creation-policy-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Auto-creation policy slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "AUTO_CREATION_POLICY_SLICE_VALIDATE_OK") {
+      throw "Auto-creation policy slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Failure and policy denial slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\failure-policy-denial-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Failure and policy denial slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "FAILURE_POLICY_DENIAL_SLICE_VALIDATE_OK") {
+      throw "Failure and policy denial slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
@@ -288,7 +355,7 @@ try {
   }
 
   Invoke-ValidationStep "Epics placeholder check" {
-    rg -n "\{\{|\}\}" "_bmad-output\planning-artifacts\epics.md"
+    rg -n "\{\{|\}\}" "_bmad-output/planning-artifacts/epics.md"
     if ($LASTEXITCODE -eq 0) {
       throw "Placeholder tokens remain in epics.md."
     }
@@ -389,7 +456,7 @@ try {
   }
 
   Invoke-ValidationStep "Stale BMAD gate reference check" {
-    rg -n -g "!council-mvp-local-validate.ps1" 'pending-workflow-completion|pending workflow completion|Doug sends `C`|Doug replies `C`|Minimal Reply Needed|implementation readiness remains incomplete|readiness analysis can begin|final workflow completion' "_bmad-output\planning-artifacts" "_bmad-output\implementation-artifacts"
+    rg -n -g "!council-mvp-local-validate.ps1" 'pending-workflow-completion|pending workflow completion|Doug sends `C`|Doug replies `C`|Minimal Reply Needed|implementation readiness remains incomplete|readiness analysis can begin|final workflow completion' "_bmad-output/planning-artifacts" "_bmad-output/implementation-artifacts"
     if ($LASTEXITCODE -eq 0) {
       throw "Stale BMAD gate references remain."
     }
