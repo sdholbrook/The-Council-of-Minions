@@ -235,6 +235,15 @@ $siblingWorkItemIds = @(
   Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 )
 
+$siblingWorkItemTypes = @{}
+foreach ($siblingItem in @($story13Items + $story14Items)) {
+  $siblingId = [string]$siblingItem.com_council_work_item_id
+  if ([string]::IsNullOrWhiteSpace($siblingId)) { continue }
+  if (-not $siblingWorkItemTypes.ContainsKey($siblingId)) {
+    $siblingWorkItemTypes[$siblingId] = [string]$siblingItem.com_type
+  }
+}
+
 $story15Receipts = @($story15Drift.driftRun.receipts | Where-Object { $null -ne $_ })
 $siblingReceiptIds = @($story15Receipts | ForEach-Object { [string]$_.com_receipt_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
@@ -318,6 +327,7 @@ else {
     ownerConfidenceMin = "owner_confidence"
     nextActionConfidenceMin = "next_action_confidence"
   }
+  $thresholdMinsParsed = @{}
   foreach ($thresholdName in @($thresholdMap.Keys)) {
     if (-not ($thresholds.PSObject.Properties.Name -contains $thresholdName)) {
       Add-Issue $issues "Policy thresholds must declare: $thresholdName."
@@ -329,6 +339,9 @@ else {
     }
     elseif ($parsed -lt 0 -or $parsed -gt 1) {
       Add-Issue $issues "Policy threshold $thresholdName must be in [0,1], found: $parsed."
+    }
+    else {
+      $thresholdMinsParsed[$thresholdMap[$thresholdName]] = $parsed
     }
   }
 
@@ -391,6 +404,8 @@ if ($manifestRequiredWorkItemFields.Count -eq 0) {
 $sliceWorkItemIds = @{}
 $autoCreatedItems = @()
 $deniedItems = @()
+$candidateResults = @{}
+$candidateEvalValues = @{}
 
 foreach ($candidate in $candidates) {
   $candidateId = [string]$candidate.com_council_work_item_id
@@ -451,22 +466,22 @@ foreach ($candidate in $candidates) {
     continue
   }
 
-  $evalThresholds = @{
-    source_identification_confidence = $thresholds.sourceIdentificationConfidenceMin
-    type_confidence = $thresholds.typeConfidenceMin
-    low_risk_classification_confidence = $thresholds.lowRiskClassConfidenceMin
-    owner_confidence = $thresholds.ownerConfidenceMin
-    next_action_confidence = $thresholds.nextActionConfidenceMin
-  }
+  $evalFields = @(
+    "source_identification_confidence",
+    "type_confidence",
+    "low_risk_classification_confidence",
+    "owner_confidence",
+    "next_action_confidence"
+  )
 
   $evalValues = @{}
-  foreach ($evalField in @($evalThresholds.Keys)) {
-    $minValue = $evalThresholds[$evalField]
+  foreach ($evalField in $evalFields) {
     $parsed = Test-ConfidenceInRange -Issues $issues -Record $eval -Field $evalField -Subject "$subject policyEvaluation"
     if ($null -ne $parsed) {
       $evalValues[$evalField] = $parsed
     }
   }
+  $candidateEvalValues[$candidateId] = $evalValues
 
   if (-not (Test-HasNonEmptyField -Record $eval -Field "policy_rationale")) {
     Add-Issue $issues "$subject policyEvaluation must carry a non-empty policy_rationale."
@@ -485,6 +500,7 @@ foreach ($candidate in $candidates) {
   }
 
   $result = [string]$candidate.com_auto_creation_policy_result
+  $candidateResults[$candidateId] = $result
 
   if ($result -eq "auto_created") {
     $autoCreatedItems += $candidate
@@ -498,9 +514,12 @@ foreach ($candidate in $candidates) {
     if ($candidate.com_state_group -ne "proposed") {
       Add-Issue $issues "$subject auto_created item must stay in proposed state group, found: $($candidate.com_state_group)."
     }
-    foreach ($evalField in @($evalThresholds.Keys)) {
-      if ($evalValues.ContainsKey($evalField)) {
-        $minValue = $evalThresholds[$evalField]
+    if ($eval.type_allowed_for_auto_create -isnot [bool] -or -not $eval.type_allowed_for_auto_create) {
+      Add-Issue $issues "$subject is auto_created but policyEvaluation.type_allowed_for_auto_create is not strict boolean true."
+    }
+    foreach ($evalField in $evalFields) {
+      if ($evalValues.ContainsKey($evalField) -and $thresholdMinsParsed.ContainsKey($evalField)) {
+        $minValue = $thresholdMinsParsed[$evalField]
         if ($evalValues[$evalField] -lt $minValue) {
           Add-Issue $issues "$subject is auto_created but $evalField ($($evalValues[$evalField])) is below the policy minimum ($minValue)."
         }
@@ -522,6 +541,9 @@ foreach ($candidate in $candidates) {
     if (-not (Test-HasNonEmptyField -Record $eval -Field "policy_rationale")) {
       Add-Issue $issues "$subject policy_denied item must carry a non-empty policy_rationale."
     }
+    if ($eval.all_thresholds_met -isnot [bool] -or $eval.all_thresholds_met) {
+      Add-Issue $issues "$subject is policy_denied but policyEvaluation.all_thresholds_met is not strict boolean false; a denial must record that thresholds were not all met."
+    }
     if ($eval.decision -ne "policy_denied") {
       Add-Issue $issues "$subject is policy_denied but policyEvaluation.decision is '$($eval.decision)'; must be 'policy_denied'."
     }
@@ -532,6 +554,19 @@ foreach ($candidate in $candidates) {
 
   if (-not (Test-HasNonEmptyField -Record $candidate -Field "com_policy_flags")) {
     Add-Issue $issues "$subject must carry a non-empty com_policy_flags."
+  }
+  else {
+    foreach ($requiredFlag in @("no_external_action", "local_contract_evidence_only", "no_tenant_write")) {
+      if ([string]$candidate.com_policy_flags -notmatch [regex]::Escape($requiredFlag)) {
+        Add-Issue $issues "$subject com_policy_flags must declare $requiredFlag; Story 2.5 candidates are local contract evidence only with no external action or tenant write."
+      }
+    }
+    if ($result -eq "auto_created" -and [string]$candidate.com_policy_flags -notmatch "auto_created") {
+      Add-Issue $issues "$subject is auto_created but com_policy_flags does not declare auto_created."
+    }
+    if ($result -eq "policy_denied" -and [string]$candidate.com_policy_flags -notmatch "policy_denied") {
+      Add-Issue $issues "$subject is policy_denied but com_policy_flags does not declare policy_denied."
+    }
   }
 }
 
@@ -548,28 +583,123 @@ if ($autoMeetingAction.Count -ne 1) {
   Add-Issue $issues "Policy slice must include exactly one auto-created meeting_action candidate, found: $($autoMeetingAction.Count)."
 }
 
-# --- Exactly 2 denied (1 confidence, 1 risk-class) ---
+# --- Exactly 2 denied (1 confidence, 1 risk-class), classified by VALUE not self-authored tags ---
 if ($deniedItems.Count -ne 2) {
   Add-Issue $issues "Policy slice must include exactly two denied candidates, found: $($deniedItems.Count)."
 }
 $confidenceDenied = @()
 $riskDenied = @()
 foreach ($denied in $deniedItems) {
+  $deniedId = [string]$denied.com_council_work_item_id
+  $subject = "Denied candidate $deniedId"
   $eval = $denied.policyEvaluation
-  if ($null -ne $eval) {
-    if ((Test-HasNonEmptyField -Record $eval -Field "failing_thresholds") -and @($eval.failing_thresholds).Count -gt 0) {
-      $confidenceDenied += $denied
+  if ($null -eq $eval) {
+    Add-Issue $issues "$subject has no policyEvaluation; cannot classify denial reason by value."
+    continue
+  }
+
+  $dEvalValues = $candidateEvalValues[$deniedId]
+  if ($null -eq $dEvalValues) { $dEvalValues = @{} }
+
+  # Identification confidence fields (excludes low_risk_classification_confidence, which is the risk-class classifier's own metric and a corollary of the risk-class check, not an independent identification threshold).
+  $identificationConfidenceFields = @(
+    "source_identification_confidence",
+    "type_confidence",
+    "owner_confidence",
+    "next_action_confidence"
+  )
+
+  # Genuine identification-confidence failure: at least one identification confidence value is strictly below its declared minimum.
+  $hasConfidenceFailure = $false
+  $failingFields = @()
+  foreach ($evalField in $identificationConfidenceFields) {
+    if ($dEvalValues.ContainsKey($evalField) -and $thresholdMinsParsed.ContainsKey($evalField)) {
+      if ($dEvalValues[$evalField] -lt $thresholdMinsParsed[$evalField]) {
+        $hasConfidenceFailure = $true
+        $failingFields += $evalField
+      }
     }
-    if ((Test-HasNonEmptyField -Record $eval -Field "failing_check") -and [string]$eval.failing_check -match "risk_class") {
-      $riskDenied += $denied
+  }
+
+  # Genuine risk-class failure: evaluated_risk_class is not in lowRiskClasses.
+  $deniedRiskClass = [string]$eval.evaluated_risk_class
+  $hasRiskFailure = (-not [string]::IsNullOrWhiteSpace($deniedRiskClass)) -and ($lowRiskClasses -notcontains $deniedRiskClass)
+
+  # Each denied candidate must fail exactly one distinct policy reason.
+  if ($hasConfidenceFailure -and -not $hasRiskFailure) {
+    $confidenceDenied += $denied
+  }
+  elseif ($hasRiskFailure -and -not $hasConfidenceFailure) {
+    $riskDenied += $denied
+  }
+  elseif ($hasConfidenceFailure -and $hasRiskFailure) {
+    Add-Issue $issues "$subject fails BOTH a confidence threshold ($($failingFields -join ', ')) and the low-risk-class check; each denied candidate must fail exactly one distinct policy reason."
+  }
+  else {
+    Add-Issue $issues "$subject is policy_denied but no policyEvaluation value actually fails any declared threshold or the low-risk-class check; the denial is not justified by evidence."
+  }
+
+  # The self-authored failure tags must agree with the computed failure reason.
+  if ($hasConfidenceFailure) {
+    if (-not (Test-HasNonEmptyField -Record $eval -Field "failing_thresholds")) {
+      Add-Issue $issues "$subject fails confidence threshold(s) ($($failingFields -join ', ')) by value but policyEvaluation.failing_thresholds is absent or empty."
+    }
+    else {
+      $declaredFailing = @($eval.failing_thresholds | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+      foreach ($ff in $failingFields) {
+        if ($declaredFailing -notcontains $ff) {
+          Add-Issue $issues "$subject policyEvaluation.failing_thresholds must list the actually-failing field: $ff."
+        }
+      }
+    }
+  }
+  if ($hasRiskFailure) {
+    if (-not (Test-HasNonEmptyField -Record $eval -Field "failing_check") -or [string]$eval.failing_check -notmatch "risk_class") {
+      Add-Issue $issues "$subject fails the low-risk-class check by value but policyEvaluation.failing_check is absent or does not name risk_class."
+    }
+  }
+
+  # Rationale must reference the actual failing evidence, not just be non-empty prose.
+  if (Test-HasNonEmptyField -Record $eval -Field "policy_rationale") {
+    $rationale = [string]$eval.policy_rationale
+    if ($hasConfidenceFailure) {
+      foreach ($ff in $failingFields) {
+        $actualValue = $dEvalValues[$ff]
+        $minValue = $thresholdMinsParsed[$ff]
+        if ($rationale -notmatch [regex]::Escape([string]$actualValue)) {
+          Add-Issue $issues "$subject policy_rationale must reference the actual failing $ff value ($actualValue); found rationale does not cite it."
+        }
+        if ($rationale -notmatch [regex]::Escape([string]$minValue)) {
+          Add-Issue $issues "$subject policy_rationale must reference the $ff policy minimum ($minValue); found rationale does not cite it."
+        }
+      }
+    }
+    if ($hasRiskFailure) {
+      if ($rationale -notmatch [regex]::Escape($deniedRiskClass)) {
+        Add-Issue $issues "$subject policy_rationale must reference the evaluated_risk_class ($deniedRiskClass); found rationale does not cite it."
+      }
+      $referencesLowRisk = $false
+      if ($rationale -match "low.risk") { $referencesLowRisk = $true }
+      foreach ($lrc in $lowRiskClasses) {
+        if ($rationale -match [regex]::Escape([string]$lrc)) { $referencesLowRisk = $true }
+      }
+      if (-not $referencesLowRisk) {
+        Add-Issue $issues "$subject policy_rationale must reference the low-risk-class set or the term 'low-risk'; found rationale does not."
+      }
     }
   }
 }
 if ($confidenceDenied.Count -ne 1) {
-  Add-Issue $issues "Policy slice must include exactly one denied candidate failing a confidence threshold, found: $($confidenceDenied.Count)."
+  Add-Issue $issues "Policy slice must include exactly one denied candidate whose policyEvaluation confidence value is genuinely below its declared minimum (with risk class still low-risk), found: $($confidenceDenied.Count)."
 }
 if ($riskDenied.Count -ne 1) {
-  Add-Issue $issues "Policy slice must include exactly one denied candidate failing the risk-class check, found: $($riskDenied.Count)."
+  Add-Issue $issues "Policy slice must include exactly one denied candidate whose evaluated_risk_class is genuinely not in lowRiskClasses (with all confidences meeting their minimums), found: $($riskDenied.Count)."
+}
+# The two denied candidates must be distinct items with distinct denial reasons.
+if ($confidenceDenied.Count -eq 1 -and $riskDenied.Count -eq 1) {
+  if ([string]$confidenceDenied[0].com_council_work_item_id -eq [string]$riskDenied[0].com_council_work_item_id) {
+    Add-Issue $issues "The confidence-denied and risk-denied candidates must be distinct Work Items; found both reasons on the same id."
+  }
 }
 
 # --- No non-allowed type is auto_created (exhaustive check within slice) ---
@@ -599,6 +729,19 @@ foreach ($entry in $siblingProposalOnly) {
   if (-not (Test-HasNonEmptyField -Record $entry -Field "note")) {
     Add-Issue $issues "$subject must carry a non-empty note."
   }
+  # The referenced sibling must actually be of a type outside allowedAutoCreateTypes (proven from the sibling slice, not just asserted in prose).
+  if ($siblingWorkItemTypes.ContainsKey($siblingId)) {
+    $siblingType = $siblingWorkItemTypes[$siblingId]
+    if ($workItemTypes -notcontains $siblingType) {
+      Add-Issue $issues "$subject references a sibling whose com_type '$siblingType' is not in manifest com_workitemtype vocabulary."
+    }
+    if ($allowedTypes -contains $siblingType) {
+      Add-Issue $issues "$subject references a sibling of type '$siblingType' which IS in allowedAutoCreateTypes; a proposal-only sibling must be a non-allowed type by evidence, not just by note."
+    }
+  }
+  else {
+    Add-Issue $issues "$subject references a sibling Work Item whose com_type could not be harvested from Story 1.3/1.4 slices; the non-allowed-type claim must be proven from sibling slice data, not just prose."
+  }
   foreach ($mutationField in @("com_state_group", "com_auto_creation_policy_result")) {
     if ($entry.PSObject.Properties.Name -contains $mutationField) {
       Add-Issue $issues "$subject must not apply '$mutationField' in-slice; sibling items are referenced only, never modified."
@@ -621,6 +764,7 @@ $receiptRequiredFields = @($manifestRequiredReceiptFields + @("com_work_item", "
 
 $sliceReceiptIds = @{}
 $seenIdempotencyKeys = @{}
+$receiptsByWorkItem = @{}
 foreach ($receipt in $receipts) {
   $receiptId = [string]$receipt.com_receipt_id
   $subject = "Receipt $receiptId"
@@ -676,7 +820,7 @@ foreach ($receipt in $receipts) {
   if ($receipt.com_append_only_locked -isnot [bool] -or -not $receipt.com_append_only_locked) {
     Add-Issue $issues "$subject com_append_only_locked must be strict boolean true."
   }
-  Test-ConfidenceInRange -Issues $issues -Record $receipt -Field "com_confidence" -Subject $subject
+  $null = Test-ConfidenceInRange -Issues $issues -Record $receipt -Field "com_confidence" -Subject $subject
 
   foreach ($liveWriteField in @("dataverseRowId", "com_dataverse_row_id", "crmRecordUrl", "environmentUrl", "liveWriteAt", "tenantWriteAt")) {
     if ($receipt.PSObject.Properties.Name -contains $liveWriteField) {
@@ -696,6 +840,12 @@ foreach ($receipt in $receipts) {
   if (-not [string]::IsNullOrWhiteSpace($workItemId)) {
     if (-not $sliceWorkItemIds.ContainsKey($workItemId)) {
       Add-Issue $issues "$subject com_work_item references an unknown candidate Work Item: $workItemId."
+    }
+    else {
+      if (-not $receiptsByWorkItem.ContainsKey($workItemId)) {
+        $receiptsByWorkItem[$workItemId] = @()
+      }
+      $receiptsByWorkItem[$workItemId] += $receipt
     }
   }
 
@@ -726,6 +876,56 @@ foreach ($receipt in $receipts) {
 foreach ($expectedReceiptId in @("CR-LOCAL-AUTO-CREATE-001", "CR-LOCAL-AUTO-CREATE-002", "CR-LOCAL-POLICY-DENY-001", "CR-LOCAL-POLICY-DENY-002")) {
   if (-not $sliceReceiptIds.ContainsKey($expectedReceiptId)) {
     Add-Issue $issues "Policy slice must include receipt $expectedReceiptId."
+  }
+}
+
+# --- 1:1 receipt <-> candidate binding with result agreement (AC3) ---
+$receiptOwners = @{}
+foreach ($receipt in $receipts) {
+  $receiptId = [string]$receipt.com_receipt_id
+  $workItemId = [string]$receipt.com_work_item
+  if (-not [string]::IsNullOrWhiteSpace($workItemId) -and $sliceWorkItemIds.ContainsKey($workItemId)) {
+    $receiptOwners[$receiptId] = $workItemId
+  }
+}
+# No two distinct candidate ids may be served by the same receipt (a receipt has exactly one com_work_item by manifest, but assert it here too).
+foreach ($candidate in $candidates) {
+  $cid = [string]$candidate.com_council_work_item_id
+  if ([string]::IsNullOrWhiteSpace($cid)) { continue }
+  $cResult = [string]$candidate.com_auto_creation_policy_result
+  $cReceipts = @($receiptsByWorkItem[$cid] | Where-Object { $null -ne $_ })
+  if ($cReceipts.Count -lt 1) {
+    Add-Issue $issues "Candidate $cid must be backed by at least one receipt whose com_work_item references it; found 0."
+    continue
+  }
+  $hasAgreeingReceipt = $false
+  foreach ($r in $cReceipts) {
+    $rSubject = "Receipt $([string]$r.com_receipt_id) for candidate $cid"
+    $agrees = $true
+    if ($cResult -eq "auto_created") {
+      if ([string]$r.com_verb -ne "proposed") { $agrees = $false }
+      if ([string]$r.com_result -ne "accepted") { $agrees = $false }
+      if ([string]$r.com_after_state -ne "auto_created") { $agrees = $false }
+      if ([string]$r.com_policy_flags -notmatch "auto_created") { $agrees = $false }
+    }
+    elseif ($cResult -eq "policy_denied") {
+      if ([string]$r.com_verb -ne "policy_denied") { $agrees = $false }
+      if ([string]$r.com_result -ne "rejected") { $agrees = $false }
+      if ([string]$r.com_after_state -ne "proposal_only") { $agrees = $false }
+      if ([string]$r.com_policy_flags -notmatch "policy_denied") { $agrees = $false }
+    }
+    if ($agrees) { $hasAgreeingReceipt = $true }
+  }
+  if (-not $hasAgreeingReceipt) {
+    Add-Issue $issues "Candidate $cid (com_auto_creation_policy_result=$cResult) must have at least one receipt whose verb/result/com_after_state/com_policy_flags agree with that result; no agreeing receipt found."
+  }
+}
+# Every receipt must reference a candidate (no orphan receipts pointing nowhere or to a denied candidate under an auto-created receipt shape).
+foreach ($receipt in $receipts) {
+  $receiptId = [string]$receipt.com_receipt_id
+  $workItemId = [string]$receipt.com_work_item
+  if ([string]::IsNullOrWhiteSpace($workItemId) -or -not $sliceWorkItemIds.ContainsKey($workItemId)) {
+    Add-Issue $issues "Receipt $receiptId com_work_item must reference a candidate in this slice; found: $workItemId."
   }
 }
 

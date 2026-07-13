@@ -55,13 +55,13 @@ development_status:
   1-4-handle-zero-item-and-multi-item-extraction: done
   1-5-handle-source-drift-and-supersession: done
   epic-1-retrospective: optional
-  epic-2: backlog
-  2-1-maintain-the-work-item-execution-shell: ready-for-dev
-  2-2-enforce-human-approval-boundaries: ready-for-dev
-  2-3-apply-receipt-backed-queue-state-changes: ready-for-dev
-  2-4-enforce-idempotent-mutations: ready-for-dev
-  2-5-apply-safe-auto-creation-policy: ready-for-dev
-  2-6-record-failures-and-policy-denials: ready-for-dev
+  epic-2: done
+  2-1-maintain-the-work-item-execution-shell: done
+  2-2-enforce-human-approval-boundaries: done
+  2-3-apply-receipt-backed-queue-state-changes: done
+  2-4-enforce-idempotent-mutations: done
+  2-5-apply-safe-auto-creation-policy: done
+  2-6-record-failures-and-policy-denials: done
   epic-2-retrospective: optional
   epic-3: backlog
   3-1-create-a-minion-brief-snapshot: backlog

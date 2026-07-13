@@ -168,8 +168,18 @@ $demoEvidence = Read-JsonInput -Path $DemoEvidencePath
 $rawSliceText = Get-Content -LiteralPath $ShellSlicePath -Raw
 $issues = [System.Collections.Generic.List[string]]::new()
 
-# GUID pattern: 8-4-4-4-12 hex, case-insensitive. Reject any Work Item primary id shaped like a Microsoft platform id.
+# Platform-id shapes that may NEVER serve as Work Item primary identity or leak into non-source-ref
+# Work Item fields. GUID covers Dataverse row ids and Microsoft Graph activity/object ids; the Outlook
+# message-id pattern covers Exchange/Outlook message id strings (AAMk-prefixed base64-ish tokens).
 $guidPattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+$messageIdPattern = "^AAMk[A-Za-z0-9+/=_-]{10,}$"
+# Unanchored variants for the isolation scan: a smuggled platform id may be embedded in prose, so
+# the scan must match a platform-id-shaped token ANYWHERE in a non-carrier field value (not just a
+# full-string match).
+$platformIdScanPatterns = @(
+  "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+  "AAMk[A-Za-z0-9+/=_-]{10,}"
+)
 
 $workItemTypes = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_workitemtype"
 $stateGroups = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_workitemstategroup"
@@ -203,6 +213,19 @@ if ($receiptVerbs -notcontains "proposed") {
 }
 if ($workItemSourceRoles -notcontains "superseding") {
   Add-Issue $issues "Manifest com_councilworkitemsource.com_source_role is missing: superseding."
+}
+
+# Build the set of every manifest column name across all tables, so carrier-field allow-lists can
+# be verified against real columns (no phantom field names widen a platform-id exemption).
+$knownColumnNames = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($table in @($manifest.tables)) {
+  foreach ($column in @($table.columns)) {
+    $colName = [string]$column.name
+    if (-not [string]::IsNullOrWhiteSpace($colName)) { [void]$knownColumnNames.Add($colName) }
+  }
+}
+if ($knownColumnNames.Count -eq 0) {
+  Add-Issue $issues "No columns could be derived from manifest tables; carrier-field validation would silently no-op."
 }
 
 if ($shell.storyKey -ne "2-1-maintain-the-work-item-execution-shell") {
@@ -251,7 +274,35 @@ $demoWorkItemIds = @($demoEvidence.workItemIds | Where-Object { -not [string]::I
 
 # Harvest known sibling-slice Receipt IDs (for cross-slice ID-collision tripwires).
 $demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
-$driftReceiptIds = @($drift.driftRun.receipts | Where-Object { $null -ne $_ } | ForEach-Object { [string]$_.com_receipt_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+# All-slice raw-text harvest: the story's hard rule is "unique across ALL slices", not just the
+# named sibling slices. Walk every *-slice.json in the implementation-artifacts dir (except this
+# slice's own file), and collect every CWI-LOCAL-* / CR-LOCAL-* token mentioned anywhere in the
+# raw JSON text. This catches ids embedded in proposedWorkItems, workItemsFlaggedForReview, evidence
+# refs, idempotency keys, rationale prose, acceptanceMapping text, etc. — a superset of declared ids,
+# which is the conservative set a new id must not collide with.
+$allSliceWorkItemIds = [System.Collections.Generic.HashSet[string]]::new()
+$allSliceReceiptIds = [System.Collections.Generic.HashSet[string]]::new()
+$wiIdRegex = [regex]'CWI-LOCAL-[A-Za-z0-9_-]+'
+$crIdRegex = [regex]'CR-LOCAL-[A-Za-z0-9_-]+'
+$selfSliceBasename = (Split-Path -Leaf $ShellSlicePath)
+$selfStoryKey = [string]$shell.storyKey
+$selfStoryKeyRegex = [regex]'"storyKey"\s*:\s*"2-1-maintain-the-work-item-execution-shell"'
+foreach ($sliceFile in @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File)) {
+  if ($sliceFile.Name -eq $selfSliceBasename) { continue }
+  try {
+    $rawText = Get-Content -LiteralPath $sliceFile.FullName -Raw
+  }
+  catch {
+    Add-Issue $issues "Could not read sibling slice $($sliceFile.Name) for all-slice id harvest: $($_.Exception.Message)"
+    continue
+  }
+  # Exclude this story's own slice even if it was copied/renamed into the dir, so the validator never
+  # harvests its own ids as "sibling" ids (which would cause a false self-collision).
+  if ($selfStoryKeyRegex.IsMatch($rawText)) { continue }
+  foreach ($m in $wiIdRegex.Matches($rawText)) { [void]$allSliceWorkItemIds.Add($m.Value) }
+  foreach ($m in $crIdRegex.Matches($rawText)) { [void]$allSliceReceiptIds.Add($m.Value) }
+}
 
 foreach ($sliceLoad in @(
     @{ Name = "manual-source-record-slice sampleRecords"; Count = $manualSources.Count },
@@ -274,6 +325,9 @@ if ($siblingWorkItemIds.Count -eq 0) {
 }
 if ($demoReceiptIds.Count -eq 0) {
   Add-Issue $issues "No reserved receipt IDs could be loaded from state-transition-demo-evidence.json; receipt collision checks would silently no-op."
+}
+if ($allSliceWorkItemIds.Count -eq 0 -and $allSliceReceiptIds.Count -eq 0) {
+  Add-Issue $issues "No CWI-LOCAL-* / CR-LOCAL-* ids could be harvested from any sibling *-slice.json; the all-slice uniqueness check would silently no-op."
 }
 
 $run = $shell.executionShell
@@ -331,8 +385,9 @@ $manifestRequiredWorkItemFields = @(@($workItemTable.columns) | Where-Object { $
 if ($manifestRequiredWorkItemFields.Count -eq 0) {
   Add-Issue $issues "No required Work Item columns could be derived from manifest com_councilworkitem; required-field checks would silently no-op."
 }
-# Manifest-required columns, plus the Council shell fields Story 2.1 pins (owner candidate, approved owner, created receipt).
-$workItemRequiredFields = @($manifestRequiredWorkItemFields + @("com_owner_candidate", "com_approved_owner", "com_created_receipt")) | Sort-Object -Unique
+# Manifest-required columns, plus the Council shell fields Story 2.1 pins (owner candidate, approved owner,
+# created receipt, and the NFR12 policy-flag declaration that is NOT optional on a Work Item).
+$workItemRequiredFields = @($manifestRequiredWorkItemFields + @("com_owner_candidate", "com_approved_owner", "com_created_receipt", "com_policy_flags")) | Sort-Object -Unique
 
 # Derive manifest-required Receipt columns and pin the Council receipt contract fields.
 $receiptTable = @($manifest.tables) | Where-Object { $_.schemaName -eq "com_councilreceipt" } | Select-Object -First 1
@@ -346,6 +401,24 @@ $workItems = @($run.workItems | Where-Object { $null -ne $_ })
 if ($workItems.Count -lt 3) {
   Add-Issue $issues "Shell slice must include at least three Work Items covering different types, found $($workItems.Count)."
 }
+
+# Source-reference carrier fields that ARE permitted to hold Microsoft platform ids (NFR12 allows
+# platform ids "only inside source references"). Read the declared allow-list from the slice's
+# primaryIdentityProof so the isolation scan is bound to the actual receipts, not a hardcoded list.
+$allowedPlatformIdCarrierFields = [System.Collections.Generic.HashSet[string]]::new()
+$declaredCarrierFields = @($run.primaryIdentityProof.platformIdFieldsAllowedOnlyInSourceReferences | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+if ($declaredCarrierFields.Count -eq 0) {
+  Add-Issue $issues "primaryIdentityProof.platformIdFieldsAllowedOnlyInSourceReferences must declare a non-empty list of source-reference carrier fields; the platform-id isolation scan would otherwise be unboundable."
+}
+foreach ($carrier in $declaredCarrierFields) {
+  [void]$allowedPlatformIdCarrierFields.Add([string]$carrier)
+}
+
+# Track computed (structural) NFR12 truths so the primaryIdentityProof booleans can be verified
+# against reality rather than trusted as self-assertions.
+$computedAllPrimaryIdsCouncilLevel = $true
+$computedNoPrimaryIdGuidShaped = $true
+$computedPlatformIdsIsolated = $true
 
 $workItemIds = @{}
 $workItemTypesSeen = @{}
@@ -376,9 +449,11 @@ foreach ($item in $workItems) {
   }
   if ($itemId -notmatch "^CWI-LOCAL-") {
     Add-Issue $issues "$subject must use Council-level CWI-LOCAL-* primary identity."
+    $computedAllPrimaryIdsCouncilLevel = $false
   }
   if ($itemId -match $guidPattern) {
     Add-Issue $issues "$subject primary id must not be GUID-shaped; a Microsoft platform identifier may never serve as primary product identity (NFR12), found: $itemId."
+    $computedNoPrimaryIdGuidShaped = $false
   }
   if ($workItemIds.ContainsKey($itemId)) {
     Add-Issue $issues "Duplicate Work Item ID in slice: $itemId."
@@ -386,8 +461,8 @@ foreach ($item in $workItems) {
   else {
     $workItemIds[$itemId] = $item
   }
-  if ($siblingWorkItemIds -contains $itemId) {
-    Add-Issue $issues "$subject collides with an existing Work Item ID from a Story 1.3/1.4 sibling slice; new ids must be unique across ALL slices."
+  if ($allSliceWorkItemIds.Contains($itemId)) {
+    Add-Issue $issues "$subject collides with an existing CWI-LOCAL-* Work Item id harvested from a sibling *-slice.json; new ids must be unique across ALL slices."
   }
   if ($demoWorkItemIds -contains $itemId) {
     Add-Issue $issues "$subject collides with a reserved state-transition-demo Work Item ID."
@@ -431,9 +506,24 @@ foreach ($item in $workItems) {
       Add-Issue $issues "$subject must not carry live-write marker field '$liveWriteField'; Story 2.1 Work Items are local contract evidence only."
     }
   }
-  if (Test-HasNonEmptyField -Record $item -Field "com_policy_flags") {
-    if ([string]$item.com_policy_flags -notmatch [regex]::Escape("primary_id_is_council_level_not_platform")) {
-      Add-Issue $issues "$subject com_policy_flags must declare primary_id_is_council_level_not_platform; NFR12 is a Story 2.1 shell invariant."
+  # com_policy_flags is a required field (enforced above) and must declare the NFR12 invariant token.
+  if ([string]$item.com_policy_flags -notmatch [regex]::Escape("primary_id_is_council_level_not_platform")) {
+    Add-Issue $issues "$subject com_policy_flags must declare primary_id_is_council_level_not_platform; NFR12 is a Story 2.1 shell invariant and is not optional."
+  }
+
+  # Platform-id isolation (NFR12): scan every string-valued Work Item field EXCEPT the declared
+  # source-reference carrier fields, and reject any value whose shape matches a Microsoft platform
+  # id (GUID / Dataverse row id / Graph activity id / Outlook message id). This proves platform ids
+  # appear only inside source references, rather than self-asserting it via a boolean.
+  foreach ($property in @($item.PSObject.Properties)) {
+    if ($allowedPlatformIdCarrierFields -contains $property.Name) { continue }
+    $value = $property.Value
+    if ($null -eq $value -or $value -isnot [string]) { continue }
+    foreach ($pattern in $platformIdScanPatterns) {
+      if ($value -match $pattern) {
+        Add-Issue $issues "$subject field '$($property.Name)' carries a Microsoft-platform-id-shaped value '$value'; platform ids may only appear inside source-reference carrier fields, never as Work Item identity or in shell prose (NFR12)."
+        $computedPlatformIdsIsolated = $false
+      }
     }
   }
 }
@@ -503,8 +593,8 @@ foreach ($receipt in $receipts) {
     Add-Issue $issues "Receipt must declare com_receipt_id."
   }
   else {
-    if ($receiptId -notmatch "^CR-") {
-      Add-Issue $issues "$subject must use Council-level CR-* identity."
+    if ($receiptId -notmatch "^CR-LOCAL-") {
+      Add-Issue $issues "$subject must use Council-level CR-LOCAL-* identity (the hard rule), found: $receiptId."
     }
     if ($sliceReceiptIds.ContainsKey($receiptId)) {
       Add-Issue $issues "Duplicate receipt ID in slice: $receiptId."
@@ -515,8 +605,8 @@ foreach ($receipt in $receipts) {
     if ($demoReceiptIds -contains $receiptId) {
       Add-Issue $issues "$subject collides with a reserved state-transition-demo receipt ID."
     }
-    if ($driftReceiptIds -contains $receiptId) {
-      Add-Issue $issues "$subject collides with an existing receipt ID from the Story 1.5 sibling slice; new ids must be unique across ALL slices."
+    if ($allSliceReceiptIds.Contains($receiptId)) {
+      Add-Issue $issues "$subject collides with an existing CR-LOCAL-* receipt id harvested from a sibling *-slice.json; new ids must be unique across ALL slices."
     }
   }
 
@@ -686,15 +776,52 @@ else {
   if ($primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform -isnot [bool] -or -not $primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform) {
     Add-Issue $issues "primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform must be strict boolean true."
   }
+  elseif ($primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform -ne $computedAllPrimaryIdsCouncilLevel) {
+    Add-Issue $issues "primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform is asserted as $($primaryIdentityProof.primaryIdsAreCouncilLevelNotPlatform) but the structural scan of Work Item primary ids computed $computedAllPrimaryIdsCouncilLevel; the proof must match the receipts."
+  }
   if ($primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences -isnot [bool] -or -not $primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences) {
     Add-Issue $issues "primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences must be strict boolean true."
+  }
+  elseif ($primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences -ne $computedPlatformIdsIsolated) {
+    Add-Issue $issues "primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences is asserted as $($primaryIdentityProof.platformIdsAppearOnlyInsideSourceReferences) but the structural platform-id isolation scan computed $computedPlatformIdsIsolated; the proof must match the receipts."
   }
   if ($primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped -isnot [bool] -or -not $primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped) {
     Add-Issue $issues "primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped must be strict boolean true."
   }
-  foreach ($field in @("primaryIdShape")) {
-    if (-not (Test-HasNonEmptyField -Record $primaryIdentityProof -Field $field)) {
-      Add-Issue $issues "primaryIdentityProof must carry a non-empty $field."
+  elseif ($primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped -ne $computedNoPrimaryIdGuidShaped) {
+    Add-Issue $issues "primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped is asserted as $($primaryIdentityProof.noWorkItemPrimaryIdIsGuidShaped) but the structural GUID scan computed $computedNoPrimaryIdGuidShaped; the proof must match the receipts."
+  }
+  # platformIdFieldsAllowedOnlyInSourceReferences: must be a non-empty array, and every declared
+  # carrier field must actually exist as a known manifest Work Item / source-link column so a lying
+  # slice cannot widen the exemption with a phantom field name.
+  $carrierFields = @($primaryIdentityProof.PSObject.Properties | Where-Object { $_.Name -eq "platformIdFieldsAllowedOnlyInSourceReferences" })
+  if ($carrierFields.Count -eq 0) {
+    Add-Issue $issues "primaryIdentityProof must declare platformIdFieldsAllowedOnlyInSourceReferences so the platform-id isolation scan is bound to the actual carrier fields."
+  }
+  else {
+    $carrierList = @($primaryIdentityProof.platformIdFieldsAllowedOnlyInSourceReferences | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+    if ($carrierList.Count -eq 0) {
+      Add-Issue $issues "primaryIdentityProof.platformIdFieldsAllowedOnlyInSourceReferences must list at least one source-reference carrier field."
+    }
+    foreach ($carrier in $carrierList) {
+      if ($knownColumnNames -notcontains [string]$carrier) {
+        Add-Issue $issues "primaryIdentityProof.platformIdFieldsAllowedOnlyInSourceReferences lists an unknown column '$carrier'; carrier fields must be real manifest columns."
+      }
+    }
+  }
+  # primaryIdShape: must carry substantive content naming the invariant, not a one-character filler.
+  if (-not (Test-HasNonEmptyField -Record $primaryIdentityProof -Field "primaryIdShape")) {
+    Add-Issue $issues "primaryIdentityProof must carry a non-empty primaryIdShape."
+  }
+  else {
+    $shape = [string]$primaryIdentityProof.primaryIdShape
+    if ($shape.Length -lt 40) {
+      Add-Issue $issues "primaryIdentityProof.primaryIdShape must carry substantive prose describing the primary-id invariant, found only $($shape.Length) characters."
+    }
+    foreach ($requiredToken in @("CWI-LOCAL", "GUID", "platform")) {
+      if ($shape -notlike "*$requiredToken*") {
+        Add-Issue $issues "primaryIdentityProof.primaryIdShape must reference the token '$requiredToken' so the proof is not a free-text placeholder."
+      }
     }
   }
 }
@@ -730,18 +857,25 @@ foreach ($itemId in @($workItemIds.Keys)) {
   }
 }
 
-foreach ($criterion in @(1, 2)) {
+foreach ($criterion in @(1, 2, 3)) {
   $mapping = @($shell.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
     Add-Issue $issues "Missing acceptance mapping for AC $criterion."
   }
   else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 2) {
+      Add-Issue $issues "Acceptance mapping for AC $criterion must list at least two non-empty localEvidence entries; a single bullet cannot prove a Slice-must-prove criterion."
     }
     if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
       Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
     }
+  }
+}
+# Reject extra/unknown acceptanceMapping criteria so the three Slice-must-prove items cannot be
+# silently renumbered or padded.
+foreach ($mapping in @($shell.acceptanceMapping)) {
+  if (@(1, 2, 3) -notcontains [int]$mapping.acceptanceCriterion) {
+    Add-Issue $issues "Acceptance mapping declares an unknown acceptanceCriterion $($mapping.acceptanceCriterion); Story 2.1 has exactly three Slice-must-prove criteria (1, 2, 3)."
   }
 }
 

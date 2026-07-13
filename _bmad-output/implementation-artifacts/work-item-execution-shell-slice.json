@@ -364,17 +364,25 @@
       "localEvidence": [
         "executionShell.workItems (5 Work Items of 5 distinct types: decision, delegation, risk, request, follow_up) each carrying com_council_work_item_id (CWI-LOCAL-*), com_type, com_summary, com_state_group, com_owner_candidate, com_approved_owner (where known), com_primary_source_record, com_rationale, com_approval_required, com_semantic_contract_version, and com_created_receipt (CR-LOCAL-SHELL-CREATE-*)",
         "executionShell.creationReceipts CR-LOCAL-SHELL-CREATE-001..005 (verb proposed) bound to each Work Item with full manifest receipt fields",
-        "executionShell.primaryIdentityProof: primary ids are CWI-LOCAL-* and no Work Item primary id is GUID-shaped; platform ids appear only inside source references",
-        "guards.primaryIdIsCouncilLevelNotPlatform=true; guards.noWorkItemStateChangeInThisSlice=true"
+        "guards.noWorkItemStateChangeInThisSlice=true; executionShell.workItemStateChangesDeferred records every Work Item with a Story 2.3 receipt gate"
       ],
       "tenantEvidenceRequired": "Persisting the Work Item execution shell to live Dataverse rows and emitting creation receipts against a tenant record remain receipt-gated to Epic 2 Story 2.3; this slice is local contract evidence only and performs no tenant write."
     },
     {
       "acceptanceCriterion": 2,
       "localEvidence": [
+        "executionShell.primaryIdentityProof: primaryIdPattern CWI-LOCAL-*; every Work Item com_council_work_item_id matches ^CWI-LOCAL- and none is GUID-shaped; platformIdFieldsAllowedOnlyInSourceReferences lists the carrier fields (com_source_object_ref, com_source_object_url, com_conversation_ref, com_source_version_ref, com_content_hash, com_parent_ref) that are the only fields permitted to hold Microsoft platform ids",
+        "executionShell.workItems[].com_policy_flags each declare primary_id_is_council_level_not_platform (NFR12 invariant, not optional); guards.primaryIdIsCouncilLevelNotPlatform=true; executionShell.decisionPolicy.platformIdsOnlyInsideSourceReferences=true",
+        "No Work Item shell field outside the declared carrier fields carries a GUID-, activity-id-, or Outlook-message-id-shaped value; platform ids appear only inside source references carried by sibling-slice CSR-* records, never as Work Item primary identity"
+      ],
+      "tenantEvidenceRequired": "Proving on a live tenant that no Microsoft platform identifier (Dataverse row id, Graph activity id, Outlook message id) is persisted as a Work Item primary identity remains gated to Epic 2 Story 2.3 tenant-row proof; this slice proves the invariant locally against the manifest-shaped shell fields."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
         "executionShell.queueView.stateGroups declares all seven state groups: proposed, approved, blocked, held, in_review, completed, failed",
         "proposed is populated with the five CWI-LOCAL-SHELL-* Work Items; approved, blocked, held, in_review, completed, and failed are explicitly declaredEmpty with a note that any move from proposed is receipt-gated to Epic 2 Story 2.3",
-        "guards.noWorkItemStateChangeInThisSlice=true"
+        "guards.noWorkItemStateChangeInThisSlice=true; no non-proposed state group is populated in this slice"
       ],
       "tenantEvidenceRequired": "Surfacing the live Council Queue with populated non-proposed state groups remains gated to Epic 2 Story 2.3 receipt-backed state transitions; no tenant Work Item state was modified for this slice."
     }

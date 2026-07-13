@@ -286,10 +286,10 @@
     ],
     "receiptSourceLinks": [
       {
-        "com_name": "CR-LOCAL-APPROVAL-PROPOSED-001 approval evidence - CSR-MANUAL-SUMMARY-001",
+        "com_name": "CR-LOCAL-APPROVAL-PROPOSED-001 supporting evidence - CSR-MANUAL-SUMMARY-001",
         "com_receipt": "CR-LOCAL-APPROVAL-PROPOSED-001",
         "com_source_record": "CSR-MANUAL-SUMMARY-001",
-        "com_evidence_role": "approval"
+        "com_evidence_role": "supporting"
       },
       {
         "com_name": "CR-LOCAL-APPROVAL-001 approval evidence - CSR-MANUAL-SUMMARY-001",
@@ -304,56 +304,56 @@
         "riskClassLabel": "decision",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-DECISION-001].noPreApprovalExternalAction=true; the item stays proposed with approval_required and no external action, delegation, or memory promotion occurred."
+        "proof": "CWI-LOCAL-APPROVAL-DECISION-001 remains in com_state_group proposed. No approved, delegated, memory_promoted, external_action_requested, or external_action_completed receipt was emitted for this work item in this slice. No tenant write, outbound send, or state transition occurred before explicit human approval. The receipts collection contains no row binding this id to any verb other than proposed; absence of such a receipt row is the negative evidence that no external action occurred pre-approval."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-DELEGATION-001",
         "riskClassLabel": "delegation",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-DELEGATION-001].noPreApprovalExternalAction=true; no Minion was granted authority and no delegated action executed."
+        "proof": "CWI-LOCAL-APPROVAL-DELEGATION-001 remains in com_state_group proposed. No delegated or approved receipt was emitted for this work item; no Minion was granted authority and no delegated action executed. No external_action_requested or external_action_completed receipt exists for this id. Absence of any delegated-verb receipt binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-RISK-001",
         "riskClassLabel": "risk",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-RISK-001].noPreApprovalExternalAction=true; no mitigation, escalation, or outbound notification occurred."
+        "proof": "CWI-LOCAL-APPROVAL-RISK-001 remains in com_state_group proposed. No external_action_requested, external_action_completed, approved, or delegated receipt was emitted for this work item. No mitigation, escalation, or outbound notification occurred before explicit human approval. Absence of any such receipt row binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-SENSITIVE-001",
         "riskClassLabel": "sensitive",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-SENSITIVE-001].noPreApprovalExternalAction=true; no sensitive content was handled, copied, or forwarded."
+        "proof": "CWI-LOCAL-APPROVAL-SENSITIVE-001 remains in com_state_group proposed. No external_action_requested, external_action_completed, approved, or delegated receipt was emitted for this work item. No sensitive content was handled, copied, forwarded, or otherwise acted on before explicit human approval. Absence of any such receipt row binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-OUTBOUND-001",
         "riskClassLabel": "outbound",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-OUTBOUND-001].noPreApprovalExternalAction=true; no message was sent and no external_action_requested or external_action_completed receipt was emitted."
+        "proof": "CWI-LOCAL-APPROVAL-OUTBOUND-001 remains in com_state_group proposed. No external_action_requested or external_action_completed receipt was emitted for this work item; no message was sent and no external system was called. No approved or delegated receipt exists for this id. Absence of any external-action-verb receipt binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-MEMORY-001",
         "riskClassLabel": "memory_promotion",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-MEMORY-001].noPreApprovalExternalAction=true; no memory candidate was promoted and no memory_promoted receipt was emitted."
+        "proof": "CWI-LOCAL-APPROVAL-MEMORY-001 remains in com_state_group proposed. No memory_promoted, approved, or delegated receipt was emitted for this work item; no memory candidate was promoted and no approved instruction was created before explicit human approval. Absence of any memory_promoted-verb receipt binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-SKILL-001",
         "riskClassLabel": "skill_authority_expansion",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-SKILL-001].noPreApprovalExternalAction=true; no skill authority class was broadened and no skill record was updated."
+        "proof": "CWI-LOCAL-APPROVAL-SKILL-001 remains in com_state_group proposed. No approved or delegated receipt was emitted for this work item; no skill authority class was broadened and no skill record was updated. No external_action_requested or external_action_completed receipt exists for this id. Absence of any such receipt binding this id is the negative evidence that no pre-approval external action occurred."
       },
       {
         "workItem": "CWI-LOCAL-APPROVAL-TENANT-001",
         "riskClassLabel": "tenant_affecting",
         "guard": "noPreApprovalExternalAction",
         "value": true,
-        "proof": "candidateWorkItems[CWI-LOCAL-APPROVAL-TENANT-001].noPreApprovalExternalAction=true; no tenant write, solution publish, or environment configuration change occurred."
+        "proof": "CWI-LOCAL-APPROVAL-TENANT-001 remains in com_state_group proposed. No approved, delegated, external_action_requested, or external_action_completed receipt was emitted for this work item; no tenant write, solution publish, or environment configuration change occurred before explicit human approval. Absence of any such receipt binding this id is the negative evidence that no pre-approval external action occurred."
       }
     ],
     "sourceUpdatesDeferred": [
@@ -392,7 +392,7 @@
       "acceptanceCriterion": 3,
       "localEvidence": [
         "approvalBoundariesRun.receipts CR-LOCAL-APPROVAL-PROPOSED-001 (verb proposed) and CR-LOCAL-APPROVAL-001 (verb approved) are manifest-verb receipts with actor_type=human, actor_id=Doug, authority_basis, and com_append_only_locked=true",
-        "approvalBoundariesRun.receiptSourceLinks binds each approval receipt to its source evidence with the approval evidence role",
+        "approvalBoundariesRun.receiptSourceLinks binds each receipt to its source evidence with the manifest com_evidence_role: the approved-verb receipt CR-LOCAL-APPROVAL-001 uses role approval, the proposed-verb receipt CR-LOCAL-APPROVAL-PROPOSED-001 uses role supporting (proposal evidence is not approval evidence)",
         "guards.receiptsAppendOnly=true and guards.receiptsAreLocalContractEvidenceOnly=true; no live-write marker fields appear on any receipt"
       ],
       "tenantEvidenceRequired": "Live approval receipts emitted by the tenant receipt subsystem remain VERIFY IN TENANT; this slice's receipts are local contract evidence only and no tenant receipt row was created."

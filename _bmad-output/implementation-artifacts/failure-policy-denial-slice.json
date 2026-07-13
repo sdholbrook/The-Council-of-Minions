@@ -207,7 +207,7 @@
         "failureRun.failureReceipts CR-LOCAL-FAILURE-001 (system error, retryAllowed=true, humanReviewRequired=false, failureCode source_read_failed, verb failed, result failed)",
         "failureRun.failureReceipts CR-LOCAL-FAILURE-002 (policy denial, retryAllowed=false, humanReviewRequired=false, failureCode auto_create_policy_denied, verb policy_denied, result rejected)",
         "failureRun.failureReceipts CR-LOCAL-FAILURE-003 (human review, retryAllowed=false, humanReviewRequired=true, failureCode extraction_uncertain_needs_review, verb failed, result failed)",
-        "each receipt carries attemptedAction, com_actor_type, com_actor_id, com_authority_basis, com_evidence_refs, retryAllowed, com_failure_code, com_result, and humanReviewRequired",
+        "failureRun.failureReceipts CR-LOCAL-FAILURE-001, CR-LOCAL-FAILURE-002, CR-LOCAL-FAILURE-003 each carry attemptedAction, com_actor_type, com_actor_id, com_authority_basis, com_evidence_refs, retryAllowed, com_failure_code, com_result, and humanReviewRequired",
         "failureRun.failureCodeVocabulary declares each code with kind, retryAllowed, humanReviewRequired, and definition as a Story 2.6 local extension of the manifest free-text com_failure_code column"
       ],
       "tenantEvidenceRequired": "Recording failures against a live tenant Receipt table and adopting these failure codes as tenant-wide choice values are receipt-gated to Epic 2; this slice is local contract evidence only."

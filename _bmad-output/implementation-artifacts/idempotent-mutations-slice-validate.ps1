@@ -30,28 +30,69 @@ function Get-ChoiceValues {
   @($choice.values | Where-Object { $null -ne $_ })
 }
 
-function Get-ColumnChoiceValues {
+function Invoke-CollectSiblingIds {
+  # Recursively walk a parsed sibling slice JSON and harvest every canonical
+  # Council id / idempotency key by property name, plus the demo-evidence
+  # workItemIds/receiptIds arrays. This is the single source of truth for
+  # cross-slice collision checks so they cover ALL co-located slices, not just
+  # the named 1.1-1.5 siblings (Story 2.4 hard rule: ids unique across ALL
+  # slices).
   param(
-    [Parameter(Mandatory = $true)]$Manifest,
-    [Parameter(Mandatory = $true)][string]$TableSchemaName,
-    [Parameter(Mandatory = $true)][string]$ColumnName
+    [Parameter(Mandatory = $false)][AllowNull()]$Node,
+    [Parameter(Mandatory = $true)][hashtable]$WorkItems,
+    [Parameter(Mandatory = $true)][hashtable]$Receipts,
+    [Parameter(Mandatory = $true)][hashtable]$Keys,
+    [Parameter(Mandatory = $true)][hashtable]$SourceRecords
   )
 
-  $table = @($Manifest.tables) | Where-Object { $_.schemaName -eq $TableSchemaName } | Select-Object -First 1
-  $column = @($table.columns) | Where-Object { $_.name -eq $ColumnName } | Select-Object -First 1
-  @($column.values | Where-Object { $null -ne $_ })
-}
-
-function Get-ColumnChoiceName {
-  param(
-    [Parameter(Mandatory = $true)]$Manifest,
-    [Parameter(Mandatory = $true)][string]$TableSchemaName,
-    [Parameter(Mandatory = $true)][string]$ColumnName
-  )
-
-  $table = @($Manifest.tables) | Where-Object { $_.schemaName -eq $TableSchemaName } | Select-Object -First 1
-  $column = @($table.columns) | Where-Object { $_.name -eq $ColumnName } | Select-Object -First 1
-  [string]$column.choice
+  if ($null -eq $Node) { return }
+  if ($Node -is [System.Collections.IList]) {
+    foreach ($item in $Node) {
+      Invoke-CollectSiblingIds -Node $item -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords
+    }
+    return
+  }
+  if ($Node -is [pscustomobject]) {
+    foreach ($prop in $Node.PSObject.Properties) {
+      switch ($prop.Name) {
+        "com_council_work_item_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $WorkItems[$id] = $true }
+          break
+        }
+        "com_receipt_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $Receipts[$id] = $true }
+          break
+        }
+        "com_idempotency_key" {
+          $k = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($k)) { $Keys[$k] = $true }
+          break
+        }
+        "com_council_source_record_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $SourceRecords[$id] = $true }
+          break
+        }
+        "workItemIds" {
+          if ($prop.Value -is [System.Collections.IList]) {
+            foreach ($v in $prop.Value) { $id = [string]$v; if (-not [string]::IsNullOrWhiteSpace($id)) { $WorkItems[$id] = $true } }
+          }
+          break
+        }
+        "receiptIds" {
+          if ($prop.Value -is [System.Collections.IList]) {
+            foreach ($v in $prop.Value) { $id = [string]$v; if (-not [string]::IsNullOrWhiteSpace($id)) { $Receipts[$id] = $true } }
+          }
+          break
+        }
+        default {
+          Invoke-CollectSiblingIds -Node $prop.Value -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords
+        }
+      }
+    }
+  }
 }
 
 function Test-HasNonEmptyField {
@@ -151,8 +192,9 @@ $outlookSlice = Read-JsonInput -Path $OutlookSlicePath
 $story13Extraction = Read-JsonInput -Path $Story13ExtractionPath
 $story14Extraction = Read-JsonInput -Path $Story14ExtractionPath
 $driftSlice = Read-JsonInput -Path $DriftSlicePath
-$demoEvidence = Read-JsonInput -Path $DemoEvidencePath
-$rawSliceText = Get-Content -LiteralPath $IdempotentSlicePath -Raw
+# $demoEvidence is intentionally not parsed here: the generic sibling-id harvester
+# below walks state-transition-demo-evidence.json (and every other sibling JSON)
+# straight from disk so collision checks cover ALL co-located slices.
 $issues = [System.Collections.Generic.List[string]]::new()
 
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
@@ -236,21 +278,10 @@ foreach ($record in @($manualSources + $outlookSources + $story14EmbeddedSources
 }
 $knownPriorSourceIds = @($priorSourcesById.Keys)
 
-# Cross-slice Work Item IDs (Story 1.3/1.4 proposed Work Items + demo state-transition work items).
+# Named sibling structural loads (for deep per-slice tripwires + runId collision).
 $story13Items = @($story13Extraction.extractionRun.proposedWorkItems | Where-Object { $null -ne $_ })
 $story14Items = @($story14Extraction.extractionRun.proposedWorkItems | Where-Object { $null -ne $_ })
-$siblingWorkItemIds = @($story13Items + $story14Items | ForEach-Object { [string]$_.com_council_work_item_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-$demoWorkItemIds = @($demoEvidence.workItemIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
-$siblingWorkItemIds = @($siblingWorkItemIds + $demoWorkItemIds | Sort-Object -Unique)
-
-# Cross-slice Receipt IDs (Story 1.5 receipts + demo state-transition receipts).
 $driftReceipts = @($driftSlice.driftRun.receipts | Where-Object { $null -ne $_ })
-$siblingReceiptIds = @($driftReceipts | ForEach-Object { [string]$_.com_receipt_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-$demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
-$siblingReceiptIds = @($siblingReceiptIds + $demoReceiptIds | Sort-Object -Unique)
-
-# Sibling idempotency keys (Story 1.5 receipts carry com_idempotency_key).
-$siblingIdempotencyKeys = @($driftReceipts | ForEach-Object { [string]$_.com_idempotency_key } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
 foreach ($sliceLoad in @(
     @{ Name = "manual-source-record-slice sampleRecords"; Count = $manualSources.Count },
@@ -265,14 +296,42 @@ foreach ($sliceLoad in @(
   }
 }
 
+# Generic cross-slice id harvest: walk EVERY sibling slice JSON in this folder so
+# collision checks cover ALL co-located slices (Story 2.4 hard rule: ids unique
+# across ALL slices), not only the named 1.1-1.5 siblings. Hashtables make the
+# membership tests O(1) and immune to duplicate-fold bugs.
+$siblingWorkItemIds = @{}
+$siblingReceiptIds = @{}
+$siblingIdempotencyKeys = @{}
+$siblingSourceRecordIds = @{}
+$siblingSliceFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*.json" |
+  Where-Object { $_.Name -ne "dataverse-mvp-schema-manifest.json" -and $_.Name -ne "idempotent-mutations-slice.json" } |
+  ForEach-Object { $_.FullName })
+if ($siblingSliceFiles.Count -eq 0) {
+  Add-Issue $issues "No sibling slice JSON files found in $PSScriptRoot; cross-slice id-collision checks would silently no-op."
+}
+foreach ($siblingFile in $siblingSliceFiles) {
+  $siblingJson = Read-JsonInput -Path $siblingFile
+  Invoke-CollectSiblingIds -Node $siblingJson -WorkItems $siblingWorkItemIds -Receipts $siblingReceiptIds -Keys $siblingIdempotencyKeys -SourceRecords $siblingSourceRecordIds
+}
+
+# Fold sibling source-record ids into the prior-source set used for
+# com_primary_source_record resolution (broader than the named 1.1/1.2/1.4 set).
+foreach ($sid in @($siblingSourceRecordIds.Keys)) {
+  if ($knownPriorSourceIds -notcontains $sid) { $knownPriorSourceIds += $sid }
+}
+
 if ($knownPriorSourceIds.Count -eq 0) {
-  Add-Issue $issues "No Source Record IDs could be loaded from the Story 1.1/1.2/1.4 slices; com_primary_source_record checks would silently no-op."
+  Add-Issue $issues "No Source Record IDs could be harvested from sibling slices; com_primary_source_record checks would silently no-op."
 }
 if ($siblingWorkItemIds.Count -eq 0) {
-  Add-Issue $issues "No Work Item IDs could be loaded from sibling slices; Work Item collision checks would silently no-op."
+  Add-Issue $issues "No Work Item IDs could be harvested from sibling slices; Work Item collision checks would silently no-op."
 }
 if ($siblingReceiptIds.Count -eq 0) {
-  Add-Issue $issues "No Receipt IDs could be loaded from sibling slices; receipt collision checks would silently no-op."
+  Add-Issue $issues "No Receipt IDs could be harvested from sibling slices; receipt collision checks would silently no-op."
+}
+if ($siblingIdempotencyKeys.Count -eq 0) {
+  Add-Issue $issues "No idempotency keys could be harvested from sibling slices; key collision checks would silently no-op."
 }
 
 $run = $slice.idempotencyRun
@@ -345,6 +404,16 @@ $mutationIds = @{}
 $mutationKeys = @{}
 $keyToMutations = @{}
 $nonDuplicateTriggerKinds = @{}
+# Pre-collect every mutation id BEFORE the validation loop so the isDuplicateOf
+# reference check is order-independent (a duplicate listed before its original
+# in the mutations array must still resolve, not false-fail on ContainsKey).
+$allMutationIds = @{}
+foreach ($preMutation in $mutations) {
+  $preId = [string]$preMutation.mutationId
+  if (-not [string]::IsNullOrWhiteSpace($preId) -and -not $allMutationIds.ContainsKey($preId)) {
+    $allMutationIds[$preId] = $preMutation
+  }
+}
 foreach ($mutation in $mutations) {
   $mutationId = [string]$mutation.mutationId
   $subject = "Mutation $mutationId"
@@ -409,11 +478,11 @@ foreach ($mutation in $mutations) {
     $isDuplicate = $mutation.isDuplicate
   }
   if ($isDuplicate) {
-    if (-not (Test-HasNonEmptyField -Record $mutation -Field "isDuplicateOf") -or -not $mutationIds.ContainsKey([string]$mutation.isDuplicateOf)) {
+    if (-not (Test-HasNonEmptyField -Record $mutation -Field "isDuplicateOf") -or -not $allMutationIds.ContainsKey([string]$mutation.isDuplicateOf)) {
       Add-Issue $issues "$subject (isDuplicate=true) must reference an existing original mutation via isDuplicateOf, found: $($mutation.isDuplicateOf)."
     }
     else {
-      $original = $mutationIds[[string]$mutation.isDuplicateOf]
+      $original = $allMutationIds[[string]$mutation.isDuplicateOf]
       if ([string]$original.idempotencyKey -ne [string]$mutation.idempotencyKey) {
         Add-Issue $issues "$subject must reuse the original mutation's idempotency key ($($original.idempotencyKey)), found: $($mutation.idempotencyKey)."
       }
@@ -456,6 +525,15 @@ foreach ($mutation in $mutations) {
       Add-Issue $issues "$subject (unverifiableKey=true) must carry a non-empty unverifiableReason."
     }
   }
+
+  # Accepted path (neither duplicate nor unverifiable): the free-form outcome
+  # string is constrained to the accepted vocabulary so an accepting mutation
+  # cannot masquerade as no_op/rejected while its receipt says "accepted".
+  if (-not $isDuplicate -and -not $unverifiable) {
+    if ([string]$mutation.outcome -ne "accepted") {
+      Add-Issue $issues "$subject (accepted path) outcome must be 'accepted', found: $($mutation.outcome)."
+    }
+  }
 }
 
 foreach ($kind in $declaredTriggerKinds) {
@@ -487,7 +565,7 @@ if ($dupKeyPairs -ne 1) {
 
 # Sibling idempotency-key collision: this slice's mutation keys must not collide with sibling receipt keys.
 foreach ($key in @($mutationKeys.Keys | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })) {
-  if ($siblingIdempotencyKeys -contains $key) {
+  if ($siblingIdempotencyKeys.ContainsKey($key)) {
     Add-Issue $issues "Mutation idempotency key '$key' collides with a sibling slice receipt idempotency key; keys must be unique across all slices."
   }
 }
@@ -521,7 +599,7 @@ foreach ($workItem in $workItems) {
     else {
       $sliceWorkItemIds[$workItemId] = $true
     }
-    if ($siblingWorkItemIds -contains $workItemId) {
+    if ($siblingWorkItemIds.ContainsKey($workItemId)) {
       Add-Issue $issues "$subject collides with a Work Item id from a sibling slice or demo evidence."
     }
   }
@@ -586,7 +664,7 @@ foreach ($receipt in $receipts) {
     else {
       $sliceReceiptIds[$receiptId] = $receipt
     }
-    if ($siblingReceiptIds -contains $receiptId) {
+    if ($siblingReceiptIds.ContainsKey($receiptId)) {
       Add-Issue $issues "$subject collides with a receipt ID from a sibling slice or demo evidence."
     }
   }
@@ -610,7 +688,7 @@ foreach ($receipt in $receipts) {
     else {
       $seenReceiptIdempotencyKeys[$receiptKey] = $true
     }
-    if ($siblingIdempotencyKeys -contains $receiptKey) {
+    if ($siblingIdempotencyKeys.ContainsKey($receiptKey)) {
       Add-Issue $issues "$subject idempotency key collides with a sibling slice receipt idempotency key: $receiptKey."
     }
   }
@@ -675,8 +753,12 @@ if ($dupReceipt) {
   }
 }
 
-# Unverifiable-key receipt specifics.
+# Unverifiable-key receipt specifics + AC3 bindings.
 $failReceipt = $receipts | Where-Object { $_.com_receipt_id -eq "CR-LOCAL-IDEMPOTENT-FAIL-001" } | Select-Object -First 1
+$unverifiableMutations = @($mutations | Where-Object { $_.PSObject.Properties.Name -contains "unverifiableKey" -and $_.unverifiableKey -is [bool] -and $_.unverifiableKey })
+if ($unverifiableMutations.Count -ne 1) {
+  Add-Issue $issues "Idempotency run must declare exactly one unverifiable-key mutation, found $($unverifiableMutations.Count)."
+}
 if ($failReceipt) {
   if (@("policy_denied", "failed") -notcontains [string]$failReceipt.com_verb) {
     Add-Issue $issues "Receipt CR-LOCAL-IDEMPOTENT-FAIL-001 verb must be policy_denied or failed, found: $($failReceipt.com_verb)."
@@ -686,6 +768,32 @@ if ($failReceipt) {
   }
   if (-not (Test-HasNonEmptyField -Record $failReceipt -Field "com_failure_code")) {
     Add-Issue $issues "Receipt CR-LOCAL-IDEMPOTENT-FAIL-001 must carry a non-empty com_failure_code for the unverifiable-key denial."
+  }
+  # Reverse binding: FAIL-001 must be produced by exactly one mutation and that
+  # mutation must be the unverifiable-key one (an accepted receipt cannot stand
+  # in for the denial receipt).
+  $failProducers = @($mutations | Where-Object { [string]$_.producesReceipt -eq "CR-LOCAL-IDEMPOTENT-FAIL-001" })
+  if ($failProducers.Count -ne 1) {
+    Add-Issue $issues "Receipt CR-LOCAL-IDEMPOTENT-FAIL-001 must be produced by exactly one mutation, found $($failProducers.Count)."
+  }
+  else {
+    $failProducer = $failProducers[0]
+    if (-not ($failProducer.PSObject.Properties.Name -contains "unverifiableKey" -and $failProducer.unverifiableKey -is [bool] -and $failProducer.unverifiableKey)) {
+      Add-Issue $issues "Receipt CR-LOCAL-IDEMPOTENT-FAIL-001 must be produced by a mutation with unverifiableKey=true, found producer: $($failProducer.mutationId)."
+    }
+  }
+}
+
+# AC3 forward binding: the unverifiable mutation must produce CR-LOCAL-IDEMPOTENT-
+# FAIL-001 (not an accepted/junk receipt string) and that receipt must exist.
+foreach ($unv in $unverifiableMutations) {
+  $unvId = [string]$unv.mutationId
+  $unvReceiptId = [string]$unv.producesReceipt
+  if ($unvReceiptId -ne "CR-LOCAL-IDEMPOTENT-FAIL-001") {
+    Add-Issue $issues "Unverifiable mutation $unvId producesReceipt must be CR-LOCAL-IDEMPOTENT-FAIL-001 (the failure/policy-denial receipt), found: $unvReceiptId."
+  }
+  elseif (-not $sliceReceiptIds.ContainsKey($unvReceiptId)) {
+    Add-Issue $issues "Unverifiable mutation $unvId producesReceipt $unvReceiptId must exist in this slice."
   }
 }
 
@@ -730,6 +838,23 @@ if ($flaggedWorkItemIds -notcontains "CWI-LOCAL-IDEMPOTENT-AGENT-001") {
   Add-Issue $issues "The unverifiable-key scenario must flag CWI-LOCAL-IDEMPOTENT-AGENT-001 for human review."
 }
 
+# AC3 binding: each unverifiable mutation's flagsWorkItemForHumanReview field
+# must resolve to a real slice Work Item AND must equal the workItem of the
+# flagged-list entry whose flaggedBy is CR-LOCAL-IDEMPOTENT-FAIL-001. This
+# closes the loophole where the mutation field and the workItemsFlaggedForHuman
+# Review list disagree (a non-empty string passing for proof).
+$failBackedFlaggedIds = @($flaggedItems | Where-Object { [string]$_.flaggedBy -eq "CR-LOCAL-IDEMPOTENT-FAIL-001" } | ForEach-Object { [string]$_.workItem } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+foreach ($unv in $unverifiableMutations) {
+  $unvId = [string]$unv.mutationId
+  $flaggedWi = [string]$unv.flagsWorkItemForHumanReview
+  if ([string]::IsNullOrWhiteSpace($flaggedWi) -or -not $sliceWorkItemIds.ContainsKey($flaggedWi)) {
+    Add-Issue $issues "Unverifiable mutation $unvId flagsWorkItemForHumanReview must reference a Work Item that exists in this slice, found: $flaggedWi."
+  }
+  if ($failBackedFlaggedIds -notcontains $flaggedWi) {
+    Add-Issue $issues "Unverifiable mutation $unvId flagsWorkItemForHumanReview ($flaggedWi) must match the workItem of a workItemsFlaggedForHumanReview entry whose flaggedBy is CR-LOCAL-IDEMPOTENT-FAIL-001."
+  }
+}
+
 # Deferred mutations: every accepted mutation's live Work Item creation must be a deferred entry naming a receipt gate.
 $deferredMutations = @($run.deferredMutations | Where-Object { $null -ne $_ })
 $acceptedMutations = @($mutations | Where-Object {
@@ -758,7 +883,17 @@ foreach ($accepted in $acceptedMutations) {
   }
 }
 
-# Accepted mutations produce receipts whose idempotency key matches the mutation key (append-only binding).
+# Accepted mutations must mint a Work Item each (Story 2.4 goal: prevent
+# duplicate Work Items under retries — there must be at least one accepted WI
+# per trigger kind to dedupe against). The producesWorkItem id must exist in
+# this slice and be distinct across accepted mutations.
+if ($workItems.Count -lt $acceptedMutations.Count) {
+  Add-Issue $issues "Slice must propose at least one Work Item per accepted mutation ($($acceptedMutations.Count) accepted), found $($workItems.Count)."
+}
+if ($acceptedMutations.Count -lt 3) {
+  Add-Issue $issues "Idempotency run must include at least three accepted mutations (one per trigger kind), found $($acceptedMutations.Count)."
+}
+$acceptedWorkItemIds = @{}
 foreach ($accepted in $acceptedMutations) {
   $acceptedId = [string]$accepted.mutationId
   $receiptId = [string]$accepted.producesReceipt
@@ -773,27 +908,65 @@ foreach ($accepted in $acceptedMutations) {
   if ([string]$prodReceipt.com_result -ne "accepted") {
     Add-Issue $issues "Accepted mutation $acceptedId receipt $receiptId com_result must be accepted, found: $($prodReceipt.com_result)."
   }
-  if (Test-HasNonEmptyField -Record $accepted -Field "producesWorkItem") {
-    $prodWorkItemId = [string]$accepted.producesWorkItem
-    if (-not $sliceWorkItemIds.ContainsKey($prodWorkItemId)) {
-      Add-Issue $issues "Accepted mutation $acceptedId producesWorkItem must reference a Work Item that exists in this slice, found: $prodWorkItemId."
-    }
+  # producesWorkItem is REQUIRED on the accepted path (not optional): an accepted
+  # mutation that omits it could pass while shipping only a deferred row + an
+  # accepted receipt, evading the duplicate-WI-prevention story entirely.
+  if (-not (Test-HasNonEmptyField -Record $accepted -Field "producesWorkItem")) {
+    Add-Issue $issues "Accepted mutation $acceptedId must mint a Work Item (producesWorkItem); the duplicate-key story needs an accepted WI to dedupe against."
+    continue
+  }
+  $prodWorkItemId = [string]$accepted.producesWorkItem
+  if (-not $sliceWorkItemIds.ContainsKey($prodWorkItemId)) {
+    Add-Issue $issues "Accepted mutation $acceptedId producesWorkItem must reference a Work Item that exists in this slice, found: $prodWorkItemId."
+  }
+  elseif ($acceptedWorkItemIds.ContainsKey($prodWorkItemId)) {
+    Add-Issue $issues "Accepted mutation $acceptedId producesWorkItem ($prodWorkItemId) must be distinct from other accepted mutations' Work Items; a shared id would defeat duplicate-WI prevention."
+  }
+  else {
+    $acceptedWorkItemIds[$prodWorkItemId] = $true
   }
 }
 
-# Acceptance mapping for AC 1, 2, 3.
+# Acceptance mapping for AC 1, 2, 3. localEvidence must not be self-asserting
+# prose: every CR-LOCAL-IDEMPOTENT-*, CWI-LOCAL-IDEMPOTENT-*, and MUT-LOCAL-* id
+# it cites must resolve to a real slice entity, and each AC must cite at least
+# one real slice id (so the mapping is bound to the actual receipts/WIs/mutations).
 foreach ($criterion in @(1, 2, 3)) {
   $mapping = @($slice.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
     Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+    continue
   }
-  else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  $evidenceItems = @($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+  if ($evidenceItems.Count -lt 1) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  }
+  if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+  }
+  $joinedEvidence = $evidenceItems -join " `n"
+  $citedIds = [regex]::Matches($joinedEvidence, "(?:CR-LOCAL-IDEMPOTENT-[A-Z0-9-]+|CWI-LOCAL-IDEMPOTENT-[A-Z0-9-]+|MUT-LOCAL-[A-Z0-9-]+)") | ForEach-Object { [string]$_.Value } | Sort-Object -Unique
+  $citedAny = $false
+  foreach ($citedId in $citedIds) {
+    $resolved = $false
+    if ($citedId -like "CR-LOCAL-IDEMPOTENT-*") {
+      if ($sliceReceiptIds.ContainsKey($citedId)) { $resolved = $true }
     }
-    if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+    elseif ($citedId -like "CWI-LOCAL-IDEMPOTENT-*") {
+      if ($sliceWorkItemIds.ContainsKey($citedId)) { $resolved = $true }
     }
+    elseif ($citedId -like "MUT-LOCAL-*") {
+      if ($mutationIds.ContainsKey($citedId)) { $resolved = $true }
+    }
+    if (-not $resolved) {
+      Add-Issue $issues "Acceptance mapping for AC $criterion cites id '$citedId' which does not resolve to any receipt, Work Item, or mutation in this slice."
+    }
+    else {
+      $citedAny = $true
+    }
+  }
+  if (-not $citedAny) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must cite at least one real slice id (CR/CWI-LOCAL-IDEMPOTENT-* or MUT-LOCAL-*) in localEvidence; self-asserting prose is not proof."
   }
 }
 

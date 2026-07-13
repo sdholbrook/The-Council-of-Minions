@@ -213,18 +213,34 @@ foreach ($guardProperty in @($slice.guards.PSObject.Properties)) {
   }
 }
 
-# Cross-slice ID inventories (siblings 1.1-1.5 + demo)
+# Cross-slice ID inventories (siblings 1.1-1.5 + demo) — harvested and ACTIVELY used for collision tripwires
 $siblingRaw = @()
 foreach ($siblingPath in @($ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $Story15DriftPath, $DemoEvidencePath)) {
   $siblingRaw += Get-Content -LiteralPath $siblingPath -Raw
 }
 $siblingText = $siblingRaw -join "`n"
 
-$siblingCwiIds = Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_council_work_item_id"\s*:\s*"(CWI-[^"]+)"'
-$siblingCwiIds += Get-IdsFromSliceText -RawText $siblingText -Pattern '"(CWI-(?:LOCAL|DEMO)[^"]+)"'
-$siblingCrIds = Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_receipt_id"\s*:\s*"(CR-[^"]+)"'
-$siblingCrIds += Get-IdsFromSliceText -RawText $siblingText -Pattern '"(CR-(?:LOCAL|DEMO)[^"]+)"'
-$siblingCsrIds = Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_council_source_record_id"\s*:\s*"(CSR-[^"]+)"'
+$siblingCwiIds = @(
+  @(
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_council_work_item_id"\s*:\s*"(CWI-[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"(CWI-(?:LOCAL|DEMO)[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '\b(CWI-[A-Za-z0-9-]+)\b'
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+)
+$siblingCrIds = @(
+  @(
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_receipt_id"\s*:\s*"(CR-[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"(CR-(?:LOCAL|DEMO)[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '\b(CR-[A-Za-z0-9-]+)\b'
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+)
+$siblingCsrIds = @(
+  @(
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"com_council_source_record_id"\s*:\s*"(CSR-[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '"(CSR-[^"]+)"'
+    Get-IdsFromSliceText -RawText $siblingText -Pattern '\b(CSR-[A-Za-z0-9-]+)\b'
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+)
 
 $demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
 $demoWorkItemIds = @($demoEvidence.workItemIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
@@ -264,6 +280,21 @@ $knownPriorSourceIds = @(
 )
 if ($knownPriorSourceIds.Count -eq 0) {
   Add-Issue $issues "No Source Record IDs could be loaded from sibling slices; primary-source binding checks would silently no-op."
+}
+
+# Union structured inventories into the raw-text harvest so collision tripwires cannot silent-no-op
+$siblingCwiIds = @($siblingCwiIds + $knownPriorWorkItemIds + $demoWorkItemIds) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+$siblingCrIds = @($siblingCrIds + $driftReceiptIds + $demoReceiptIds) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+$siblingCsrIds = @($siblingCsrIds + $knownPriorSourceIds) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+
+if ($siblingCwiIds.Count -eq 0) {
+  Add-Issue $issues "No sibling CWI-* IDs could be harvested from slices 1-1..1-5/demo; cross-slice Work Item collision checks would silently no-op."
+}
+if ($siblingCrIds.Count -eq 0) {
+  Add-Issue $issues "No sibling CR-* IDs could be harvested from slices 1-1..1-5/demo; cross-slice receipt collision checks would silently no-op."
+}
+if ($siblingCsrIds.Count -eq 0) {
+  Add-Issue $issues "No sibling CSR-* IDs could be harvested from slices 1-1..1-5; cross-slice source-record collision/binding checks would silently no-op."
 }
 
 foreach ($sliceLoad in @(
@@ -347,17 +378,13 @@ foreach ($item in $workItems) {
   $itemId = [string]$item.com_council_work_item_id
   $subject = "Work Item $itemId"
   foreach ($field in $manifestRequiredWorkItemFields) {
-    if ($field -eq "com_primary_source_record") {
-      if (-not (Test-HasNonEmptyField -Record $item -Field $field)) {
-        Add-Issue $issues "$subject missing required manifest field: $field."
-      }
+    if ($field -eq "com_approval_required") {
+      # Strict boolean is validated below; presence-only via type check
       continue
     }
-    if (-not (Test-HasNonEmptyField -Record $item -Field $field) -and $field -ne "com_approval_required") {
-      # booleans handled below
-      if (@($item.PSObject.Properties.Name) -notcontains $field) {
-        Add-Issue $issues "$subject missing required manifest field: $field."
-      }
+    # Flag both absent and present-but-empty/whitespace required fields (cannot no-op on "")
+    if (-not (Test-HasNonEmptyField -Record $item -Field $field)) {
+      Add-Issue $issues "$subject missing required manifest field: $field."
     }
   }
   if ([string]::IsNullOrWhiteSpace($itemId)) {
@@ -373,8 +400,9 @@ foreach ($item in $workItems) {
     else {
       $sliceWorkItemIds[$itemId] = $true
     }
-    if ($knownPriorWorkItemIds -contains $itemId -or $demoWorkItemIds -contains $itemId) {
-      Add-Issue $issues "$subject collides with a reserved sibling or demo Work Item ID."
+    # Active cross-slice collision against full raw-text harvest of siblings 1-1..1-5 + demo
+    if ($siblingCwiIds -contains $itemId) {
+      Add-Issue $issues "$subject collides with a sibling-slice or demo Work Item ID harvested from slices 1-1..1-5/demo."
     }
   }
   if ($workItemTypes -notcontains $item.com_type) {
@@ -389,9 +417,15 @@ foreach ($item in $workItems) {
   if ($item.com_approval_required -isnot [bool]) {
     Add-Issue $issues "$subject com_approval_required must be a strict boolean."
   }
+  if ((Test-HasNonEmptyField -Record $item -Field "com_semantic_contract_version") -and ([string]$item.com_semantic_contract_version -ne "2026-07-07")) {
+    Add-Issue $issues "$subject com_semantic_contract_version must be 2026-07-07, found: $($item.com_semantic_contract_version)."
+  }
   $primarySource = [string]$item.com_primary_source_record
-  if (-not [string]::IsNullOrWhiteSpace($primarySource) -and $knownPriorSourceIds -notcontains $primarySource) {
-    Add-Issue $issues "$subject primary source must reference a known sibling CSR-* id, found: $primarySource."
+  if (-not [string]::IsNullOrWhiteSpace($primarySource)) {
+    # Must bind to a known sibling CSR-* (harvest + structured sample inventories)
+    if ($siblingCsrIds -notcontains $primarySource -and $knownPriorSourceIds -notcontains $primarySource) {
+      Add-Issue $issues "$subject primary source must reference a known sibling CSR-* id, found: $primarySource."
+    }
   }
   foreach ($liveWriteField in @("dataverseRowId", "com_dataverse_row_id", "crmRecordUrl", "environmentUrl", "liveWriteAt", "tenantWriteAt")) {
     if ($item.PSObject.Properties.Name -contains $liveWriteField) {
@@ -455,11 +489,9 @@ foreach ($receipt in $receipts) {
       $sliceReceiptIds[$receiptId] = $true
       $receiptById[$receiptId] = $receipt
     }
-    if ($demoReceiptIds -contains $receiptId) {
-      Add-Issue $issues "$subject collides with a reserved state-transition-demo receipt ID."
-    }
-    if ($driftReceiptIds -contains $receiptId) {
-      Add-Issue $issues "$subject collides with a Story 1.5 drift/supersession receipt ID."
+    # Active cross-slice collision against full raw-text harvest of siblings 1-1..1-5 + demo (+ structured drift/demo)
+    if ($siblingCrIds -contains $receiptId) {
+      Add-Issue $issues "$subject collides with a sibling-slice or demo receipt ID harvested from slices 1-1..1-5/demo."
     }
   }
 
@@ -770,11 +802,27 @@ foreach ($itemId in @($sliceWorkItemIds.Keys)) {
   }
 }
 
-# Acceptance mapping for both ACs
-foreach ($criterion in @(1, 2)) {
+# Acceptance mapping for every "Slice must prove" AC (story lists three numbered items — do not hardcode x2)
+# Derive required criterion ids from the slice's declared count floor: story proves 1..N where N is max of
+# (declared acceptanceCriteria or the three story proof items). Always demand 1..3 plus any higher criteria present.
+$requiredAcceptanceCriteria = @(1, 2, 3)
+$declaredCriteria = @(
+  @($slice.acceptanceMapping) |
+    Where-Object { $null -ne $_ -and $null -ne $_.acceptanceCriterion } |
+    ForEach-Object { [int]$_.acceptanceCriterion } |
+    Sort-Object -Unique
+)
+$maxDeclared = 0
+if ($declaredCriteria.Count -gt 0) {
+  $maxDeclared = ($declaredCriteria | Measure-Object -Maximum).Maximum
+}
+if ($maxDeclared -gt $requiredAcceptanceCriteria.Count) {
+  $requiredAcceptanceCriteria = 1..$maxDeclared
+}
+foreach ($criterion in $requiredAcceptanceCriteria) {
   $mapping = @($slice.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
-    Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+    Add-Issue $issues "Missing acceptance mapping for AC $criterion (story 'Slice must prove' / every AC must map)."
   }
   else {
     if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
@@ -783,6 +831,32 @@ foreach ($criterion in @(1, 2)) {
     if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
       Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
     }
+  }
+}
+# AC3 must speak to manifest-only verbs + strictly ordered occurred-at (vocabulary bound to actual receipts)
+$ac3 = @($slice.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq 3 } | Select-Object -First 1
+if ($ac3) {
+  $ac3EvidenceText = (@($ac3.localEvidence) -join " ")
+  if ($ac3EvidenceText -notmatch "(?i)verb" -or $ac3EvidenceText -notmatch "(?i)manifest") {
+    Add-Issue $issues "Acceptance mapping for AC 3 must evidence that receipt verbs are drawn only from the manifest vocabulary."
+  }
+  if ($ac3EvidenceText -notmatch "(?i)occurred|timestamp" -or $ac3EvidenceText -notmatch "(?i)order") {
+    Add-Issue $issues "Acceptance mapping for AC 3 must evidence strictly ordered occurred-at along each transition chain."
+  }
+}
+
+# This slice must not mint new CSR-* identities that collide with (or silently replace) sibling harvest
+$sliceCsrIds = @(
+  @(
+    Get-IdsFromSliceText -RawText $rawSliceText -Pattern '"com_council_source_record_id"\s*:\s*"(CSR-[^"]+)"'
+    Get-IdsFromSliceText -RawText $rawSliceText -Pattern '"(CSR-[A-Za-z0-9-]+)"'
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+)
+foreach ($csrId in $sliceCsrIds) {
+  # References to known siblings are required; NEW CSR-* not in sibling harvest must not look like accidental reuse of incomplete harvest.
+  # Any CSR appearing in this slice that is absent from sibling harvest is a brand-new identity — forbidden here unless declared (story only binds primaries).
+  if ($siblingCsrIds -notcontains $csrId) {
+    Add-Issue $issues "Slice CSR id $csrId is not present in sibling slices 1-1..1-5 harvest; Story 2.3 must reference existing source records, not mint colliding/new CSR identities without sibling context."
   }
 }
 

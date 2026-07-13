@@ -5,7 +5,13 @@ param(
   [string]$OutlookSlicePath = "$PSScriptRoot\outlook-source-reference-slice.json",
   [string]$Story13ExtractionPath = "$PSScriptRoot\proposed-work-item-extraction-slice.json",
   [string]$Story14ExtractionPath = "$PSScriptRoot\zero-multi-item-extraction-slice.json",
-  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
+  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json",
+  [string]$DriftSlicePath = "$PSScriptRoot\source-drift-supersession-slice.json",
+  [string]$AutoCreationPolicySlicePath = "$PSScriptRoot\auto-creation-policy-slice.json",
+  [string]$ApprovalBoundariesSlicePath = "$PSScriptRoot\approval-boundaries-slice.json",
+  [string]$IdempotentMutationsSlicePath = "$PSScriptRoot\idempotent-mutations-slice.json",
+  [string]$ReceiptBackedStateChangesSlicePath = "$PSScriptRoot\receipt-backed-state-changes-slice.json",
+  [string]$WorkItemExecutionShellSlicePath = "$PSScriptRoot\work-item-execution-shell-slice.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -137,7 +143,94 @@ function Split-EvidenceRefs {
   @(([string]$Raw) -split "[;\r\n]" | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 }
 
-foreach ($path in @($ManifestPath, $FailureSlicePath, $ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $DemoEvidencePath)) {
+# Recursive scanner: harvest every receipt id and run id declared anywhere in a sibling slice JSON.
+# Collects com_receipt_id string values, receiptIds array entries, and runId string values so the
+# cross-slice collision inventory does not depend on knowing each sibling's run-block name.
+# The collector is a hashtable (reference type) passed in by the caller so recursion does not
+# depend on PowerShell's dynamic-scope variable visibility.
+function Invoke-ScanSliceIdentifiers {
+  param($Node, $Collector)
+
+  if ($null -eq $Node) { return }
+  if ($Node -is [string]) { return }
+  # Primitive scalar leaves (int, double, bool, datetime, etc.) carry no named identifiers.
+  if ($Node -is [System.ValueType]) { return }
+  # Anything that is not a dictionary, list, or PSCustomObject has no harvestable named fields.
+  if (-not ($Node -is [System.Collections.IDictionary]) -and
+      -not ($Node -is [Array] -or $Node -is [System.Collections.IList]) -and
+      -not ($Node -is [psobject])) { return }
+
+  if ($Node -is [System.Collections.IDictionary]) {
+    foreach ($key in @($Node.Keys)) {
+      $value = $Node[$key]
+      switch -CaseSensitive ($key) {
+        "com_receipt_id" {
+          $s = [string]$value
+          if (-not [string]::IsNullOrWhiteSpace($s) -and $s -match "^CR-") { $Collector.ReceiptIds.Add($s) | Out-Null }
+        }
+        "runId" {
+          $s = [string]$value
+          if (-not [string]::IsNullOrWhiteSpace($s)) { $Collector.RunIds.Add($s) | Out-Null }
+        }
+        "receiptIds" {
+          foreach ($entry in @($value)) {
+            $s = [string]$entry
+            if (-not [string]::IsNullOrWhiteSpace($s) -and $s -match "^CR-") { $Collector.ReceiptIds.Add($s) | Out-Null }
+          }
+        }
+        default { Invoke-ScanSliceIdentifiers -Node $value -Collector $Collector }
+      }
+    }
+    return
+  }
+
+  if ($Node -is [Array] -or ($Node -is [System.Collections.IList])) {
+    foreach ($element in $Node) { Invoke-ScanSliceIdentifiers -Node $element -Collector $Collector }
+    return
+  }
+
+  # PSCustomObject (ConvertFrom-Json output)
+  foreach ($prop in @($Node.PSObject.Properties)) {
+    switch -CaseSensitive ($prop.Name) {
+      "com_receipt_id" {
+        $s = [string]$prop.Value
+        if (-not [string]::IsNullOrWhiteSpace($s) -and $s -match "^CR-") { $Collector.ReceiptIds.Add($s) | Out-Null }
+      }
+      "runId" {
+        $s = [string]$prop.Value
+        if (-not [string]::IsNullOrWhiteSpace($s)) { $Collector.RunIds.Add($s) | Out-Null }
+      }
+      "receiptIds" {
+        foreach ($entry in @($prop.Value)) {
+          $s = [string]$entry
+          if (-not [string]::IsNullOrWhiteSpace($s) -and $s -match "^CR-") { $Collector.ReceiptIds.Add($s) | Out-Null }
+        }
+      }
+      default { Invoke-ScanSliceIdentifiers -Node $prop.Value -Collector $Collector }
+    }
+  }
+}
+
+function Get-SliceIdentifiers {
+  param([Parameter(Mandatory = $true)]$Node)
+
+  $ids = @{
+    ReceiptIds = [System.Collections.Generic.List[string]]::new()
+    RunIds     = [System.Collections.Generic.List[string]]::new()
+  }
+  Invoke-ScanSliceIdentifiers -Node $Node -Collector $ids
+  , $ids
+}
+
+# Required inputs: must all be present (a missing sibling would silently no-op a cross-slice tripwire).
+$requiredInputs = @(
+  $ManifestPath, $FailureSlicePath, $ManualSlicePath, $OutlookSlicePath,
+  $Story13ExtractionPath, $Story14ExtractionPath, $DemoEvidencePath,
+  $DriftSlicePath, $AutoCreationPolicySlicePath, $ApprovalBoundariesSlicePath,
+  $IdempotentMutationsSlicePath, $ReceiptBackedStateChangesSlicePath,
+  $WorkItemExecutionShellSlicePath
+)
+foreach ($path in $requiredInputs) {
   if (-not (Test-Path -LiteralPath $path)) {
     throw "Required failure and policy denial validation input not found: $path"
   }
@@ -150,6 +243,12 @@ $outlookSlice = Read-JsonInput -Path $OutlookSlicePath
 $story13Extraction = Read-JsonInput -Path $Story13ExtractionPath
 $story14Extraction = Read-JsonInput -Path $Story14ExtractionPath
 $demoEvidence = Read-JsonInput -Path $DemoEvidencePath
+$driftSlice = Read-JsonInput -Path $DriftSlicePath
+$autoCreationPolicySlice = Read-JsonInput -Path $AutoCreationPolicySlicePath
+$approvalBoundariesSlice = Read-JsonInput -Path $ApprovalBoundariesSlicePath
+$idempotentMutationsSlice = Read-JsonInput -Path $IdempotentMutationsSlicePath
+$receiptBackedStateChangesSlice = Read-JsonInput -Path $ReceiptBackedStateChangesSlicePath
+$workItemExecutionShellSlice = Read-JsonInput -Path $WorkItemExecutionShellSlicePath
 $issues = [System.Collections.Generic.List[string]]::new()
 
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
@@ -250,23 +349,44 @@ foreach ($item in $knownWorkItems) {
 }
 $knownWorkItemIds = @($knownWorkItemsById.Keys)
 
-# Prior slice receipt ids that our new CR-LOCAL-FAILURE-* ids must not collide with.
+# Cross-slice receipt id inventory: harvest every CR-* declared by any sibling slice on disk
+# (Story hard rule: new CR-LOCAL-* ids unique across ALL slices). Uses the recursive scanner so
+# each sibling's run-block name (driftRun, policyRun, approvalBoundariesRun, idempotencyRun,
+# stateChangeRun, executionShell, ...) does not have to be enumerated by hand.
+$siblingSlices = @(
+  @{ Name = "source-drift-supersession-slice.json";            Node = $driftSlice },
+  @{ Name = "auto-creation-policy-slice.json";                 Node = $autoCreationPolicySlice },
+  @{ Name = "approval-boundaries-slice.json";                  Node = $approvalBoundariesSlice },
+  @{ Name = "idempotent-mutations-slice.json";                 Node = $idempotentMutationsSlice },
+  @{ Name = "receipt-backed-state-changes-slice.json";         Node = $receiptBackedStateChangesSlice },
+  @{ Name = "work-item-execution-shell-slice.json";             Node = $workItemExecutionShellSlice },
+  @{ Name = "proposed-work-item-extraction-slice.json";         Node = $story13Extraction },
+  @{ Name = "zero-multi-item-extraction-slice.json";            Node = $story14Extraction },
+  @{ Name = "manual-source-record-slice.json";                 Node = $manualSlice },
+  @{ Name = "outlook-source-reference-slice.json";              Node = $outlookSlice }
+)
 $priorReceiptIds = @{}
-$driftSlicePath = Join-Path $PSScriptRoot "source-drift-supersession-slice.json"
-if (Test-Path -LiteralPath $driftSlicePath) {
-  $driftSlice = Read-JsonInput -Path $driftSlicePath
-  foreach ($r in @($driftSlice.driftRun.receipts | Where-Object { $null -ne $_ })) {
-    $rid = [string]$r.com_receipt_id
-    if (-not [string]::IsNullOrWhiteSpace($rid)) {
-      $priorReceiptIds[$rid] = "source-drift-supersession-slice.json"
+$siblingRunIds = @{}
+foreach ($sibling in $siblingSlices) {
+  $harvest = Get-SliceIdentifiers -Node $sibling.Node
+  foreach ($rid in $harvest.ReceiptIds) {
+    if ($priorReceiptIds.ContainsKey($rid)) {
+      # Same id in two sibling slices is itself a cross-slice defect worth surfacing.
+      $priorReceiptIds[$rid] = "$($priorReceiptIds[$rid]); $($sibling.Name)"
+    }
+    else {
+      $priorReceiptIds[$rid] = $sibling.Name
+    }
+  }
+  foreach ($runId in $harvest.RunIds) {
+    if (-not $siblingRunIds.ContainsKey($runId)) {
+      $siblingRunIds[$runId] = $sibling.Name
     }
   }
 }
-else {
-  Add-Issue $issues "Sibling slice source-drift-supersession-slice.json not found; cross-slice receipt collision checks would silently no-op."
-}
-$demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
-foreach ($rid in $demoReceiptIds) {
+# Reserved demo receipt ids (state-transition-demo-evidence.json) are not produced by a slice
+# validator's recursive scan (they live in a non-slice evidence file), so add them explicitly.
+foreach ($rid in @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })) {
   $priorReceiptIds[[string]$rid] = "state-transition-demo-evidence.json"
 }
 
@@ -290,6 +410,9 @@ if ($knownWorkItemIds.Count -eq 0) {
 if ($priorReceiptIds.Count -eq 0) {
   Add-Issue $issues "No reserved receipt IDs could be loaded from sibling slices; receipt collision checks would silently no-op."
 }
+if ($siblingRunIds.Count -eq 0) {
+  Add-Issue $issues "No sibling runIds could be harvested from sibling slices; runId collision checks would silently no-op."
+}
 
 $run = $failure.failureRun
 if ($null -eq $run) {
@@ -303,8 +426,8 @@ if ($null -eq $run) {
 if (-not (Test-HasNonEmptyField -Record $run -Field "runId")) {
   Add-Issue $issues "Failure run must declare a runId."
 }
-elseif (@([string]$story13Extraction.extractionRun.runId, [string]$story14Extraction.runId, [string]$driftSlice.driftRun.runId) -contains [string]$run.runId) {
-  Add-Issue $issues "Failure run must use a new local runId, not a sibling slice runId: $($run.runId)."
+elseif ($siblingRunIds.ContainsKey([string]$run.runId)) {
+  Add-Issue $issues "Failure run must use a new local runId, not a sibling slice runId ($($siblingRunIds[[string]$run.runId])): $($run.runId)."
 }
 if ($run.semanticContractVersion -ne "2026-07-07") {
   Add-Issue $issues "Failure run semanticContractVersion must be 2026-07-07."
@@ -381,10 +504,7 @@ else {
     else {
       $declaredCodeKinds[[string]$code.kind] = $codeValue
     }
-    if (-not (Test-HasNonEmptyField -Record $code -Field "retryAllowed") -or -not (Test-StrictBooleanTrue $code.retryAllowed) -and ($code.retryAllowed -isnot [bool])) {
-      Add-Issue $issues "$subject retryAllowed must be a strict boolean."
-    }
-    elseif ($code.retryAllowed -isnot [bool]) {
+    if ($code.retryAllowed -isnot [bool]) {
       Add-Issue $issues "$subject retryAllowed must be a strict boolean, found: $($code.retryAllowed)."
     }
     if ($code.humanReviewRequired -isnot [bool]) {
@@ -399,8 +519,11 @@ else {
 }
 
 $receipts = @($run.failureReceipts | Where-Object { $null -ne $_ })
-if ($receipts.Count -lt 3) {
-  Add-Issue $issues "Failure slice must include at least three failure receipts (system error, policy denial, human review), found $($receipts.Count)."
+# Story 2.6 demands exactly three failure receipts (one per kind: system_error, policy_denial,
+# human_review). A loose "<3" floor plus last-write-wins kind bucketing lets a slice ship five
+# system_error receipts plus one of each other kind and still pass — that is a defect.
+if ($receipts.Count -ne 3) {
+  Add-Issue $issues "Failure slice must include exactly three failure receipts (one system_error, one policy_denial, one human_review), found $($receipts.Count)."
 }
 
 $receiptTable = @($manifest.tables) | Where-Object { $_.schemaName -eq "com_councilreceipt" } | Select-Object -First 1
@@ -414,7 +537,12 @@ $receiptRequiredFields = @($manifestRequiredReceiptFields + @("attemptedAction",
 $sliceReceiptIds = @{}
 $seenIdempotencyKeys = @{}
 $receiptByCode = @{}
-$receiptByKind = @{}
+# List-per-kind: last-write-wins kind bucketing would silently hide a duplicate-kind receipt.
+$receiptsByKind = @{
+  "system_error"  = [System.Collections.Generic.List[object]]::new()
+  "policy_denial" = [System.Collections.Generic.List[object]]::new()
+  "human_review"  = [System.Collections.Generic.List[object]]::new()
+}
 foreach ($receipt in $receipts) {
   $receiptId = [string]$receipt.com_receipt_id
   $subject = "Receipt $receiptId"
@@ -487,9 +615,31 @@ foreach ($receipt in $receipts) {
     Add-Issue $issues "$subject com_failure_code '$failureCode' is not declared in failureCodeVocabulary."
   }
   else {
-    $receiptByCode[$failureCode] = $receipt
-    if ($null -ne $declaredFailureCodes[$failureCode]) {
-      $receiptByKind[[string]$declaredFailureCodes[$failureCode].kind] = $receipt
+    if ($receiptByCode.ContainsKey($failureCode)) {
+      Add-Issue $issues "$subject reuses failure code '$failureCode' already carried by another receipt; the three receipts must use distinct codes."
+    }
+    else {
+      $receiptByCode[$failureCode] = $receipt
+    }
+    $declaredCode = $declaredFailureCodes[$failureCode]
+    if ($null -ne $declaredCode) {
+      $codeKind = [string]$declaredCode.kind
+      if ($receiptsByKind.ContainsKey($codeKind)) {
+        $receiptsByKind[$codeKind].Add($receipt) | Out-Null
+      }
+      # Binding (Finding 3): the receipt's retry/human-review booleans must equal the values
+      # declared for its failure code in the vocabulary. Otherwise the vocabulary is free
+      # decoration and the slice can game its own dictionary.
+      if ($receipt.retryAllowed -is [bool] -and ($declaredCode.retryAllowed -is [bool])) {
+        if ($receipt.retryAllowed -ne $declaredCode.retryAllowed) {
+          Add-Issue $issues "$subject retryAllowed ($($receipt.retryAllowed)) must match the value declared for code '$failureCode' in failureCodeVocabulary ($($declaredCode.retryAllowed))."
+        }
+      }
+      if ($receipt.humanReviewRequired -is [bool] -and ($declaredCode.humanReviewRequired -is [bool])) {
+        if ($receipt.humanReviewRequired -ne $declaredCode.humanReviewRequired) {
+          Add-Issue $issues "$subject humanReviewRequired ($($receipt.humanReviewRequired)) must match the value declared for code '$failureCode' in failureCodeVocabulary ($($declaredCode.humanReviewRequired))."
+        }
+      }
     }
   }
 
@@ -545,16 +695,44 @@ foreach ($receipt in $receipts) {
       }
     }
   }
+  else {
+    # Non-Work-Item-bound receipts (e.g. the system_error source-read receipt) are required to
+    # carry com_before_state / com_after_state, but those fields must NOT masquerade as manifest
+    # com_workitemstategroup values — otherwise a source-read failure could hide a state move.
+    # The manifest types these columns as free text; the binding here is that a non-WI receipt
+    # describes a non-state-group transition (e.g. source_read_not_attempted -> source_read_failed_retry_allowed).
+    if ((Test-HasNonEmptyField -Record $receipt -Field "com_before_state") -and (Test-HasNonEmptyField -Record $receipt -Field "com_after_state")) {
+      foreach ($stateField in @("com_before_state", "com_after_state")) {
+        if ($workItemStateGroups -contains [string]$receipt.$stateField) {
+          Add-Issue $issues "$subject $stateField '$($receipt.$stateField)' is a manifest com_workitemstategroup value but the receipt is not Work-Item-bound; a non-WI failure receipt must not claim a work-item state group as its before/after state."
+        }
+      }
+    }
+  }
 }
 
-# The three kinds must be distinguishable by their field combinations.
-$systemErrorReceipt = $receiptByKind["system_error"]
-$policyDenialReceipt = $receiptByKind["policy_denial"]
-$humanReviewReceipt = $receiptByKind["human_review"]
-if ($null -eq $systemErrorReceipt) {
-  Add-Issue $issues "Failure slice must include exactly one system_error receipt."
+# The three kinds must be present exactly once each and distinguishable by their field combinations.
+# Finding 1: previously kind survivors were last-write-wins, so five system_error + one policy + one
+# human-review still passed. Now each kind bucket is a list and we assert Count -eq 1.
+$kindSurvivors = @{}
+foreach ($kind in @("system_error", "policy_denial", "human_review")) {
+  $bucket = $receiptsByKind[$kind]
+  if ($bucket.Count -eq 0) {
+    Add-Issue $issues "Failure slice must include exactly one $kind receipt; none found."
+  }
+  elseif ($bucket.Count -gt 1) {
+    $ids = ($bucket | ForEach-Object { [string]$_.com_receipt_id }) -join ", "
+    Add-Issue $issues "Failure slice must include exactly one $kind receipt; found $($bucket.Count): $ids."
+  }
+  else {
+    $kindSurvivors[$kind] = $bucket[0]
+  }
 }
-else {
+
+$systemErrorReceipt = $kindSurvivors["system_error"]
+$policyDenialReceipt = $kindSurvivors["policy_denial"]
+$humanReviewReceipt = $kindSurvivors["human_review"]
+if ($null -ne $systemErrorReceipt) {
   if ($systemErrorReceipt.com_verb -ne "failed" -or $systemErrorReceipt.com_result -ne "failed") {
     Add-Issue $issues "system_error receipt must use verb failed and result failed, found: $($systemErrorReceipt.com_verb) / $($systemErrorReceipt.com_result)."
   }
@@ -565,10 +743,7 @@ else {
     Add-Issue $issues "system_error receipt must have humanReviewRequired=false (strict boolean)."
   }
 }
-if ($null -eq $policyDenialReceipt) {
-  Add-Issue $issues "Failure slice must include exactly one policy_denial receipt."
-}
-else {
+if ($null -ne $policyDenialReceipt) {
   if ($policyDenialReceipt.com_verb -ne "policy_denied" -or $policyDenialReceipt.com_result -ne "rejected") {
     Add-Issue $issues "policy_denial receipt must use verb policy_denied and result rejected, found: $($policyDenialReceipt.com_verb) / $($policyDenialReceipt.com_result)."
   }
@@ -579,10 +754,7 @@ else {
     Add-Issue $issues "policy_denial receipt must have humanReviewRequired=false (strict boolean)."
   }
 }
-if ($null -eq $humanReviewReceipt) {
-  Add-Issue $issues "Failure slice must include exactly one human_review receipt."
-}
-else {
+if ($null -ne $humanReviewReceipt) {
   if ($humanReviewReceipt.com_verb -ne "failed" -or $humanReviewReceipt.com_result -ne "failed") {
     Add-Issue $issues "human_review receipt must use verb failed and result failed, found: $($humanReviewReceipt.com_verb) / $($humanReviewReceipt.com_result)."
   }
@@ -593,10 +765,21 @@ else {
     Add-Issue $issues "human_review receipt must have humanReviewRequired=true."
   }
 }
-# Mutual distinguishability: the three receipts must differ by failure code and by at least one of retry/review.
-$kindCodes = @($receiptByKind.Keys | ForEach-Object { [string]$receiptByKind[$_].com_failure_code })
-if (($kindCodes | Select-Object -Unique).Count -ne $kindCodes.Count) {
-  Add-Issue $issues "The three failure kinds must be distinguishable by distinct failure codes, found: $($kindCodes -join ', ')."
+
+# Mutual distinguishability (Finding 4): the comment previously claimed the three survivors must
+# differ by failure code AND by at least one of retry/review, but only unique failure codes were
+# checked. Enforce both halves, and that the (retryAllowed, humanReviewRequired) pairs are mutually
+# distinct across the three survivors.
+$survivorList = @($kindSurvivors.Values | Where-Object { $null -ne $_ })
+if ($survivorList.Count -eq 3) {
+  $kindCodes = @($survivorList | ForEach-Object { [string]$_.com_failure_code })
+  if (($kindCodes | Select-Object -Unique).Count -ne 3) {
+    Add-Issue $issues "The three failure kinds must be distinguishable by distinct failure codes, found: $($kindCodes -join ', ')."
+  }
+  $kindPairs = @($survivorList | ForEach-Object { "$([string]$_.retryAllowed)|$([string]$_.humanReviewRequired)" })
+  if (($kindPairs | Select-Object -Unique).Count -ne 3) {
+    Add-Issue $issues "The three failure kinds must be distinguishable by distinct (retryAllowed, humanReviewRequired) combinations, found: $($kindPairs -join ', ')."
+  }
 }
 
 foreach ($expectedReceiptId in @("CR-LOCAL-FAILURE-001", "CR-LOCAL-FAILURE-002", "CR-LOCAL-FAILURE-003")) {
@@ -784,13 +967,51 @@ foreach ($criterion in @(1, 2, 3)) {
   $mapping = @($failure.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
     Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+    continue
   }
-  else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  $evidenceStrings = @($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+  if ($evidenceStrings.Count -lt 1) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  }
+  if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+  }
+  # Finding 8: previously a non-whitespace string was enough to rubber-stamp AC coverage. Bind each
+  # localEvidence string to the actual slice graph: it must contain at least one resolvable
+  # identifier (a slice receipt id, a known prior Source Record id, or a known prior Work Item id)
+  # OR a dotted path into a real slice property (failureRun.* / guards.* / acceptanceMapping.* /
+  # failureReceipts / failureCodeVocabulary / policyDenialTrace / affectedWorkItems /
+  # receiptSourceLinks / workItemStateChangesDeferred). Bare assertions with no anchor fail.
+  $validSlicePathTokens = @(
+    "failureRun.failureReceipts", "failureRun.failureCodeVocabulary", "failureRun.policyDenialTrace",
+    "failureRun.affectedWorkItems", "failureRun.workItemStateChangesDeferred", "failureRun.receiptSourceLinks",
+    "failureRun.decisionPolicy", "failureRun.inputSlicesFrom", "guards.", "acceptanceMapping.",
+    "failureReceipts", "failureCodeVocabulary", "policyDenialTrace", "affectedWorkItems",
+    "receiptSourceLinks", "workItemStateChangesDeferred", "decisionPolicy"
+  )
+  foreach ($evidence in $evidenceStrings) {
+    $text = [string]$evidence
+    $resolved = $false
+    foreach ($rid in @($sliceReceiptIds.Keys)) {
+      if ($text -match [regex]::Escape($rid)) { $resolved = $true; break }
     }
-    if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+    if (-not $resolved) {
+      foreach ($sid in $knownPriorSourceIds) {
+        if ($text -match [regex]::Escape($sid)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      foreach ($wid in $knownWorkItemIds) {
+        if ($text -match [regex]::Escape($wid)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      foreach ($token in $validSlicePathTokens) {
+        if ($text -match [regex]::Escape($token)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      Add-Issue $issues "Acceptance mapping for AC $criterion localEvidence must anchor to a resolvable slice identifier or a real slice path; unanchored string: '$($text.Substring(0, [Math]::Min(80, $text.Length)))...'."
     }
   }
 }

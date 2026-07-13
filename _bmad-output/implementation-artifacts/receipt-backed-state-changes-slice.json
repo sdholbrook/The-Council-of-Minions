@@ -365,6 +365,16 @@
         "CHAIN-CORR-001 expectedStates proposed → held → blocked records the original as available for audit"
       ],
       "tenantEvidenceRequired": "Live correction flow that refuses edit-in-place of prior receipts and requires a new Receipt remains VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "Every stateChangeRun.receipts[*].com_verb is drawn only from manifest com_receiptverb vocabulary (proposed, approved, blocked, held, resumed, reviewed, completed, failed observed on the happy/blocked/correction chains)",
+        "stateChangeRun.decisionPolicy.verbsDrawnOnlyFromManifest=true and occurredAtStrictlyOrderedPerChain=true; validator rejects any receipt verb outside the manifest set",
+        "Each transitionChains[*].receiptIds sequence requires strictly increasing com_occurred_at ISO 8601 timestamps (offset-explicit) along the unbroken before/after state chain",
+        "Correction chain CHAIN-CORR-001 also enforces correction receipt occurred-at strictly after the erroneous held receipt while keeping the original append-only locked"
+      ],
+      "tenantEvidenceRequired": "Live ledger enforcement that every verb is a declared choice and that temporal order of state-change receipts is append-only remains VERIFY IN TENANT; this slice is local contract evidence only."
     }
   ]
 }

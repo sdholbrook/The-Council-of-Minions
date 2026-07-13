@@ -177,7 +177,6 @@ $story13Extraction = Read-JsonInput -Path $Story13ExtractionPath
 $story14Extraction = Read-JsonInput -Path $Story14ExtractionPath
 $driftSlice = Read-JsonInput -Path $DriftSlicePath
 $demoEvidence = Read-JsonInput -Path $DemoEvidencePath
-$rawSliceText = Get-Content -LiteralPath $ApprovalSlicePath -Raw
 $issues = [System.Collections.Generic.List[string]]::new()
 
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
@@ -358,7 +357,6 @@ if ($candidates.Count -ne 8) {
 
 $seenCandidateIds = @{}
 $seenRiskClassLabels = @{}
-$seenCandidateIdempotency = @{}
 foreach ($candidate in $candidates) {
   $candidateId = [string]$candidate.com_council_work_item_id
   $subject = "Candidate Work Item $candidateId"
@@ -374,8 +372,8 @@ foreach ($candidate in $candidates) {
     Add-Issue $issues "Candidate Work Item must declare com_council_work_item_id."
   }
   else {
-    if ($candidateId -notmatch "^CWI-") {
-      Add-Issue $issues "$subject must use Council-level CWI-* identity."
+    if ($candidateId -notmatch "^CWI-LOCAL-") {
+      Add-Issue $issues "$subject must use a story-local CWI-LOCAL-* identity (hard rule: new CWI ids are CWI-LOCAL-*), found: $candidateId."
     }
     if ($seenCandidateIds.ContainsKey($candidateId)) {
       Add-Issue $issues "Duplicate candidate Work Item ID in slice: $candidateId."
@@ -414,6 +412,12 @@ foreach ($candidate in $candidates) {
   }
   if ($workItemUrgency -notcontains [string]$candidate.com_urgency) {
     Add-Issue $issues "$subject com_urgency is not in manifest urgency vocabulary, found: $($candidate.com_urgency)."
+  }
+
+  if (Test-HasNonEmptyField -Record $candidate -Field "com_primary_source_record") {
+    if (-not $priorCsrIds.Contains([string]$candidate.com_primary_source_record)) {
+      Add-Issue $issues "$subject com_primary_source_record must reference an existing Source Record id from a sibling slice (foreign key), found: $($candidate.com_primary_source_record)."
+    }
   }
 
   if ($candidate.com_approval_required -isnot [bool] -or -not $candidate.com_approval_required) {
@@ -459,8 +463,8 @@ foreach ($approved in $approvedItems) {
     Add-Issue $issues "Approved Work Item must declare com_council_work_item_id."
   }
   else {
-    if ($approvedId -notmatch "^CWI-") {
-      Add-Issue $issues "$subject must use Council-level CWI-* identity."
+    if ($approvedId -notmatch "^CWI-LOCAL-") {
+      Add-Issue $issues "$subject must use a story-local CWI-LOCAL-* identity (hard rule: new CWI ids are CWI-LOCAL-*), found: $approvedId."
     }
     if ($approvedItemIds.ContainsKey($approvedId)) {
       Add-Issue $issues "Duplicate approved Work Item ID in slice: $approvedId."
@@ -486,6 +490,12 @@ foreach ($approved in $approvedItems) {
     Add-Issue $issues "$subject com_approval_required must be strict boolean true; approval was required for this high-risk item."
   }
 
+  if (Test-HasNonEmptyField -Record $approved -Field "com_primary_source_record") {
+    if (-not $priorCsrIds.Contains([string]$approved.com_primary_source_record)) {
+      Add-Issue $issues "$subject com_primary_source_record must reference an existing Source Record id from a sibling slice (foreign key), found: $($approved.com_primary_source_record)."
+    }
+  }
+
   $approvalRecord = $approved.approvalRecord
   if ($null -eq $approvalRecord) {
     Add-Issue $issues "$subject must carry an approvalRecord."
@@ -505,12 +515,48 @@ foreach ($approved in $approvedItems) {
     if ($null -ne $approvalRecord.outOfScopeActions -and @($approvalRecord.outOfScopeActions).Count -lt 1) {
       Add-Issue $issues "$subject approvalRecord outOfScopeActions must list at least one action not authorized by this approval."
     }
+    # F2: authorizedTransition must be a real before->after pair drawn from the
+    # manifest state-group vocabulary, and approvedScope must bind to the
+    # approved Work Item id (so the scope is not generic free text).
+    $script:pendingAuthorizedBefore = $null
+    $script:pendingAuthorizedAfter = $null
+    $authorizedTransition = [string]$approvalRecord.authorizedTransition
+    if (-not [string]::IsNullOrWhiteSpace($authorizedTransition)) {
+      if ($authorizedTransition -notmatch "^(.+?)\s+to\s+(.+)$") {
+        Add-Issue $issues "$subject approvalRecord authorizedTransition must be a '<before> to <after>' state pair, found: $authorizedTransition."
+      }
+      else {
+        $beforeState = $matches[1].Trim()
+        $afterState = $matches[2].Trim()
+        if ($workItemStateGroups -notcontains $beforeState) {
+          Add-Issue $issues "$subject approvalRecord authorizedTransition before state '$beforeState' is not in manifest com_workitemstategroup vocabulary."
+        }
+        if ($workItemStateGroups -notcontains $afterState) {
+          Add-Issue $issues "$subject approvalRecord authorizedTransition after state '$afterState' is not in manifest com_workitemstategroup vocabulary."
+        }
+        $script:pendingAuthorizedBefore = $beforeState
+        $script:pendingAuthorizedAfter = $afterState
+      }
+    }
+    $approvedScope = [string]$approvalRecord.approvedScope
+    if (-not [string]::IsNullOrWhiteSpace($approvedScope)) {
+      if ($approvedScope -notmatch [regex]::Escape($approvedId)) {
+        Add-Issue $issues "$subject approvalRecord approvedScope must name the approved Work Item id ($approvedId) so the scope is bound to this item, not generic text."
+      }
+      if ($approvedScope -notmatch "proposed") {
+        Add-Issue $issues "$subject approvalRecord approvedScope must reference the proposed state the transition is authorized from."
+      }
+      if ($approvedScope -notmatch "approved") {
+        Add-Issue $issues "$subject approvalRecord approvedScope must reference the approved state the transition is authorized to."
+      }
+    }
     $approvalReceiptId = [string]$approvalRecord.approvalReceipt
     if ([string]::IsNullOrWhiteSpace($approvalReceiptId)) {
       Add-Issue $issues "$subject approvalRecord must name its backing approvalReceipt."
     }
     else {
       $script:pendingApprovalReceiptId = $approvalReceiptId
+      $script:pendingApprovalRecordApprovedId = $approvedId
     }
   }
 }
@@ -543,6 +589,32 @@ foreach ($deferred in $deferredActions) {
   }
   if ($deferred.stateChangeInThisSlice -isnot [bool] -or $deferred.stateChangeInThisSlice) {
     Add-Issue $issues "$subject stateChangeInThisSlice must be strict boolean false; the out-of-scope action is deferred, not executed."
+  }
+  # F3: the deferred action must be the one the approval excluded; require the
+  # deferredAction to share at least two significant tokens with an entry in the
+  # approvalRecord.outOfScopeActions of the approved Work Item it targets.
+  if (-not [string]::IsNullOrWhiteSpace($deferredWorkItem) -and $approvedItemIds.ContainsKey($deferredWorkItem)) {
+    $targetApproved = @($approvedItems | Where-Object { [string]$_.com_council_work_item_id -eq $deferredWorkItem }) | Select-Object -First 1
+    $targetOos = @()
+    if ($null -ne $targetApproved -and $null -ne $targetApproved.approvalRecord -and $null -ne $targetApproved.approvalRecord.outOfScopeActions) {
+      $targetOos = @($targetApproved.approvalRecord.outOfScopeActions | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+    }
+    if ($targetOos.Count -eq 0) {
+      Add-Issue $issues "$subject must be covered by an outOfScopeActions entry in $deferredWorkItem's approvalRecord, but none were declared."
+    }
+    elseif (Test-HasNonEmptyField -Record $deferred -Field "deferredAction") {
+      $stopwords = @("the", "this", "that", "a", "an", "to", "of", "for", "and", "or", "on", "in", "is", "was", "were", "be", "with", "from", "by", "any", "not", "no", "it", "its", "item", "work", "only", "must", "may", "does", "did")
+      $deferredTokens = @(([regex]::Matches(([string]$deferred.deferredAction).ToLower(), "[a-z]{4,}") | ForEach-Object { $_.Value }) | Where-Object { $stopwords -notcontains $_ } | Sort-Object -Unique)
+      $matchedOos = $false
+      foreach ($oos in $targetOos) {
+        $oosTokens = @(([regex]::Matches(([string]$oos).ToLower(), "[a-z]{4,}") | ForEach-Object { $_.Value }) | Where-Object { $stopwords -notcontains $_ } | Sort-Object -Unique)
+        $shared = @($deferredTokens | Where-Object { $oosTokens -contains $_ })
+        if ($shared.Count -ge 2) { $matchedOos = $true; break }
+      }
+      if (-not $matchedOos) {
+        Add-Issue $issues "$subject deferredAction must be the action the approval excluded: it must share at least two significant tokens with an outOfScopeActions entry of $deferredWorkItem's approvalRecord; found no match."
+      }
+    }
   }
 }
 foreach ($approvedId in @($approvedItemIds.Keys)) {
@@ -581,8 +653,8 @@ foreach ($receipt in $receipts) {
     Add-Issue $issues "Receipt must declare com_receipt_id."
   }
   else {
-    if ($receiptId -notmatch "^CR-") {
-      Add-Issue $issues "$subject must use Council-level CR-* identity."
+    if ($receiptId -notmatch "^CR-LOCAL-") {
+      Add-Issue $issues "$subject must use a story-local CR-LOCAL-* identity (hard rule: new CR ids are CR-LOCAL-*), found: $receiptId."
     }
     if ($sliceReceiptIds.ContainsKey($receiptId)) {
       Add-Issue $issues "Duplicate receipt ID in slice: $receiptId."
@@ -602,11 +674,27 @@ foreach ($receipt in $receipts) {
   if ($actorTypes -notcontains [string]$receipt.com_actor_type) {
     Add-Issue $issues "$subject actor type is not in manifest com_actortype vocabulary: $($receipt.com_actor_type)."
   }
-  elseif ([string]$receipt.com_actor_type -ne "human") {
-    Add-Issue $issues "$subject actor type must be human for an approval event, found: $($receipt.com_actor_type)."
+  # F6: the strict human/Doug actor pin binds approval events only (verb approved).
+  # Non-approved-verb receipts (e.g. proposed) still must use manifest vocabulary
+  # but are not forced to the approval-event actor contract.
+  if ([string]$receipt.com_verb -eq "approved") {
+    if ([string]$receipt.com_actor_type -ne "human") {
+      Add-Issue $issues "$subject actor type must be human for an approval event (verb approved), found: $($receipt.com_actor_type)."
+    }
+    if ([string]$receipt.com_actor_id -ne "Doug") {
+      Add-Issue $issues "$subject actor id must be Doug for an approval event (verb approved), found: $($receipt.com_actor_id)."
+    }
   }
-  if ([string]$receipt.com_actor_id -ne "Doug") {
-    Add-Issue $issues "$subject actor id must be Doug (human approval), found: $($receipt.com_actor_id)."
+  # F7: before/after states, when present, must be manifest state-group values
+  # or a recognized pre-existence sentinel; free text outside the vocabulary is
+  # not acceptable evidence even on a text-typed column.
+  foreach ($stateField in @("com_before_state", "com_after_state")) {
+    if (Test-HasNonEmptyField -Record $receipt -Field $stateField) {
+      $stateVal = [string]$receipt.$stateField
+      if ($workItemStateGroups -notcontains $stateVal -and $stateVal -ne "not_proposed") {
+        Add-Issue $issues "$subject $stateField '$stateVal' is not in manifest com_workitemstategroup vocabulary and is not a recognized pre-existence sentinel (not_proposed)."
+      }
+    }
   }
   if ($receiptResults -notcontains [string]$receipt.com_result) {
     Add-Issue $issues "$subject result is not in manifest com_receiptresult vocabulary: $($receipt.com_result)."
@@ -659,6 +747,26 @@ if ($null -ne $script:pendingApprovalReceiptId) {
     if ([string]$approvalReceipt.com_after_state -ne "approved") {
       Add-Issue $issues "Receipt $script:pendingApprovalReceiptId com_after_state must be approved, found: $($approvalReceipt.com_after_state)."
     }
+    # F4: the backing receipt must bind to the SAME Work Item the approvalRecord
+    # belongs to; otherwise the approval scope is backed by an unrelated receipt.
+    $bindingApprovedId = [string]$script:pendingApprovalRecordApprovedId
+    if ([string]::IsNullOrWhiteSpace([string]$approvalReceipt.com_work_item)) {
+      Add-Issue $issues "Receipt $script:pendingApprovalReceiptId backing the approval record must carry com_work_item binding it to the approved Work Item ($bindingApprovedId); com_work_item is empty."
+    }
+    elseif ([string]$approvalReceipt.com_work_item -ne $bindingApprovedId) {
+      Add-Issue $issues "Receipt $script:pendingApprovalReceiptId com_work_item must equal the approved Work Item id ($bindingApprovedId), found: $($approvalReceipt.com_work_item)."
+    }
+    # F2: the authorizedTransition declared on the approvalRecord must equal the
+    # receipt's recorded before->after pair, so the declared scope is the scope
+    # the receipt actually proves.
+    if ($null -ne $script:pendingAuthorizedBefore -and $null -ne $script:pendingAuthorizedAfter) {
+      if ([string]$approvalReceipt.com_before_state -ne $script:pendingAuthorizedBefore) {
+        Add-Issue $issues "approvalRecord.authorizedTransition before state ($($script:pendingAuthorizedBefore)) must equal the backing receipt com_before_state ($($approvalReceipt.com_before_state)); the declared scope must match the proven scope."
+      }
+      if ([string]$approvalReceipt.com_after_state -ne $script:pendingAuthorizedAfter) {
+        Add-Issue $issues "approvalRecord.authorizedTransition after state ($($script:pendingAuthorizedAfter)) must equal the backing receipt com_after_state ($($approvalReceipt.com_after_state)); the declared scope must match the proven scope."
+      }
+    }
   }
 }
 
@@ -701,8 +809,22 @@ foreach ($link in $links) {
   if ($evidenceRoles -notcontains [string]$link.com_evidence_role) {
     Add-Issue $issues "$linkSubject evidence role is not in manifest vocabulary: $($link.com_evidence_role)."
   }
-  elseif ([string]$link.com_evidence_role -ne "approval") {
-    Add-Issue $issues "$linkSubject must use the approval evidence role, found: $($link.com_evidence_role)."
+  elseif ($sliceReceiptIds.ContainsKey($linkReceiptId)) {
+    # F5: the approval evidence role is reserved for the approved-verb receipt;
+    # a non-approved receipt (e.g. proposed) must NOT carry role approval, and
+    # an approved receipt MUST carry role approval. Proposal evidence is not
+    # approval evidence.
+    $linkReceiptVerb = [string]$sliceReceiptsById[$linkReceiptId].com_verb
+    if ($linkReceiptVerb -eq "approved") {
+      if ([string]$link.com_evidence_role -ne "approval") {
+        Add-Issue $issues "$linkSubject is bound to an approved-verb receipt and must use the approval evidence role, found: $($link.com_evidence_role)."
+      }
+    }
+    else {
+      if ([string]$link.com_evidence_role -eq "approval") {
+        Add-Issue $issues "$linkSubject is bound to a non-approved receipt (verb $linkReceiptVerb) and must NOT use the approval evidence role; use supporting instead."
+      }
+    }
   }
 }
 foreach ($receiptId in @($sliceReceiptIds.Keys)) {
@@ -753,6 +875,35 @@ foreach ($proof in $proofEntries) {
   }
   if (-not (Test-HasNonEmptyField -Record $proof -Field "proof")) {
     Add-Issue $issues "$subject must carry a non-empty proof rationale."
+  }
+  else {
+    $proofText = [string]$proof.proof
+    # F1: the proof must be independent negative evidence, not a circular
+    # restatement of the guard boolean it claims to prove.
+    if ($proofText -match "noPreApprovalExternalAction\s*=\s*true") {
+      Add-Issue $issues "$subject proof must not circularly restate the guard boolean (noPreApprovalExternalAction=true); it must state independent negative evidence."
+    }
+    # The proof must bind to its own Work Item id so it cannot be a generic
+    # string reused for any candidate.
+    if (-not [string]::IsNullOrWhiteSpace($proofWorkItem) -and $proofText -notmatch [regex]::Escape($proofWorkItem)) {
+      Add-Issue $issues "$subject proof must name its own Work Item id ($proofWorkItem) so it is bound to this candidate, not generic text."
+    }
+    # The proof must contain at least two independent negative-evidence phrases.
+    $negativePhrases = [regex]::Matches($proofText, "(?i)\b(?:no|not|never|absent|absence|without)\s+[A-Za-z_]+")
+    if (@($negativePhrases).Count -lt 2) {
+      Add-Issue $issues "$subject proof must contain at least two independent negative-evidence phrases (e.g., 'no <verb> receipt', 'absence of ...'); found a vacuous proof."
+    }
+    # The proof must reference at least one manifest receipt verb (other than
+    # 'proposed', which is the candidate's own state) so the negative evidence
+    # is bound to the actual receipt vocabulary rather than free text.
+    $proofVerbsFound = 0
+    foreach ($verb in $receiptVerbs) {
+      if ($verb -eq "proposed") { continue }
+      if ($proofText -match "\b$([regex]::Escape($verb))\b") { $proofVerbsFound++ }
+    }
+    if ($proofVerbsFound -lt 1) {
+      Add-Issue $issues "$subject proof must reference at least one manifest com_receiptverb (other than 'proposed') whose absence is the negative evidence; proof is not bound to the receipt vocabulary."
+    }
   }
 }
 foreach ($candidateId in @($seenCandidateIds.Keys)) {
