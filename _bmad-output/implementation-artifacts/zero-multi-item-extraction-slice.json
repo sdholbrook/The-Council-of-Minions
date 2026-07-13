@@ -1,0 +1,212 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "1-4-handle-zero-item-and-multi-item-extraction",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove zero-item and multi-item extraction cardinality locally: Source Records with no actionable work are marked ignored or held with rationale and produce no Work Item, while one meeting Source Record yields multiple proposed Work Items each carrying its own rationale, confidence, type, and primary source link. No tenant writes occur; extraction-status mutation stays receipt-gated to Epic 2.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "noReceiptCreationInThisSlice": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "noWorkItemCreatedForZeroItemSources": true
+  },
+  "extractionRun": {
+    "runId": "EXTRACT-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 1.4 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "embeddedSampleSourceRecords"
+    ],
+    "decisionPolicy": {
+      "defaultStateGroup": "proposed",
+      "defaultAutoCreationPolicyResult": "proposal_only",
+      "zeroItemOutcomeRequiresRationale": true,
+      "noFillerWorkItemForZeroItemSources": true,
+      "decisionDelegationRiskRequiresApproval": true,
+      "lowRiskFollowUpStillNoExternalAction": true,
+      "receiptCreationDeferredToStory2": true
+    },
+    "zeroItemOutcomes": [
+      {
+        "sourceRecord": "CSR-MANUAL-LINK-001",
+        "com_extraction_status": "ignored",
+        "extraction_rationale": "The link-only manual note points at reference material and contains no commitment, request, decision, or risk. Creating a Work Item would only satisfy a one-source-one-task assumption, so the source is marked ignored with this rationale instead.",
+        "extraction_confidence": 0.9,
+        "workItemCreated": false,
+        "noWorkItemNote": "No Work Item was created for this source; the ignored outcome plus rationale is the complete extraction result."
+      },
+      {
+        "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_extraction_status": "held",
+        "extraction_rationale": "The mock Outlook thread is hash-only, mock/manual evidence with no authorized body content. Whether it contains actionable work cannot be decided until live Outlook reads are approved, so extraction is held with rationale rather than guessed into a filler Work Item.",
+        "extraction_confidence": 0.55,
+        "workItemCreated": false,
+        "noWorkItemNote": "No Work Item was created for this source; the held outcome defers the decision until verified tenant evidence exists."
+      }
+    ],
+    "embeddedSampleSourceRecords": [
+      {
+        "com_name": "Manual source - meeting note with multiple commitments",
+        "com_council_source_record_id": "CSR-MANUAL-MEETING-001",
+        "com_source_system": "manual",
+        "com_source_kind": "meeting",
+        "com_source_object_ref": "manual:2026-07-13:meeting-note-example",
+        "com_source_object_url": "https://example.invalid/manual-meeting-note",
+        "com_captured_at": "2026-07-13T09:05:00-04:00",
+        "com_captured_by": "Doug",
+        "com_content_snapshot_ref": "summary:manual-meeting-note-001",
+        "com_permission_snapshot": "unknown",
+        "com_sensitivity_label": "unknown",
+        "com_retention_or_hold_flags": "unknown",
+        "com_extraction_status": "new",
+        "com_source_to_work_item_rationale": "Summary-allowed manual meeting note from the 2026-07-13 weekly platform sync stating three distinct commitments so extraction can propose multiple Work Items from one source: (1) Doug committed to send the revised tenant readiness checklist to Priya by Friday; (2) the group decided, pending ratification, to defer the Fabric ontology projection until Epic 4 planning; (3) a risk was raised that publisher prefix approval may slip past the Epic 5 readiness gate.",
+        "com_data_boundary_policy": "summary_allowed"
+      }
+    ],
+    "proposedWorkItems": [
+      {
+        "com_council_work_item_id": "CWI-LOCAL-MEETING-ACTION-001",
+        "com_title": "Send revised tenant readiness checklist to Priya by Friday",
+        "com_type": "meeting_action",
+        "com_summary": "Doug committed in the 2026-07-13 platform sync to send the revised tenant readiness checklist to Priya by Friday.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.88,
+        "com_urgency": "high",
+        "com_risk_class": "delivery",
+        "com_confidence_summary": "Extraction confidence 0.86; type confidence 0.90; owner confidence 0.88. Source is a local sample meeting summary, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary states an explicit personal commitment with a named recipient, a concrete artifact, and a deadline, which maps directly to a meeting action.",
+        "com_recommended_next_action": "Doug approves the proposed meeting action and sends the checklist to Priya before Friday, or reassigns the commitment.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; no_outbound_action; local_sample_not_tenant_verified",
+        "extraction_rationale": "Commitment (1) in the meeting summary names an owner, a recipient, an artifact, and a deadline; it is a distinct actionable commitment separate from the other two statements in the same source.",
+        "extraction_confidence": 0.86,
+        "type_confidence": 0.9,
+        "source_identification_confidence": 1.0,
+        "uncertainty": "The exact Friday deadline date and Priya's identity come from a local sample summary and should be confirmed before execution."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-DECISION-002",
+        "com_title": "Ratify deferral of the Fabric ontology projection to Epic 4",
+        "com_type": "decision",
+        "com_summary": "The 2026-07-13 platform sync tentatively decided to defer the Fabric ontology projection until Epic 4 planning; the deferral needs explicit ratification by Doug.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.8,
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Extraction confidence 0.82; type confidence 0.85; owner confidence 0.80. Source is a local sample meeting summary, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary records a group decision that is pending ratification; decision items always stay proposed until human approval.",
+        "com_recommended_next_action": "Doug reviews the deferral rationale and either ratifies the decision or reopens the Fabric ontology projection scope.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; governance; no_outbound_action; local_sample_not_tenant_verified",
+        "extraction_rationale": "Commitment (2) in the meeting summary is a distinct pending decision about project scope, separate from the checklist commitment and the prefix-approval risk in the same source.",
+        "extraction_confidence": 0.82,
+        "type_confidence": 0.85,
+        "source_identification_confidence": 1.0,
+        "uncertainty": "The sample summary does not state who holds final decision authority or when Epic 4 planning starts; both should be confirmed at review."
+      },
+      {
+        "com_council_work_item_id": "CWI-LOCAL-RISK-001",
+        "com_title": "Track risk: publisher prefix approval may slip past the Epic 5 gate",
+        "com_type": "risk",
+        "com_summary": "The 2026-07-13 platform sync raised the risk that Dataverse publisher prefix approval could slip past the Epic 5 tenant readiness gate.",
+        "com_state_group": "proposed",
+        "com_owner_candidate": "Doug",
+        "com_owner_candidate_confidence": 0.75,
+        "com_urgency": "normal",
+        "com_risk_class": "governance",
+        "com_confidence_summary": "Extraction confidence 0.8; type confidence 0.88; owner confidence 0.75. Source is a local sample meeting summary, not tenant verified.",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The meeting summary explicitly flags a schedule risk against a readiness gate; risk items always require human approval before any mitigation work is created.",
+        "com_recommended_next_action": "Doug reviews the risk, confirms the Epic 5 gate dependency, and decides whether to track mitigation as separate work.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_auto_creation_policy_result": "proposal_only",
+        "com_policy_flags": "human_approval_required; governance; no_outbound_action; local_sample_not_tenant_verified",
+        "extraction_rationale": "Commitment (3) in the meeting summary is a distinct raised risk, separate from the checklist commitment and the deferral decision extracted from the same source.",
+        "extraction_confidence": 0.8,
+        "type_confidence": 0.88,
+        "source_identification_confidence": 1.0,
+        "uncertainty": "The sample summary does not quantify slip likelihood or impact; severity should be assessed by a human before mitigation planning."
+      }
+    ],
+    "workItemSourceLinks": [
+      {
+        "com_name": "CWI-LOCAL-MEETING-ACTION-001 primary source",
+        "com_work_item": "CWI-LOCAL-MEETING-ACTION-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_source_role": "primary",
+        "com_rationale": "Commitment (1) of the embedded meeting summary is the sole evidence for the proposed checklist meeting action.",
+        "com_confidence": 1.0
+      },
+      {
+        "com_name": "CWI-LOCAL-DECISION-002 primary source",
+        "com_work_item": "CWI-LOCAL-DECISION-002",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_source_role": "primary",
+        "com_rationale": "Commitment (2) of the embedded meeting summary is the sole evidence for the proposed deferral decision.",
+        "com_confidence": 0.95
+      },
+      {
+        "com_name": "CWI-LOCAL-RISK-001 primary source",
+        "com_work_item": "CWI-LOCAL-RISK-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_source_role": "primary",
+        "com_rationale": "Commitment (3) of the embedded meeting summary is the sole evidence for the proposed prefix-approval risk.",
+        "com_confidence": 0.95
+      }
+    ],
+    "sourceUpdatesDeferred": [
+      {
+        "sourceRecord": "CSR-MANUAL-LINK-001",
+        "deferredUpdate": "com_extraction_status may become ignored only through a receipt-backed mutation once Epic 2 receipt semantics exist; no live tenant write was performed in this slice."
+      },
+      {
+        "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "deferredUpdate": "com_extraction_status may remain or become held only through a receipt-backed mutation once Epic 2 receipt semantics exist; no live tenant write was performed in this slice."
+      },
+      {
+        "sourceRecord": "CSR-MANUAL-MEETING-001",
+        "deferredUpdate": "com_extraction_status may become extracted only through a receipt-backed mutation once Epic 2 receipt semantics exist; no live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "extractionRun.zeroItemOutcomes",
+        "com_extraction_status ignored/held with extraction_rationale and extraction_confidence",
+        "workItemCreated=false with noWorkItemNote per zero-item source",
+        "guards.noWorkItemCreatedForZeroItemSources=true",
+        "no proposedWorkItems or workItemSourceLinks reference a zero-item source"
+      ],
+      "tenantEvidenceRequired": "Live Source Record extraction-status mutation to ignored/held is receipt-gated to Epic 2 and recorded in sourceUpdatesDeferred; no tenant write was performed for this slice."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "extractionRun.embeddedSampleSourceRecords CSR-MANUAL-MEETING-001 (summary_allowed, three distinct commitments)",
+        "three proposedWorkItems of distinct types meeting_action/decision/risk from one source",
+        "per-item extraction_rationale, extraction_confidence, type_confidence, source_identification_confidence, uncertainty",
+        "one primary workItemSourceLinks entry per proposed Work Item with its own rationale and confidence"
+      ],
+      "tenantEvidenceRequired": "Live multi-item extraction against a tenant Source Record remains VERIFY IN TENANT; this local slice is sample evidence, not tenant-verified behavior."
+    }
+  ]
+}
