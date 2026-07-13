@@ -2,7 +2,7 @@
   "artifactVersion": "2026-07-13",
   "storyKey": "3-2-build-delegation-decision-support-packages",
   "status": "local-contract-not-tenant-verified",
-  "purpose": "Prove delegation decision support locally (FR12, FR13): two delegation support packages — one delegable, one carrying a non-delegable exception — each carrying suggested owner, rationale, confidence, recommended stance (delegate|hold|handle), urgency, source references resolving to sibling-slice CSR/CWI ids, and risks; the non-delegable package preserves its exception reason. The delegate/hold/handle decision itself is receipt-backed: one approval (proposed to approved) and one rejection (proposed to held), each with decision rationale, human/Doug authority basis, before state, after state, and result. Receipts here are local contract evidence only; every live Work Item state mutation stays receipt-gated and deferred.",
+  "purpose": "Prove delegation decision support locally (FR12, FR13): two delegation support packages \u2014 one delegable, one carrying a non-delegable exception \u2014 each carrying suggested owner, rationale, confidence, recommended stance (delegate|hold|handle), urgency, source references resolving to sibling-slice CSR/CWI ids, and risks; the non-delegable package preserves its exception reason. The delegate/hold/handle decision itself is receipt-backed: one approval (proposed to approved) and one rejection (proposed to held), each with decision rationale, human/Doug authority basis, before state, after state, and result. Receipts here are local contract evidence only; every live Work Item state mutation stays receipt-gated and deferred.",
   "guards": {
     "noTenantWrites": true,
     "noOutboundAction": true,
@@ -157,16 +157,21 @@
     "workItemStateChangesDeferred": [
       {
         "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "decisionId": "DEC-LOCAL-DELEG-APPROVE-001",
+        "receiptGate": "CR-LOCAL-DELEG-APPROVE-001",
         "deferredUpdate": "Applying the projected com_state_group approved (the delegation approval) to the live Dataverse Work Item row for CWI-LOCAL-FOLLOWUP-001 requires a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice. Gate: CR-LOCAL-DELEG-APPROVE-001."
       },
       {
         "workItem": "CWI-LOCAL-DECISION-001",
+        "decisionId": "DEC-LOCAL-DELEG-REJECT-001",
+        "receiptGate": "CR-LOCAL-DELEG-REJECT-001",
         "deferredUpdate": "Applying the projected com_state_group held (the delegation rejection) to the live Dataverse Work Item row for CWI-LOCAL-DECISION-001 requires a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice. Gate: CR-LOCAL-DELEG-REJECT-001."
       },
       {
         "target": "com_councilreceipt ledger (all CR-LOCAL-DELEG-*)",
         "targetKind": "receipt_ledger",
-        "deferredUpdate": "Persisting the Story 3.2 local delegation decision receipts into the live com_councilreceipt ledger is receipt-gated tenant write work outside this slice; these receipts are local contract evidence only."
+        "receiptGate": "epic-2-receipt-backed-state-changes",
+        "deferredUpdate": "Persisting the Story 3.2 local delegation decision receipts into the live com_councilreceipt ledger is receipt-gated tenant write work outside this slice (Epic 2 Story 2.3); these receipts are local contract evidence only."
       }
     ]
   },

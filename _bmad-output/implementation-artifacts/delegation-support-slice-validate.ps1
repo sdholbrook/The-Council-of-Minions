@@ -186,7 +186,7 @@ $workItemTypes = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_workitemt
 $workItemStateGroups = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_workitemstategroup"
 $riskClasses = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_riskclass"
 $evidenceRoles = Get-ColumnChoiceValues -Manifest $manifest -TableSchemaName "com_councilreceiptsource" -ColumnName "com_evidence_role"
-$workItemUrgency = @("low", "normal", "high", "critical", "unknown")
+$workItemUrgency = Get-ColumnChoiceValues -Manifest $manifest -TableSchemaName "com_councilworkitem" -ColumnName "com_urgency"
 $validStances = @("delegate", "hold", "handle")
 
 foreach ($vocabulary in @(
@@ -196,7 +196,8 @@ foreach ($vocabulary in @(
     @{ Name = "com_workitemtype"; Values = $workItemTypes },
     @{ Name = "com_workitemstategroup"; Values = $workItemStateGroups },
     @{ Name = "com_riskclass"; Values = $riskClasses },
-    @{ Name = "com_councilreceiptsource.com_evidence_role"; Values = $evidenceRoles }
+    @{ Name = "com_councilreceiptsource.com_evidence_role"; Values = $evidenceRoles },
+    @{ Name = "com_councilworkitem.com_urgency"; Values = $workItemUrgency }
   )) {
   if (@($vocabulary.Values).Count -eq 0) {
     Add-Issue $issues "Manifest vocabulary missing or empty: $($vocabulary.Name)."
@@ -217,8 +218,20 @@ if ($evidenceRoles -notcontains "approval") {
   Add-Issue $issues "Manifest com_councilreceiptsource.com_evidence_role is missing: approval."
 }
 
-# Cross-slice ID collection for collision tripwires against the sibling slices (1-1..1-5) and demo evidence.
-$siblingSlices = @($manualSlice, $outlookSlice, $story13Extraction, $story14Extraction, $driftSlice)
+# Cross-slice ID collection: the story hard rule requires new CWI-LOCAL-* / CR-LOCAL-* / CSR-* ids to be
+# unique across ALL slices (not just 1-1..1-5). Harvest CWI/CR/CSR ids from every *-slice.json in this
+# directory (excluding the slice under validation) plus the structured demo-evidence inventory. The
+# named sibling slices below are also parsed structurally for runId / source-record binding checks.
+$delegationSliceFileName = Split-Path -Leaf $DelegationSlicePath
+$allSiblingSlicePaths = @(
+  Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File |
+    Where-Object { $_.Name -ne $delegationSliceFileName } |
+    ForEach-Object { $_.FullName }
+)
+$siblingSlices = @()
+foreach ($siblingPath in $allSiblingSlicePaths) {
+  $siblingSlices += Read-JsonInput -Path $siblingPath
+}
 $priorCwiIds = [System.Collections.Generic.HashSet[string]]::new()
 $priorCrIds = [System.Collections.Generic.HashSet[string]]::new()
 $priorCsrIds = [System.Collections.Generic.HashSet[string]]::new()
@@ -239,14 +252,17 @@ $priorRunIds = @(
   [string]$driftSlice.driftRun.runId
 ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
+if ($allSiblingSlicePaths.Count -eq 0) {
+  Add-Issue $issues "No sibling slice files (*-slice.json) found in $PSScriptRoot; cross-slice collision checks would silently no-op."
+}
 if ($priorCsrIds.Count -eq 0) {
-  Add-Issue $issues "No Source Record IDs could be loaded from sibling slices; cross-slice source-reference checks would silently no-op."
+  Add-Issue $issues "No Source Record IDs could be harvested from sibling slices; cross-slice source-reference checks would silently no-op."
 }
 if ($priorCwiIds.Count -eq 0) {
-  Add-Issue $issues "No Work Item IDs could be loaded from sibling slices; cross-slice collision and source-reference checks would silently no-op."
+  Add-Issue $issues "No Work Item IDs could be harvested from sibling slices; cross-slice collision and source-reference checks would silently no-op."
 }
 if ($priorCrIds.Count -eq 0) {
-  Add-Issue $issues "No Receipt IDs could be loaded from sibling slices; cross-slice collision checks would silently no-op."
+  Add-Issue $issues "No Receipt IDs could be harvested from sibling slices; cross-slice collision checks would silently no-op."
 }
 
 # Slice header.
@@ -406,6 +422,13 @@ foreach ($package in $packages) {
     Add-Issue $issues "$subject recommendedStance must be one of (delegate|hold|handle), found: $stance."
   }
 
+  # Stance polarity: a non-delegable package must NOT recommend 'delegate' (contradiction: you cannot
+  # delegate a candidate packaged as non-delegable). A delegable package may recommend any stance.
+  $isNonDelegable = ($package.PSObject.Properties.Name -contains "nonDelegable" -and $package.nonDelegable -is [bool] -and $package.nonDelegable)
+  if ($isNonDelegable -and $stance -eq "delegate") {
+    Add-Issue $issues "$subject is non-delegable and must NOT recommend stance 'delegate'; use hold or handle."
+  }
+
   # urgency vocabulary.
   if ($workItemUrgency -notcontains [string]$package.urgency) {
     Add-Issue $issues "$subject urgency must be in manifest com_urgency vocabulary, found: $($package.urgency)."
@@ -458,8 +481,17 @@ foreach ($package in $packages) {
     if (-not (Test-HasNonEmptyField -Record $package -Field "exceptionReason")) {
       Add-Issue $issues "$subject is non-delegable and must preserve a non-empty exceptionReason."
     }
-    elseif ([string]$package.exceptionReason -notmatch "non-delegable|non_delegable|bypass the Council judgment gate") {
-      Add-Issue $issues "$subject exceptionReason must state the non-delegable rationale (non-delegable + bypass the Council judgment gate), found: $($package.exceptionReason)."
+    else {
+      $reason = [string]$package.exceptionReason
+      # Content gate: the reason must declare non-delegability AND name the governance judgment it
+      # protects (Council judgment gate / human judgment / Doug / bypass). A bare "non-delegable"
+      # token with no governance binding is not evidence.
+      if ($reason -notmatch "non-delegable|non_delegable") {
+        Add-Issue $issues "$subject exceptionReason must explicitly state non-delegability (non-delegable / non_delegable), found: $reason."
+      }
+      if ($reason -notmatch "Council judgment gate|human judgment|Doug|bypass") {
+        Add-Issue $issues "$subject exceptionReason must name the governance judgment it protects (Council judgment gate / human judgment / Doug / bypass), found: $reason."
+      }
     }
   }
   elseif ($package.PSObject.Properties.Name -contains "delegable" -and $package.delegable -is [bool] -and $package.delegable) {
@@ -536,24 +568,25 @@ foreach ($decision in $decisions) {
     }
   }
 
-  # decision.package must be a real package in this slice.
+  # decision.package must be a real package in this slice; resolve it once for polarity + exception binding.
   $decisionPackageId = [string]$decision.package
+  $targetPackage = $null
   if ([string]::IsNullOrWhiteSpace($decisionPackageId) -or -not $seenPackageIds.ContainsKey($decisionPackageId)) {
     Add-Issue $issues "$subject package must reference a delegation package in this slice, found: $decisionPackageId."
+  }
+  else {
+    $targetPackage = @($packages | Where-Object { [string]$_.packageId -eq $decisionPackageId }) | Select-Object -First 1
   }
 
   # decision.workItem must be the package's candidateWorkItem.
   $decisionWorkItem = [string]$decision.workItem
-  if (-not [string]::IsNullOrWhiteSpace($decisionPackageId) -and $seenPackageIds.ContainsKey($decisionPackageId)) {
-    $targetPackage = @($packages | Where-Object { [string]$_.packageId -eq $decisionPackageId }) | Select-Object -First 1
-    if ($null -ne $targetPackage) {
-      $targetCandidate = [string]$targetPackage.candidateWorkItem
-      if ($decisionWorkItem -ne $targetCandidate) {
-        Add-Issue $issues "$subject workItem ($decisionWorkItem) must equal its package's candidateWorkItem ($targetCandidate)."
-      }
-      elseif (-not $priorCwiIds.Contains($decisionWorkItem)) {
-        Add-Issue $issues "$subject workItem must resolve to an existing CWI id from a sibling slice, found: $decisionWorkItem."
-      }
+  if ($null -ne $targetPackage) {
+    $targetCandidate = [string]$targetPackage.candidateWorkItem
+    if ($decisionWorkItem -ne $targetCandidate) {
+      Add-Issue $issues "$subject workItem ($decisionWorkItem) must equal its package's candidateWorkItem ($targetCandidate)."
+    }
+    elseif (-not $priorCwiIds.Contains($decisionWorkItem)) {
+      Add-Issue $issues "$subject workItem must resolve to an existing CWI id from a sibling slice, found: $decisionWorkItem."
     }
   }
   if (-not [string]::IsNullOrWhiteSpace($decisionWorkItem)) {
@@ -596,6 +629,27 @@ foreach ($decision in $decisions) {
     }
   }
 
+  # Decision polarity must bind to package polarity (HIGH): an approve must target the delegable
+  # package; a reject must target the non-delegable package. This closes the hole where a mutated
+  # slice could approve the non-delegable package and reject the delegable one while still passing
+  # the typed transition contract.
+  if ($null -ne $targetPackage) {
+    $pkgDelegable = ($targetPackage.delegable -is [bool] -and $targetPackage.delegable)
+    $pkgNonDelegable = ($targetPackage.PSObject.Properties.Name -contains "nonDelegable" -and $targetPackage.nonDelegable -is [bool] -and $targetPackage.nonDelegable)
+    if ($decisionType -eq "approve" -and -not $pkgDelegable) {
+      Add-Issue $issues "$subject (approve) must target the delegable package (delegable=true), found package $decisionPackageId with delegable=$($targetPackage.delegable)."
+    }
+    if ($decisionType -eq "approve" -and $pkgNonDelegable) {
+      Add-Issue $issues "$subject (approve) must NOT target a non-delegable package, found package $decisionPackageId with nonDelegable=$($targetPackage.nonDelegable)."
+    }
+    if ($decisionType -eq "reject" -and -not $pkgNonDelegable) {
+      Add-Issue $issues "$subject (reject) must target the non-delegable package (nonDelegable=true), found package $decisionPackageId with nonDelegable=$($targetPackage.nonDelegable)."
+    }
+    if ($decisionType -eq "reject" -and $pkgDelegable) {
+      Add-Issue $issues "$subject (reject) must NOT target a delegable package, found package $decisionPackageId with delegable=$($targetPackage.delegable)."
+    }
+  }
+
   # decisionType-specific transition contract: approve => proposed->approved; reject => proposed->held.
   if ($decisionType -eq "approve") {
     if ($beforeState -ne "proposed") {
@@ -618,16 +672,20 @@ foreach ($decision in $decisions) {
     if ([string]$decision.result -ne "rejected") {
       Add-Issue $issues "$subject (reject) result must be rejected, found: $($decision.result)."
     }
-    # The rejection decision must preserve the non-delegable exception reason verbatim from its package.
-    if (-not [string]::IsNullOrWhiteSpace($decisionPackageId) -and $seenPackageIds.ContainsKey($decisionPackageId)) {
-      $targetPackage = @($packages | Where-Object { [string]$_.packageId -eq $decisionPackageId }) | Select-Object -First 1
-      if ($null -ne $targetPackage -and (Test-HasNonEmptyField -Record $targetPackage -Field "exceptionReason")) {
+    # The rejection decision must preserve the non-delegable exception reason verbatim from its
+    # package — UNCONDITIONALLY (HIGH). The reject target is bound above to a non-delegable package,
+    # which the package loop already proved carries a non-empty exceptionReason. Do not gate this
+    # check on the package already having a reason; that made the whole block skippable.
+    if ($null -ne $targetPackage) {
+      if (-not (Test-HasNonEmptyField -Record $targetPackage -Field "exceptionReason")) {
+        Add-Issue $issues "$subject (reject) target package $decisionPackageId must carry a non-empty exceptionReason for the rejection to preserve."
+      }
+      else {
         $packageReason = [string]$targetPackage.exceptionReason
-        $decisionReason = [string]$decision.nonDelegableExceptionReason
         if (-not (Test-HasNonEmptyField -Record $decision -Field "nonDelegableExceptionReason")) {
-          Add-Issue $issues "$subject (reject) must preserve the non-delegable exceptionReason from package $decisionPackageId."
+          Add-Issue $issues "$subject (reject) must preserve the non-delegable exceptionReason from package $decisionPackageId (missing nonDelegableExceptionReason)."
         }
-        elseif ($decisionReason -ne $packageReason) {
+        elseif ([string]$decision.nonDelegableExceptionReason -ne $packageReason) {
           Add-Issue $issues "$subject (reject) nonDelegableExceptionReason must be preserved verbatim from package $decisionPackageId; it differs from the package's exceptionReason."
         }
       }
@@ -806,12 +864,9 @@ foreach ($decision in $decisions) {
   }
 }
 
-# Required receipt ids present.
-foreach ($expectedReceiptId in @("CR-LOCAL-DELEG-APPROVE-001", "CR-LOCAL-DELEG-REJECT-001")) {
-  if (-not $sliceReceiptIds.ContainsKey($expectedReceiptId)) {
-    Add-Issue $issues "Delegation slice must include receipt $expectedReceiptId."
-  }
-}
+# Receipt coverage is proven semantically above (one approve + one reject decision, each bound to a
+# distinct receipt with matching verb/result/before/after/workItem). Hardcoded receipt-id literals
+# would be a slice-game anti-pattern (epic-2 called this out); the decision↔receipt binding is the proof.
 
 # Receipt source links.
 $links = @($run.receiptSourceLinks | Where-Object { $null -ne $_ })
@@ -854,21 +909,95 @@ foreach ($receiptId in @($sliceReceiptIds.Keys)) {
   }
 }
 
-# Deferred work item state changes must be receipt-gated.
+# Deferred work item state changes — MANDATORY (HIGH). Story hard rule: every would-be live write
+# appears as a deferred entry naming its receipt gate. Dropping the array or leaving it empty must
+# fail. Mirror the epic-2 receipt-backed-state-changes pattern: at least one deferred entry per
+# decided Work Item plus one ledger entry, each naming its receipt gate.
 $workItemStateChangesDeferred = @($run.workItemStateChangesDeferred | Where-Object { $null -ne $_ })
+if ($workItemStateChangesDeferred.Count -eq 0) {
+  Add-Issue $issues "Delegation run must declare workItemStateChangesDeferred; every would-be live Work Item state change must appear as a deferred entry naming its receipt gate (cannot be dropped)."
+}
+
+$deferredWorkItemEntries = @{}
+$deferredLedgerEntryCount = 0
 foreach ($deferred in $workItemStateChangesDeferred) {
-  if (Test-HasNonEmptyField -Record $deferred -Field "workItem") {
+  $isWorkItemEntry = (Test-HasNonEmptyField -Record $deferred -Field "workItem")
+  $isLedgerEntry = ((Test-HasNonEmptyField -Record $deferred -Field "target") -and (Test-HasNonEmptyField -Record $deferred -Field "targetKind"))
+
+  if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate")) {
+    Add-Issue $issues "Deferred live-write entry must carry a non-empty deferredUpdate."
+  }
+  else {
+    if ([string]$deferred.deferredUpdate -notmatch "receipt") {
+      Add-Issue $issues "Deferred live-write entry must state that any state move is receipt-gated, found: $($deferred.deferredUpdate)."
+    }
+  }
+
+  if ($isWorkItemEntry) {
     $deferredWorkItem = [string]$deferred.workItem
     if (-not $priorCwiIds.Contains($deferredWorkItem)) {
       Add-Issue $issues "Deferred Work Item state change references an unknown Work Item (not in sibling slices): $deferredWorkItem."
     }
-    if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate")) {
-      Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem must carry a non-empty deferredUpdate."
+    # No live-write marker fields on a deferred entry.
+    foreach ($liveWriteField in @("dataverseRowId", "com_dataverse_row_id", "crmRecordUrl", "environmentUrl", "liveWriteAt", "tenantWriteAt")) {
+      if ($deferred.PSObject.Properties.Name -contains $liveWriteField) {
+        Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem must not carry live-write marker field '$liveWriteField'."
+      }
     }
-    elseif ([string]$deferred.deferredUpdate -notmatch "receipt") {
-      Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem must state that any state move is receipt-gated."
+    # receiptGate must name a real receipt id minted in THIS slice and must be the decision receipt
+    # bound to this Work Item's decision. This proves the deferred ledger actually tracks the
+    # binding receipt rather than free-text aspirational claims.
+    $deferredGate = [string]$deferred.receiptGate
+    if ([string]::IsNullOrWhiteSpace($deferredGate)) {
+      Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem must name its binding receiptGate (a CR-LOCAL-* id minted in this slice)."
+    }
+    elseif (-not $sliceReceiptIds.ContainsKey($deferredGate)) {
+      Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem receiptGate '$deferredGate' must be a receipt id minted in this slice."
+    }
+    else {
+      # Cross-bind: the deferred entry's receiptGate must be the decision receipt for a decision
+      # targeting this Work Item (the gate is the receipt that would authorize the deferred write).
+      $matchingDecision = $null
+      foreach ($d in $decisions) {
+        if ([string]$d.workItem -eq $deferredWorkItem) { $matchingDecision = $d; break }
+      }
+      if ($null -eq $matchingDecision) {
+        Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem must correspond to a decision targeting that Work Item; no such decision found."
+      }
+      elseif ([string]$matchingDecision.decisionReceipt -ne $deferredGate) {
+        Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem receiptGate '$deferredGate' must equal the decision receipt '$([string]$matchingDecision.decisionReceipt)' bound to $deferredWorkItem."
+      }
+    }
+    if ($deferredWorkItemEntries.ContainsKey($deferredWorkItem)) {
+      Add-Issue $issues "Deferred Work Item state change for $deferredWorkItem appears more than once; one deferred entry per Work Item."
+    }
+    else {
+      $deferredWorkItemEntries[$deferredWorkItem] = $true
     }
   }
+  elseif ($isLedgerEntry) {
+    $deferredLedgerEntryCount++
+    if ([string]$deferred.targetKind -ne "receipt_ledger") {
+      Add-Issue $issues "Deferred ledger entry targetKind '$($deferred.targetKind)' must be 'receipt_ledger' for the com_councilreceipt ledger persistence gate."
+    }
+  }
+  else {
+    Add-Issue $issues "Deferred live-write entry must name either a 'workItem' (work-item state move) or a 'target'+'targetKind' (ledger persistence gate)."
+  }
+}
+
+# Every decided Work Item must have a deferred entry proving its would-be live write is gated.
+foreach ($decision in $decisions) {
+  $decisionWorkItem = [string]$decision.workItem
+  if (-not [string]::IsNullOrWhiteSpace($decisionWorkItem) -and -not $deferredWorkItemEntries.ContainsKey($decisionWorkItem)) {
+    Add-Issue $issues "Decided Work Item $decisionWorkItem (decision $([string]$decision.decisionId)) has no workItemStateChangesDeferred entry; its would-be live state change is not receipt-gated by the ledger."
+  }
+}
+
+# The receipt ledger itself must have a deferred persistence entry (receipts are local contract
+# evidence only; persisting them to the live com_councilreceipt ledger is Epic 2 gated work).
+if ($deferredLedgerEntryCount -lt 1) {
+  Add-Issue $issues "Delegation run must include a workItemStateChangesDeferred entry targeting the com_councilreceipt ledger (targetKind receipt_ledger); persisting the local receipts to the live ledger is deferred Epic 2 work."
 }
 
 # No live-write marker fields anywhere in the run block.
@@ -879,18 +1008,56 @@ foreach ($forbiddenField in $forbiddenTopLevelFields) {
   }
 }
 
-# Acceptance mapping.
+# Acceptance mapping — bind evidence claims to real slice ids (LOW2). localEvidence prose must cite
+# ids that actually exist in the run, so the map cannot drift into aspirational free text while the
+# real proof lives elsewhere in the slice.
 foreach ($criterion in @(1, 2)) {
   $mapping = @($delegation.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
     Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+    continue
   }
-  else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  $evidenceEntries = @($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+  if ($evidenceEntries.Count -lt 1) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  }
+  if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+  }
+
+  # Collapse localEvidence into one searchable text blob; every id cited must resolve to a real id
+  # minted or referenced in this slice (package / decision / receipt / work item).
+  $evidenceText = ($evidenceEntries | ForEach-Object { [string]$_ }) -join " "
+  $citedPackageIds = [regex]::Matches($evidenceText, "DSP-LOCAL-[A-Za-z0-9-]+") | ForEach-Object { $_.Value }
+  $citedDecisionIds = [regex]::Matches($evidenceText, "DEC-LOCAL-[A-Za-z0-9-]+") | ForEach-Object { $_.Value }
+  $citedReceiptIds = [regex]::Matches($evidenceText, "CR-LOCAL-[A-Za-z0-9-]+") | ForEach-Object { $_.Value }
+
+  if ($criterion -eq 1) {
+    # AC1 = two packages; the map must cite at least one real package id from this slice.
+    $boundPackage = $false
+    foreach ($pkgId in $citedPackageIds) {
+      if ($seenPackageIds.ContainsKey($pkgId)) { $boundPackage = $true; break }
     }
-    if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+    if (-not $boundPackage) {
+      Add-Issue $issues "Acceptance mapping for AC 1 must cite at least one real packageId (DSP-LOCAL-*) minted in this slice; found only: $($citedPackageIds -join ', ')."
+    }
+  }
+  elseif ($criterion -eq 2) {
+    # AC2 = one approval + one rejection receipt-backed; the map must cite at least one real decision id
+    # and at least one real receipt id from this slice.
+    $boundDecision = $false
+    foreach ($did in $citedDecisionIds) {
+      if ($seenDecisionIds.ContainsKey($did)) { $boundDecision = $true; break }
+    }
+    if (-not $boundDecision) {
+      Add-Issue $issues "Acceptance mapping for AC 2 must cite at least one real decisionId (DEC-LOCAL-*) minted in this slice; found only: $($citedDecisionIds -join ', ')."
+    }
+    $boundReceipt = $false
+    foreach ($rid in $citedReceiptIds) {
+      if ($sliceReceiptIds.ContainsKey($rid)) { $boundReceipt = $true; break }
+    }
+    if (-not $boundReceipt) {
+      Add-Issue $issues "Acceptance mapping for AC 2 must cite at least one real receiptId (CR-LOCAL-*) minted in this slice; found only: $($citedReceiptIds -join ', ')."
     }
   }
 }
@@ -908,4 +1075,5 @@ Write-Host "Delegation packages: $($packages.Count)"
 Write-Host "Decisions: $($decisions.Count)"
 Write-Host "Receipts: $($receipts.Count)"
 Write-Host "Receipt source links: $($links.Count)"
+Write-Host "Deferred live-write entries: $($workItemStateChangesDeferred.Count)"
 Write-Host "DELEGATION_SUPPORT_SLICE_VALIDATE_OK"

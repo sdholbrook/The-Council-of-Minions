@@ -39,36 +39,73 @@
       {
         "com_name": "Minion Brief - original queue projection 2026-07-13T14:00",
         "com_council_brief_id": "CB-LOCAL-BRIEF-001",
-        "com_brief_date": "2026-07-13T14:00:00-04:00",
+        "com_brief_date": "2026-07-13T18:00:00+00:00",
         "evidenceStatus": "local_contract_not_tenant_verified",
         "isProjection": true,
         "sourceOfTruth": "work-items+receipts",
         "sections": {
           "priorityWork": [
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "High-urgency meeting action: Doug committed to send the revised tenant readiness checklist to Priya by Friday." },
-            { "workItem": "CWI-LOCAL-DECISION-001", "reason": "Normal-urgency proposed decision: decide whether the manual summary source needs follow-up." }
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "High-urgency meeting action: Doug committed to send the revised tenant readiness checklist to Priya by Friday."
+            },
+            {
+              "workItem": "CWI-LOCAL-DECISION-001",
+              "reason": "Normal-urgency proposed decision: decide whether the manual summary source needs follow-up."
+            }
           ],
           "decisionsNeeded": [
-            { "workItem": "CWI-LOCAL-DECISION-001", "reason": "Proposed decision pending Doug approval on manual source follow-up." },
-            { "workItem": "CWI-LOCAL-DECISION-002", "reason": "Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4." }
+            {
+              "workItem": "CWI-LOCAL-DECISION-001",
+              "reason": "Proposed decision pending Doug approval on manual source follow-up."
+            },
+            {
+              "workItem": "CWI-LOCAL-DECISION-002",
+              "reason": "Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4."
+            }
           ],
           "delegationsReady": [
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "Once approved, the checklist send could be delegated to the owner or an assistant." },
-            { "workItem": "CWI-LOCAL-FOLLOWUP-001", "reason": "Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads." }
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "Once approved, the checklist send could be delegated to the owner or an assistant."
+            },
+            {
+              "workItem": "CWI-LOCAL-FOLLOWUP-001",
+              "reason": "Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads."
+            }
           ],
           "risksIfIgnored": [
-            { "workItem": "CWI-LOCAL-RISK-001", "reason": "Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked." },
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "If ignored, the Friday deadline for the revised checklist to Priya is missed." }
+            {
+              "workItem": "CWI-LOCAL-RISK-001",
+              "reason": "Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked."
+            },
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "If ignored, the Friday deadline for the revised checklist to Priya is missed."
+            }
           ],
           "blockers": [
-            { "workItem": "CWI-LOCAL-FOLLOWUP-001", "reason": "Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified." },
-            { "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001", "reason": "Held hash-only mock thread; extraction held pending live Outlook reads." }
+            {
+              "workItem": "CWI-LOCAL-FOLLOWUP-001",
+              "reason": "Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified."
+            },
+            {
+              "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+              "reason": "Held hash-only mock thread; extraction held pending live Outlook reads."
+            }
           ],
           "recentReceipts": [
-            { "receipt": "CR-DEMO-STATE-APPROVED-APPROVED", "reason": "Demo state transition: a Work Item was moved to approved via receipt." }
+            {
+              "receipt": "CR-DEMO-STATE-APPROVED-APPROVED",
+              "reason": "Demo state transition: a Work Item was moved to approved via receipt."
+            }
           ],
           "memoryCandidates": [
-            { "summary": "Doug commits to sending the revised tenant readiness checklist to Priya by Friday.", "scope": "project", "sourceRecord": "CSR-MANUAL-MEETING-001" }
+            {
+              "summary": "Doug commits to sending the revised tenant readiness checklist to Priya by Friday.",
+              "scope": "project",
+              "sourceRecord": "CSR-MANUAL-MEETING-001"
+            }
           ],
           "projectionDisclaimer": "This Brief is a projection over work-items+receipts as of the brief date. It is not the source of truth; the source of truth is the Work Items and Receipts. If the queue changes after this snapshot, this Brief is not silently rewritten — a new Brief is generated instead."
         },
@@ -78,51 +115,98 @@
       {
         "com_name": "Minion Brief - refreshed queue projection 2026-07-13T17:30",
         "com_council_brief_id": "CB-LOCAL-BRIEF-002",
-        "com_brief_date": "2026-07-13T17:30:00-04:00",
+        "com_brief_date": "2026-07-13T21:30:00+00:00",
         "evidenceStatus": "local_contract_not_tenant_verified",
         "isProjection": true,
         "sourceOfTruth": "work-items+receipts",
         "sections": {
           "priorityWork": [
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "High-urgency meeting action flagged for review: source drift moved the checklist deadline from Friday to Wednesday, increasing urgency." },
-            { "workItem": "CWI-LOCAL-DECISION-001", "reason": "Normal-urgency proposed decision: decide whether the manual summary source needs follow-up." }
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "High-urgency meeting action flagged for review: source drift moved the checklist deadline from Friday to Wednesday, increasing urgency."
+            },
+            {
+              "workItem": "CWI-LOCAL-DECISION-001",
+              "reason": "Normal-urgency proposed decision: decide whether the manual summary source needs follow-up."
+            }
           ],
           "decisionsNeeded": [
-            { "workItem": "CWI-LOCAL-DECISION-001", "reason": "Proposed decision pending Doug approval on manual source follow-up." },
-            { "workItem": "CWI-LOCAL-DECISION-002", "reason": "Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4. Drift did not affect this commitment." }
+            {
+              "workItem": "CWI-LOCAL-DECISION-001",
+              "reason": "Proposed decision pending Doug approval on manual source follow-up."
+            },
+            {
+              "workItem": "CWI-LOCAL-DECISION-002",
+              "reason": "Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4."
+            }
           ],
           "delegationsReady": [
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "Once the drift review clears and the item is approved, the checklist send could be delegated." },
-            { "workItem": "CWI-LOCAL-FOLLOWUP-001", "reason": "Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads." }
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "Once the drift review clears and the item is approved, the checklist send could be delegated."
+            },
+            {
+              "workItem": "CWI-LOCAL-FOLLOWUP-001",
+              "reason": "Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads."
+            }
           ],
           "risksIfIgnored": [
-            { "workItem": "CWI-LOCAL-RISK-001", "reason": "Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked." },
-            { "workItem": "CWI-LOCAL-MEETING-ACTION-001", "reason": "If the drift review is ignored, the revised Wednesday deadline for the checklist to Priya is missed; the original Friday assumption is stale." }
+            {
+              "workItem": "CWI-LOCAL-RISK-001",
+              "reason": "Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked."
+            },
+            {
+              "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+              "reason": "If the drift review is ignored, the revised Wednesday deadline for the checklist to Priya is missed; the original Friday assumption is stale."
+            }
           ],
           "blockers": [
-            { "workItem": "CWI-LOCAL-FOLLOWUP-001", "reason": "Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified." },
-            { "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001", "reason": "Superseded by CSR-OUTLOOK-THREAD-MOCK-002 after a newer mock thread snapshot; the superseded status move is receipt-gated to Epic 2." }
+            {
+              "workItem": "CWI-LOCAL-FOLLOWUP-001",
+              "reason": "Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified."
+            },
+            {
+              "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+              "reason": "Superseded by CSR-OUTLOOK-THREAD-MOCK-002 after a newer mock thread snapshot; the superseded status move is receipt-gated to Epic 2."
+            }
           ],
           "recentReceipts": [
-            { "receipt": "CR-DEMO-STATE-APPROVED-APPROVED", "reason": "Demo state transition: a Work Item was moved to approved via receipt." },
-            { "receipt": "CR-LOCAL-DRIFT-001", "reason": "Source drift detected on CSR-MANUAL-MEETING-001; CWI-LOCAL-MEETING-ACTION-001 flagged for review." },
-            { "receipt": "CR-LOCAL-SUPERSEDE-001", "reason": "CSR-OUTLOOK-THREAD-MOCK-001 superseded by CSR-OUTLOOK-THREAD-MOCK-002." }
+            {
+              "receipt": "CR-DEMO-STATE-APPROVED-APPROVED",
+              "reason": "Demo state transition: a Work Item was moved to approved via receipt."
+            },
+            {
+              "receipt": "CR-LOCAL-DRIFT-001",
+              "reason": "Source drift detected on CSR-MANUAL-MEETING-001; CWI-LOCAL-MEETING-ACTION-001 flagged for review."
+            },
+            {
+              "receipt": "CR-LOCAL-SUPERSEDE-001",
+              "reason": "CSR-OUTLOOK-THREAD-MOCK-001 superseded by CSR-OUTLOOK-THREAD-MOCK-002."
+            }
           ],
           "memoryCandidates": [
-            { "summary": "Doug commits to sending the revised tenant readiness checklist to Priya by Friday.", "scope": "project", "sourceRecord": "CSR-MANUAL-MEETING-001" },
-            { "summary": "Meeting note deadlines can drift after capture; briefs must be refreshed, not silently rewritten.", "scope": "project", "sourceRecord": "CSR-MANUAL-MEETING-001" }
+            {
+              "summary": "Doug commits to sending the revised tenant readiness checklist to Priya by Friday.",
+              "scope": "project",
+              "sourceRecord": "CSR-MANUAL-MEETING-001"
+            },
+            {
+              "summary": "Meeting note deadlines can drift after capture; briefs must be refreshed, not silently rewritten.",
+              "scope": "project",
+              "sourceRecord": "CSR-MANUAL-MEETING-001"
+            }
           ],
           "projectionDisclaimer": "This Brief is a projection over work-items+receipts as of the brief date. It is not the source of truth; the source of truth is the Work Items and Receipts. If the queue changes after this snapshot, this Brief is not silently rewritten — a new Brief is generated instead."
         },
-        "frozenProjectionJson": "{\"isProjection\":true,\"sourceOfTruth\":\"work-items+receipts\",\"sections\":{\"priorityWork\":[{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"High-urgency meeting action flagged for review: source drift moved the checklist deadline from Friday to Wednesday, increasing urgency.\"},{\"workItem\":\"CWI-LOCAL-DECISION-001\",\"reason\":\"Normal-urgency proposed decision: decide whether the manual summary source needs follow-up.\"}],\"decisionsNeeded\":[{\"workItem\":\"CWI-LOCAL-DECISION-001\",\"reason\":\"Proposed decision pending Doug approval on manual source follow-up.\"},{\"workItem\":\"CWI-LOCAL-DECISION-002\",\"reason\":\"Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4. Drift did not affect this commitment.\"}],\"delegationsReady\":[{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"Once the drift review clears and the item is approved, the checklist send could be delegated.\"},{\"workItem\":\"CWI-LOCAL-FOLLOWUP-001\",\"reason\":\"Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads.\"}],\"risksIfIgnored\":[{\"workItem\":\"CWI-LOCAL-RISK-001\",\"reason\":\"Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked.\"},{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"If the drift review is ignored, the revised Wednesday deadline for the checklist to Priya is missed; the original Friday assumption is stale.\"}],\"blockers\":[{\"workItem\":\"CWI-LOCAL-FOLLOWUP-001\",\"reason\":\"Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified.\"},{\"sourceRecord\":\"CSR-OUTLOOK-THREAD-MOCK-001\",\"reason\":\"Superseded by CSR-OUTLOOK-THREAD-MOCK-002 after a newer mock thread snapshot; the superseded status move is receipt-gated to Epic 2.\"}],\"recentReceipts\":[{\"receipt\":\"CR-DEMO-STATE-APPROVED-APPROVED\",\"reason\":\"Demo state transition: a Work Item was moved to approved via receipt.\"},{\"receipt\":\"CR-LOCAL-DRIFT-001\",\"reason\":\"Source drift detected on CSR-MANUAL-MEETING-001; CWI-LOCAL-MEETING-ACTION-001 flagged for review.\"},{\"receipt\":\"CR-LOCAL-SUPERSEDE-001\",\"reason\":\"CSR-OUTLOOK-THREAD-MOCK-001 superseded by CSR-OUTLOOK-THREAD-MOCK-002.\"}],\"memoryCandidates\":[{\"summary\":\"Doug commits to sending the revised tenant readiness checklist to Priya by Friday.\",\"scope\":\"project\",\"sourceRecord\":\"CSR-MANUAL-MEETING-001\"},{\"summary\":\"Meeting note deadlines can drift after capture; briefs must be refreshed, not silently rewritten.\",\"scope\":\"project\",\"sourceRecord\":\"CSR-MANUAL-MEETING-001\"}],\"projectionDisclaimer\":\"This Brief is a projection over work-items+receipts as of the brief date. It is not the source of truth; the source of truth is the Work Items and Receipts. If the queue changes after this snapshot, this Brief is not silently rewritten — a new Brief is generated instead.\"}}",
-        "frozenProjectionHash": "sha256:f66cf0ca7d1224dd72a269b062bdb558c5338ea03a0bb7a07618049ee42f242a"
+        "frozenProjectionJson": "{\"isProjection\":true,\"sourceOfTruth\":\"work-items+receipts\",\"sections\":{\"priorityWork\":[{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"High-urgency meeting action flagged for review: source drift moved the checklist deadline from Friday to Wednesday, increasing urgency.\"},{\"workItem\":\"CWI-LOCAL-DECISION-001\",\"reason\":\"Normal-urgency proposed decision: decide whether the manual summary source needs follow-up.\"}],\"decisionsNeeded\":[{\"workItem\":\"CWI-LOCAL-DECISION-001\",\"reason\":\"Proposed decision pending Doug approval on manual source follow-up.\"},{\"workItem\":\"CWI-LOCAL-DECISION-002\",\"reason\":\"Proposed decision pending ratification of Fabric ontology projection deferral to Epic 4.\"}],\"delegationsReady\":[{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"Once the drift review clears and the item is approved, the checklist send could be delegated.\"},{\"workItem\":\"CWI-LOCAL-FOLLOWUP-001\",\"reason\":\"Follow-up on mock Outlook reference is delegation-ready in shape but blocked on live Graph reads.\"}],\"risksIfIgnored\":[{\"workItem\":\"CWI-LOCAL-RISK-001\",\"reason\":\"Publisher prefix approval may slip past the Epic 5 tenant readiness gate if not tracked.\"},{\"workItem\":\"CWI-LOCAL-MEETING-ACTION-001\",\"reason\":\"If the drift review is ignored, the revised Wednesday deadline for the checklist to Priya is missed; the original Friday assumption is stale.\"}],\"blockers\":[{\"workItem\":\"CWI-LOCAL-FOLLOWUP-001\",\"reason\":\"Live Outlook Microsoft Graph reads are not approved; follow-up cannot be verified.\"},{\"sourceRecord\":\"CSR-OUTLOOK-THREAD-MOCK-001\",\"reason\":\"Superseded by CSR-OUTLOOK-THREAD-MOCK-002 after a newer mock thread snapshot; the superseded status move is receipt-gated to Epic 2.\"}],\"recentReceipts\":[{\"receipt\":\"CR-DEMO-STATE-APPROVED-APPROVED\",\"reason\":\"Demo state transition: a Work Item was moved to approved via receipt.\"},{\"receipt\":\"CR-LOCAL-DRIFT-001\",\"reason\":\"Source drift detected on CSR-MANUAL-MEETING-001; CWI-LOCAL-MEETING-ACTION-001 flagged for review.\"},{\"receipt\":\"CR-LOCAL-SUPERSEDE-001\",\"reason\":\"CSR-OUTLOOK-THREAD-MOCK-001 superseded by CSR-OUTLOOK-THREAD-MOCK-002.\"}],\"memoryCandidates\":[{\"summary\":\"Doug commits to sending the revised tenant readiness checklist to Priya by Friday.\",\"scope\":\"project\",\"sourceRecord\":\"CSR-MANUAL-MEETING-001\"},{\"summary\":\"Meeting note deadlines can drift after capture; briefs must be refreshed, not silently rewritten.\",\"scope\":\"project\",\"sourceRecord\":\"CSR-MANUAL-MEETING-001\"}],\"projectionDisclaimer\":\"This Brief is a projection over work-items+receipts as of the brief date. It is not the source of truth; the source of truth is the Work Items and Receipts. If the queue changes after this snapshot, this Brief is not silently rewritten — a new Brief is generated instead.\"}}",
+        "frozenProjectionHash": "sha256:09e0dd846f9af61808114f9c595b59d82b6ecd2d9af8871f531d357ccfcad222"
       }
     ],
     "queueChangeScenario": {
       "originalSnapshot": "CB-LOCAL-BRIEF-001",
-      "originalSnapshotGeneratedAt": "2026-07-13T14:00:00-04:00",
+      "originalSnapshotGeneratedAt": "2026-07-13T18:00:00+00:00",
       "refreshedSnapshot": "CB-LOCAL-BRIEF-002",
-      "refreshedSnapshotGeneratedAt": "2026-07-13T17:30:00-04:00",
+      "refreshedSnapshotGeneratedAt": "2026-07-13T21:30:00+00:00",
       "changeEvents": [
         {
           "receipt": "CR-LOCAL-DRIFT-001",
@@ -137,9 +221,15 @@
           "changeDescription": "CSR-OUTLOOK-THREAD-MOCK-001 was superseded by CSR-OUTLOOK-THREAD-MOCK-002 after the original Brief was generated."
         }
       ],
-      "originalUntouched": true,
-      "sectionsThatDiffer": [ "priorityWork", "delegationsReady", "risksIfIgnored", "blockers", "recentReceipts", "memoryCandidates" ],
-      "differReason": "The refreshed Brief references CR-LOCAL-DRIFT-001 and CR-LOCAL-SUPERSEDE-001 which did not exist when the original Brief was generated, and its priorityWork, risksIfIgnored, and blockers sections reflect the drift-driven review flag and the supersession; the original Brief's frozenProjectionHash is unchanged and rechecked by the validator."
+      "sectionsThatDiffer": [
+        "priorityWork",
+        "delegationsReady",
+        "risksIfIgnored",
+        "blockers",
+        "recentReceipts",
+        "memoryCandidates"
+      ],
+      "differReason": "The refreshed Brief references CR-LOCAL-DRIFT-001 and CR-LOCAL-SUPERSEDE-001 which did not exist when the original Brief was generated, and its priorityWork, risksIfIgnored, and blockers sections reflect the drift-driven review flag and the supersession; the original Brief's frozenProjectionHash is recomputed by the validator and matches the recorded hash, proving CB-LOCAL-BRIEF-001 is byte-stable (untouched)."
     },
     "receipts": [
       {
@@ -148,7 +238,7 @@
         "com_actor_type": "system",
         "com_actor_id": "local-bmad-validator",
         "com_authority_basis": "local non-tenant Story 3.1 contract validation",
-        "com_occurred_at": "2026-07-13T14:00:05-04:00",
+        "com_occurred_at": "2026-07-13T18:00:05+00:00",
         "com_idempotency_key": "brief:create:CB-LOCAL-BRIEF-001:2026-07-13T14:00:00-04:00",
         "com_before_state": "no brief snapshot existed for the epic-2 queue state",
         "com_after_state": "CB-LOCAL-BRIEF-001 projected over CWI-LOCAL-DECISION-001, CWI-LOCAL-FOLLOWUP-001, CWI-LOCAL-MEETING-ACTION-001, CWI-LOCAL-DECISION-002, CWI-LOCAL-RISK-001",
@@ -165,7 +255,7 @@
         "com_actor_type": "system",
         "com_actor_id": "local-bmad-validator",
         "com_authority_basis": "local non-tenant Story 3.1 contract validation",
-        "com_occurred_at": "2026-07-13T17:30:05-04:00",
+        "com_occurred_at": "2026-07-13T21:30:05+00:00",
         "com_idempotency_key": "brief:refresh:CB-LOCAL-BRIEF-002:2026-07-13T17:30:00-04:00",
         "com_before_state": "CB-LOCAL-BRIEF-001 was the most recent Brief; queue changed after via CR-LOCAL-DRIFT-001 and CR-LOCAL-SUPERSEDE-001",
         "com_after_state": "CB-LOCAL-BRIEF-002 projected over the refreshed queue state referencing CR-LOCAL-DRIFT-001 and CR-LOCAL-SUPERSEDE-001; CB-LOCAL-BRIEF-001 left untouched",

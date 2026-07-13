@@ -12,6 +12,8 @@ param(
   [string]$Story25AutoPath = "$PSScriptRoot\auto-creation-policy-slice.json",
   [string]$Story26FailurePath = "$PSScriptRoot\failure-policy-denial-slice.json",
   [string]$Story21ShellPath = "$PSScriptRoot\work-item-execution-shell-slice.json",
+  [string]$Story31BriefPath = "$PSScriptRoot\minion-brief-slice.json",
+  [string]$Story32DelegationPath = "$PSScriptRoot\delegation-support-slice.json",
   [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
 )
 
@@ -134,25 +136,6 @@ function Test-IsoTimestamp {
   return $parsed
 }
 
-function Get-ComparableInstant {
-  param($Value)
-
-  if ($null -eq $Value) {
-    return $null
-  }
-  if ($Value -is [datetime]) {
-    if ($Value.Kind -eq [System.DateTimeKind]::Unspecified) {
-      return $null
-    }
-    return [datetimeoffset]$Value
-  }
-  $parsed = [datetimeoffset]::MinValue
-  if ([datetimeoffset]::TryParse([string]$Value, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$parsed)) {
-    return $parsed
-  }
-  return $null
-}
-
 function Read-JsonInput {
   param(
     [Parameter(Mandatory = $true)][string]$Path
@@ -168,27 +151,7 @@ function Read-JsonInput {
   }
 }
 
-function Get-IdsFromSlice {
-  param(
-    [Parameter(Mandatory = $true)]$Slice,
-    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$Patterns,
-    [Parameter(Mandatory = $true)]$RawText
-  )
-
-  $ids = [System.Collections.Generic.List[string]]::new()
-  $matches = [regex]::Matches($RawText, '(?:CWI-LOCAL-[A-Z0-9-]+|CR-LOCAL-[A-Z0-9-]+|CSR-[A-Z0-9-]+|CWD-LOCAL-[A-Z0-9-]+)')
-  foreach ($m in $matches) {
-    $id = $m.Value
-    if ($Patterns | Where-Object { $id -match $_ }) {
-      if (-not $ids.Contains($id)) {
-        $ids.Add($id)
-      }
-    }
-  }
-  $ids
-}
-
-foreach ($path in @($ManifestPath, $DraftSlicePath, $ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $Story15DriftPath, $Story22ApprovalPath, $Story23StatePath, $Story24IdempotentPath, $Story25AutoPath, $Story26FailurePath, $Story21ShellPath, $DemoEvidencePath)) {
+foreach ($path in @($ManifestPath, $DraftSlicePath, $ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $Story15DriftPath, $Story22ApprovalPath, $Story23StatePath, $Story24IdempotentPath, $Story25AutoPath, $Story26FailurePath, $Story21ShellPath, $Story31BriefPath, $Story32DelegationPath, $DemoEvidencePath)) {
   if (-not (Test-Path -LiteralPath $path)) {
     throw "Required handoff drafts validation input not found: $path"
   }
@@ -207,6 +170,8 @@ $story24Idempotent = Read-JsonInput -Path $Story24IdempotentPath
 $story25Auto = Read-JsonInput -Path $Story25AutoPath
 $story26Failure = Read-JsonInput -Path $Story26FailurePath
 $story21Shell = Read-JsonInput -Path $Story21ShellPath
+$story31Brief = Read-JsonInput -Path $Story31BriefPath
+$story32Delegation = Read-JsonInput -Path $Story32DelegationPath
 $demoEvidence = Read-JsonInput -Path $DemoEvidencePath
 $rawSliceText = Get-Content -LiteralPath $DraftSlicePath -Raw
 $issues = [System.Collections.Generic.List[string]]::new()
@@ -214,20 +179,12 @@ $issues = [System.Collections.Generic.List[string]]::new()
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
 $actorTypes = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_actortype"
 $receiptResults = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptresult"
-$extractionStatuses = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_extractionstatus"
-$sourceSystems = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_sourcesystem"
-$sourceKinds = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_sourcekind"
-$dataBoundaryPolicies = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_databoundarypolicy"
 $evidenceRoles = Get-ColumnChoiceValues -Manifest $manifest -TableSchemaName "com_councilreceiptsource" -ColumnName "com_evidence_role"
 
 foreach ($vocabulary in @(
     @{ Name = "com_receiptverb"; Values = $receiptVerbs },
     @{ Name = "com_actortype"; Values = $actorTypes },
     @{ Name = "com_receiptresult"; Values = $receiptResults },
-    @{ Name = "com_extractionstatus"; Values = $extractionStatuses },
-    @{ Name = "com_sourcesystem"; Values = $sourceSystems },
-    @{ Name = "com_sourcekind"; Values = $sourceKinds },
-    @{ Name = "com_databoundarypolicy"; Values = $dataBoundaryPolicies },
     @{ Name = "com_councilreceiptsource.com_evidence_role"; Values = $evidenceRoles }
   )) {
   if (@($vocabulary.Values).Count -eq 0) {
@@ -313,7 +270,9 @@ $story14Items = @($story14Extraction.extractionRun.proposedWorkItems | Where-Obj
 $knownWorkItems = @($story13Items + $story14Items)
 $knownWorkItemIds = @($knownWorkItems | ForEach-Object { [string]$_.com_council_work_item_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
-# Collect IDs created by sibling slices (CWI-LOCAL-*, CR-LOCAL-*, CSR-*) for cross-slice collision checks.
+# Collect IDs created by sibling slices (CWI-LOCAL-*, CR-LOCAL-*, CSR-*, CWD-LOCAL-*) for cross-slice collision checks.
+# Story hard rule: new CR-LOCAL-* ids unique across ALL slices, so the inventory spans every sibling slice on disk,
+# including the Epic-3 siblings (minion-brief, delegation-support) — not just Epic-1/Epic-2.
 $siblingSliceFiles = @(
   @{ Name = "manual-source-record-slice.json"; Text = (Get-Content -LiteralPath $ManualSlicePath -Raw) },
   @{ Name = "outlook-source-reference-slice.json"; Text = (Get-Content -LiteralPath $OutlookSlicePath -Raw) },
@@ -325,17 +284,21 @@ $siblingSliceFiles = @(
   @{ Name = "idempotent-mutations-slice.json"; Text = (Get-Content -LiteralPath $Story24IdempotentPath -Raw) },
   @{ Name = "auto-creation-policy-slice.json"; Text = (Get-Content -LiteralPath $Story25AutoPath -Raw) },
   @{ Name = "failure-policy-denial-slice.json"; Text = (Get-Content -LiteralPath $Story26FailurePath -Raw) },
-  @{ Name = "work-item-execution-shell-slice.json"; Text = (Get-Content -LiteralPath $Story21ShellPath -Raw) }
+  @{ Name = "work-item-execution-shell-slice.json"; Text = (Get-Content -LiteralPath $Story21ShellPath -Raw) },
+  @{ Name = "minion-brief-slice.json"; Text = (Get-Content -LiteralPath $Story31BriefPath -Raw) },
+  @{ Name = "delegation-support-slice.json"; Text = (Get-Content -LiteralPath $Story32DelegationPath -Raw) }
 )
 $siblingCwiIds = [System.Collections.Generic.HashSet[string]]::new()
 $siblingCrIds = [System.Collections.Generic.HashSet[string]]::new()
 $siblingCsrIds = [System.Collections.Generic.HashSet[string]]::new()
 $siblingCwdIds = [System.Collections.Generic.HashSet[string]]::new()
+$siblingRunIds = [System.Collections.Generic.HashSet[string]]::new()
 foreach ($sibling in $siblingSliceFiles) {
   foreach ($m in [regex]::Matches($sibling.Text, 'CWI-LOCAL-[A-Z0-9-]+')) { [void]$siblingCwiIds.Add($m.Value) }
   foreach ($m in [regex]::Matches($sibling.Text, 'CR-LOCAL-[A-Z0-9-]+')) { [void]$siblingCrIds.Add($m.Value) }
   foreach ($m in [regex]::Matches($sibling.Text, 'CSR-[A-Z0-9-]+')) { [void]$siblingCsrIds.Add($m.Value) }
   foreach ($m in [regex]::Matches($sibling.Text, 'CWD-LOCAL-[A-Z0-9-]+')) { [void]$siblingCwdIds.Add($m.Value) }
+  foreach ($m in [regex]::Matches($sibling.Text, '"runId"\s*:\s*"([^"]+)"')) { [void]$siblingRunIds.Add($m.Groups[1].Value) }
 }
 $demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
 $demoWorkItemIds = @($demoEvidence.workItemIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
@@ -360,6 +323,9 @@ if ($knownWorkItemIds.Count -eq 0) {
 if ($siblingCwiIds.Count -eq 0 -or $siblingCrIds.Count -eq 0 -or $siblingCsrIds.Count -eq 0) {
   Add-Issue $issues "Sibling slice ID sets are empty; cross-slice id uniqueness checks would silently no-op."
 }
+if ($siblingRunIds.Count -eq 0) {
+  Add-Issue $issues "No sibling runIds could be harvested from sibling slices; runId collision checks would silently no-op."
+}
 if ($demoReceiptIds.Count -eq 0) {
   Add-Issue $issues "No reserved receipt IDs could be loaded from state-transition-demo-evidence.json; receipt collision checks would silently no-op."
 }
@@ -378,8 +344,8 @@ if ($null -eq $run) {
 if (-not (Test-HasNonEmptyField -Record $run -Field "runId")) {
   Add-Issue $issues "Draft run must declare a runId."
 }
-elseif (@([string]$story13Extraction.extractionRun.runId, [string]$story14Extraction.extractionRun.runId, [string]$story15Drift.driftRun.runId) -contains [string]$run.runId) {
-  Add-Issue $issues "Draft run must use a new local runId, not a Story 1.3/1.4/1.5 runId: $($run.runId)."
+elseif ($siblingRunIds.Contains([string]$run.runId)) {
+  Add-Issue $issues "Draft run must use a new local runId, not a sibling-slice runId: $($run.runId)."
 }
 if ($run.semanticContractVersion -ne "2026-07-07") {
   Add-Issue $issues "Draft run semanticContractVersion must be 2026-07-07."
@@ -498,6 +464,8 @@ $internalHandoffCount = 0
 $externalReplyCount = 0
 $approvedDraftCount = 0
 $deniedDraftCount = 0
+$approvedExternalReplyCount = 0
+$deniedExternalReplyCount = 0
 
 foreach ($dr in $drafts) {
   $draftId = [string]$dr.draftId
@@ -505,13 +473,7 @@ foreach ($dr in $drafts) {
 
   foreach ($field in $requiredDraftFields) {
     if (-not (Test-HasNonEmptyField -Record $dr -Field $field)) {
-      # approvalReceipt and denialReceipt are nullable, handled separately below.
-      if ($field -ne "draftPreparedReceipt") {
-        Add-Issue $issues "$subject missing required field: $field."
-      }
-      else {
-        Add-Issue $issues "$subject missing required field: $field."
-      }
+      Add-Issue $issues "$subject missing required field: $field."
     }
   }
 
@@ -582,6 +544,13 @@ foreach ($dr in $drafts) {
       Add-Issue $issues "$subject releasable=true requires a non-null approvalReceipt naming the approving receipt."
     }
     $approvedDraftCount += 1
+    # AC3: only an external_reply draft may be released (the story approves an external reply send).
+    if ($dr.draftKind -eq "external_reply") {
+      $approvedExternalReplyCount += 1
+    }
+    else {
+      Add-Issue $issues "$subject releasable=true requires draftKind external_reply (AC3 approves an outbound external reply), found: $($dr.draftKind)."
+    }
   }
   else {
     # Unreleased draft: outboundApproved must be false and approvalReceipt must be null/empty.
@@ -598,11 +567,15 @@ foreach ($dr in $drafts) {
     Add-Issue $issues "$subject draftOnly must stay true even after approval; drafts are never sent in this slice."
   }
 
-  if (-not [string]::IsNullOrWhiteSpace([string]$dr.draftPreparedReceipt)) {
-    # Validated against the receipt table below.
-  }
   if (-not [string]::IsNullOrWhiteSpace([string]$dr.denialReceipt)) {
     $deniedDraftCount += 1
+    # AC2: the denied draft is an attempted external send, so it must be an external_reply.
+    if ($dr.draftKind -eq "external_reply") {
+      $deniedExternalReplyCount += 1
+    }
+    else {
+      Add-Issue $issues "$subject carrying a denialReceipt requires draftKind external_reply (AC2 denies an attempted outbound send), found: $($dr.draftKind)."
+    }
   }
 }
 
@@ -612,11 +585,11 @@ if ($internalHandoffCount -lt 1) {
 if ($externalReplyCount -lt 1) {
   Add-Issue $issues "Draft slice must include at least one external_reply draft (AC1)."
 }
-if ($approvedDraftCount -lt 1) {
+if ($approvedExternalReplyCount -lt 1) {
   Add-Issue $issues "Draft slice must include at least one approved/releasable external_reply draft (AC3)."
 }
-if ($deniedDraftCount -lt 1) {
-  Add-Issue $issues "Draft slice must include at least one draft carrying a denialReceipt (AC2 unapproved-outbound scenario)."
+if ($deniedExternalReplyCount -lt 1) {
+  Add-Issue $issues "Draft slice must include at least one external_reply draft carrying a denialReceipt (AC2 unapproved-outbound scenario)."
 }
 
 # At least one approved draft and at least one unreleased draft must coexist (approval authorizes ONLY that draft).
@@ -633,8 +606,8 @@ if ($approvedDraftCount -ge 1 -and $unreleasedDraftCount -lt 1) {
 # --- Receipts -----------------------------------------------------------------------------------------
 
 $receipts = @($run.receipts | Where-Object { $null -ne $_ })
-if ($receipts.Count -lt 4) {
-  Add-Issue $issues "Draft slice must include at least four receipts (draft-create x3, denial, approval)."
+if ($receipts.Count -lt 5) {
+  Add-Issue $issues "Draft slice must include at least five receipts (draft-create x3, denial, approval)."
 }
 $receiptTable = @($manifest.tables) | Where-Object { $_.schemaName -eq "com_councilreceipt" } | Select-Object -First 1
 $manifestRequiredReceiptFields = @(@($receiptTable.columns) | Where-Object { $_.required -eq $true } | ForEach-Object { [string]$_.name } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -773,57 +746,82 @@ if ($null -ne $denialReceipt) {
   if (-not (Test-HasNonEmptyField -Record $denialReceipt -Field "com_failure_code") -or [string]$denialReceipt.com_failure_code -ne "outbound_send_without_approval") {
     Add-Issue $issues "$subject com_failure_code must be outbound_send_without_approval, found: $($denialReceipt.com_failure_code)."
   }
+  # Finding 6: the receipt's retryAllowed / humanReviewRequired must equal the values declared for
+  # its failure code in failureCodeVocabulary (mirrors the Story 2.6 hardened binding). Otherwise the
+  # vocabulary is free decoration and the slice can game its own dictionary on the review field.
+  if ($null -ne $obCode) {
+    if ($denialReceipt.retryAllowed -is [bool] -and $obCode.retryAllowed -is [bool] -and $denialReceipt.retryAllowed -ne $obCode.retryAllowed) {
+      Add-Issue $issues "$subject retryAllowed ($($denialReceipt.retryAllowed)) must match the value declared for code 'outbound_send_without_approval' in failureCodeVocabulary ($($obCode.retryAllowed))."
+    }
+    if ($denialReceipt.humanReviewRequired -is [bool] -and $obCode.humanReviewRequired -is [bool] -and $denialReceipt.humanReviewRequired -ne $obCode.humanReviewRequired) {
+      Add-Issue $issues "$subject humanReviewRequired ($($denialReceipt.humanReviewRequired)) must match the value declared for code 'outbound_send_without_approval' in failureCodeVocabulary ($($obCode.humanReviewRequired))."
+    }
+  }
   if ([string]$denialReceipt.com_policy_flags -notmatch "policy_denied") {
     Add-Issue $issues "$subject com_policy_flags must declare policy_denied."
   }
 }
 
-# --- Approval receipt (AC3) scope names exactly one draft id -----------------------------------------
+# --- Approval receipts (AC3) scope names exactly one draft id ----------------------------------------
+# Finding 1: the scope discipline is applied to EVERY approval receipt (com_verb=approved), not only a
+# hard-coded id. A second half-valid approval cannot independently release other drafts because every
+# releasable draft is bound to a fully-scoped approval whose approvedDraftId names it (global invariant).
 
-$approvalReceipt = $receiptById["CR-LOCAL-OUTBOUND-APPROVED-001"]
-if ($null -ne $approvalReceipt) {
-  $subject = "Receipt CR-LOCAL-OUTBOUND-APPROVED-001"
-  if ($approvalReceipt.com_verb -ne "approved") {
-    Add-Issue $issues "$subject must use verb approved for the approved-outbound scenario, found: $($approvalReceipt.com_verb)."
+$approvalReceipts = @($receipts | Where-Object { $_.com_verb -eq "approved" })
+if ($approvalReceipts.Count -lt 1) {
+  Add-Issue $issues "Draft slice must include at least one approved (com_verb=approved) receipt (AC3 approved-outbound scenario)."
+}
+$approvalScopedDraftIds = @{}
+foreach ($apprReceipt in $approvalReceipts) {
+  $apprId = [string]$apprReceipt.com_receipt_id
+  $subject = "Receipt $apprId"
+  if ($apprReceipt.com_actor_type -ne "human") {
+    Add-Issue $issues "$subject actor type must be human (Doug) for an approval, found: $($apprReceipt.com_actor_type)."
   }
-  if ($approvalReceipt.com_actor_type -ne "human") {
-    Add-Issue $issues "$subject actor type must be human (Doug) for an approval, found: $($approvalReceipt.com_actor_type)."
+  if (-not (Test-HasNonEmptyField -Record $apprReceipt -Field "approvedScope")) {
+    Add-Issue $issues "$subject must carry a non-empty approvedScope naming the one draft this approval authorizes."
   }
-  if (-not (Test-HasNonEmptyField -Record $approvalReceipt -Field "approvedScope")) {
-    Add-Issue $issues "$subject must carry a non-empty approvedScope."
-  }
-  if (-not (Test-HasNonEmptyField -Record $approvalReceipt -Field "approvedDraftId")) {
+  if (-not (Test-HasNonEmptyField -Record $apprReceipt -Field "approvedDraftId")) {
     Add-Issue $issues "$subject must carry a non-empty approvedDraftId naming the one draft this approval authorizes."
   }
   else {
-    $approvedDraftId = [string]$approvalReceipt.approvedDraftId
+    $approvedDraftId = [string]$apprReceipt.approvedDraftId
     if (-not $seenDraftIds.ContainsKey($approvedDraftId)) {
       Add-Issue $issues "$subject approvedDraftId must reference a draft in this slice, found: $approvedDraftId."
     }
     $approvedDraft = $drafts | Where-Object { [string]$_.draftId -eq $approvedDraftId } | Select-Object -First 1
     if ($null -ne $approvedDraft) {
+      if ($approvedDraft.draftKind -ne "external_reply") {
+        Add-Issue $issues "$subject approvedDraftId ($approvedDraftId) must be an external_reply draft (AC3 approves an outbound external reply), found: $($approvedDraft.draftKind)."
+      }
       if (-not ($approvedDraft.outboundApproved -is [bool] -and $approvedDraft.outboundApproved)) {
-        Add-Issue $issues "Draft $approvedDraftId must have outboundApproved=true after approval receipt CR-LOCAL-OUTBOUND-APPROVED-001."
+        Add-Issue $issues "Draft $approvedDraftId must have outboundApproved=true after approval receipt $apprId."
       }
       if (-not ($approvedDraft.releasable -is [bool] -and $approvedDraft.releasable)) {
-        Add-Issue $issues "Draft $approvedDraftId must have releasable=true after approval receipt CR-LOCAL-OUTBOUND-APPROVED-001."
+        Add-Issue $issues "Draft $approvedDraftId must have releasable=true after approval receipt $apprId."
       }
-      if ([string]$approvedDraft.approvalReceipt -ne "CR-LOCAL-OUTBOUND-APPROVED-001") {
-        Add-Issue $issues "Draft $approvedDraftId approvalReceipt must name CR-LOCAL-OUTBOUND-APPROVED-001, found: $($approvedDraft.approvalReceipt)."
+      if ([string]$approvedDraft.approvalReceipt -ne $apprId) {
+        Add-Issue $issues "Draft $approvedDraftId approvalReceipt must name $apprId, found: $($approvedDraft.approvalReceipt)."
       }
       # approvedDraftId must appear in the approvedScope text (scope names that draft id).
-      if (Test-HasNonEmptyField -Record $approvalReceipt -Field "approvedScope") {
-        if ([string]$approvalReceipt.approvedScope -notmatch [regex]::Escape($approvedDraftId)) {
+      if (Test-HasNonEmptyField -Record $apprReceipt -Field "approvedScope") {
+        if ([string]$apprReceipt.approvedScope -notmatch [regex]::Escape($approvedDraftId)) {
           Add-Issue $issues "$subject approvedScope must name the approved draft id $approvedDraftId within its text."
         }
       }
     }
+    if ($approvalScopedDraftIds.ContainsKey($approvedDraftId)) {
+      Add-Issue $issues "$subject approvedDraftId ($approvedDraftId) is already scoped by another approval receipt ($($approvalScopedDraftIds[$approvedDraftId])); an approval must authorize exactly one draft and no two approvals may scope the same draft."
+    }
+    else {
+      $approvalScopedDraftIds[$approvedDraftId] = $apprId
+    }
   }
-  if (@($approvalReceipt.outOfScopeDraftIds | Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
+  if (@($apprReceipt.outOfScopeDraftIds | Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
     Add-Issue $issues "$subject must list at least one outOfScopeDraftIds entry proving approval authorizes ONLY that draft."
   }
   else {
-    foreach ($outId in @($approvalReceipt.outOfScopeDraftIds | Where-Object { $null -ne $_ })) {
+    foreach ($outId in @($apprReceipt.outOfScopeDraftIds | Where-Object { $null -ne $_ })) {
       $outIdStr = [string]$outId
       if (-not $seenDraftIds.ContainsKey($outIdStr)) {
         Add-Issue $issues "$subject outOfScopeDraftIds must reference a draft in this slice, found: $outIdStr."
@@ -831,16 +829,26 @@ if ($null -ne $approvalReceipt) {
       $outDraft = $drafts | Where-Object { [string]$_.draftId -eq $outIdStr } | Select-Object -First 1
       if ($null -ne $outDraft) {
         if ($outDraft.releasable -is [bool] -and $outDraft.releasable) {
-          Add-Issue $issues "Out-of-scope draft $outIdStr must remain unreleased (releasable=false) after approval of $($approvalReceipt.approvedDraftId)."
+          Add-Issue $issues "Out-of-scope draft $outIdStr must remain unreleased (releasable=false) after approval of $($apprReceipt.approvedDraftId)."
         }
         if ($outDraft.outboundApproved -is [bool] -and $outDraft.outboundApproved) {
-          Add-Issue $issues "Out-of-scope draft $outIdStr must stay outboundApproved=false after approval of $($approvalReceipt.approvedDraftId)."
+          Add-Issue $issues "Out-of-scope draft $outIdStr must stay outboundApproved=false after approval of $($apprReceipt.approvedDraftId)."
         }
       }
     }
     # The approved draft must NOT appear in the out-of-scope list.
-    if (@($approvalReceipt.outOfScopeDraftIds | Where-Object { [string]$_ -eq [string]$approvalReceipt.approvedDraftId }).Count -gt 0) {
+    if (@($apprReceipt.outOfScopeDraftIds | Where-Object { [string]$_ -eq [string]$apprReceipt.approvedDraftId }).Count -gt 0) {
       Add-Issue $issues "$subject approvedDraftId must not also appear in outOfScopeDraftIds."
+    }
+  }
+}
+
+# Global invariant (Finding 1): every releasable draft must be authorized by a fully-scoped approval
+# receipt whose approvedDraftId names it. No releasable draft may escape the scope discipline.
+foreach ($dr in $drafts) {
+  if ($dr.releasable -is [bool] -and $dr.releasable) {
+    if (-not $approvalScopedDraftIds.ContainsKey([string]$dr.draftId)) {
+      Add-Issue $issues "Releasable draft $($dr.draftId) must be bound to a fully-scoped approval receipt (approvedDraftId=$($dr.draftId)); a releasable draft may not escape AC3 scope discipline."
     }
   }
 }
@@ -957,6 +965,7 @@ $outboundDenials = @($run.outboundDenials | Where-Object { $null -ne $_ })
 if ($outboundDenials.Count -lt 1) {
   Add-Issue $issues "Draft slice must include at least one outboundDenials entry (AC2 unapproved-outbound scenario)."
 }
+$denialByReceiptDraft = @{}
 foreach ($denial in $outboundDenials) {
   $subject = "Outbound denial $($denial.receipt)"
   if (-not (Test-HasNonEmptyField -Record $denial -Field "receipt") -or -not $sliceReceiptIds.ContainsKey([string]$denial.receipt)) {
@@ -973,18 +982,59 @@ foreach ($denial in $outboundDenials) {
   else {
     $deniedDraftObj = $drafts | Where-Object { [string]$_.draftId -eq [string]$denial.deniedDraft } | Select-Object -First 1
     if ($null -ne $deniedDraftObj) {
+      # Finding 4: the denied draft is an attempted external send, so it must be an external_reply.
+      if ($deniedDraftObj.draftKind -ne "external_reply") {
+        Add-Issue $issues "$subject deniedDraft must be an external_reply draft (AC2 denies an attempted outbound send), found: $($deniedDraftObj.draftKind)."
+      }
       if ($deniedDraftObj.outboundApproved -is [bool] -and $deniedDraftObj.outboundApproved) {
         Add-Issue $issues "$subject deniedDraft must have outboundApproved=false, found true."
       }
       if ($deniedDraftObj.releasable -is [bool] -and $deniedDraftObj.releasable) {
         Add-Issue $issues "$subject deniedDraft must have releasable=false, found true."
       }
+      # Finding 3: join the denial graph — the draft carrying the denialReceipt pointer must be the
+      # same draft this outboundDenials entry describes, and must point back at this denial receipt.
+      if ([string]$deniedDraftObj.denialReceipt -ne [string]$denial.receipt) {
+        Add-Issue $issues "$subject deniedDraft ($($denial.deniedDraft)) denialReceipt must name this denial's receipt ($($denial.receipt)), found: $($deniedDraftObj.denialReceipt); the denial graph must be joined."
+      }
+      # The denial receipt's attemptedAction must name the denied draft (receipt binds to its subject).
+      if (Test-HasNonEmptyField -Record $denReceipt -Field "attemptedAction") {
+        if ([string]$denReceipt.attemptedAction -notmatch [regex]::Escape([string]$denial.deniedDraft)) {
+          Add-Issue $issues "$subject denial receipt attemptedAction must name the denied draft $($denial.deniedDraft)."
+        }
+      }
+      # Finding 2: demote the self-asserting booleans to consequences of structural facts. The slice's
+      # declared booleans must equal the values derived from the draft's actual flags, not free assertions.
+      if ($denial.noOutboundWithoutApproval -isnot [bool]) {
+        Add-Issue $issues "$subject noOutboundWithoutApproval must be strict boolean, found: $($denial.noOutboundWithoutApproval)."
+      }
+      elseif ($denial.noOutboundWithoutApproval -ne ($deniedDraftObj.outboundApproved -isnot [bool] -or -not $deniedDraftObj.outboundApproved)) {
+        Add-Issue $issues "$subject noOutboundWithoutApproval ($($denial.noOutboundWithoutApproval)) must equal (deniedDraft.outboundApproved==false), derived from the draft's actual flag."
+      }
+      if ($denial.draftRemainsDraftOnly -isnot [bool]) {
+        Add-Issue $issues "$subject draftRemainsDraftOnly must be strict boolean, found: $($denial.draftRemainsDraftOnly)."
+      }
+      elseif ($denial.draftRemainsDraftOnly -ne ($deniedDraftObj.draftOnly -is [bool] -and $deniedDraftObj.draftOnly)) {
+        Add-Issue $issues "$subject draftRemainsDraftOnly ($($denial.draftRemainsDraftOnly)) must equal (deniedDraft.draftOnly==true), derived from the draft's actual flag."
+      }
     }
+    $denialByReceiptDraft["$($denial.receipt)|$($denial.deniedDraft)"] = $true
   }
-  Test-StrictBooleanTrue -Issues $issues -Record $denial -Field "noOutboundWithoutApproval" -Subject $subject
-  Test-StrictBooleanTrue -Issues $issues -Record $denial -Field "draftRemainsDraftOnly" -Subject $subject
+  # Finding 2: outboundOccurred is structurally false because the slice emits no external_action receipts
+  # at all (the global verb ban tripwire below). The boolean is a decoration of that structural fact.
   if ($denial.outboundOccurred -isnot [bool] -or $denial.outboundOccurred) {
     Add-Issue $issues "$subject outboundOccurred must be strict boolean false; no outbound action occurred in this slice."
+  }
+}
+# Finding 3: bidirectional denial-graph join — every draft carrying a denialReceipt must have a matching
+# outboundDenials entry (receipt + deniedDraft) describing that same draft, and vice-versa.
+foreach ($dr in $drafts) {
+  $denId = [string]$dr.denialReceipt
+  if (-not [string]::IsNullOrWhiteSpace($denId)) {
+    $key = "$denId|$([string]$dr.draftId)"
+    if (-not $denialByReceiptDraft.ContainsKey($key)) {
+      Add-Issue $issues "Draft $($dr.draftId) carries denialReceipt $denId but no outboundDenials entry joins it (receipt=$denId, deniedDraft=$($dr.draftId)); the denial graph is not joined."
+    }
   }
 }
 
@@ -994,12 +1044,16 @@ $approvedScopes = @($run.approvedOutboundScopes | Where-Object { $null -ne $_ })
 if ($approvedScopes.Count -lt 1) {
   Add-Issue $issues "Draft slice must include at least one approvedOutboundScopes entry (AC3 approved-outbound scenario)."
 }
+# Finding 1: every fully-scoped approval receipt must have exactly one approvedOutboundScopes entry, and
+# vice-versa — the scope trace is bound to a real approval, not a free-floating declaration.
+$scopeReceiptIds = @{}
 foreach ($scope in $approvedScopes) {
   $subject = "Approved outbound scope $($scope.receipt)"
   if (-not (Test-HasNonEmptyField -Record $scope -Field "receipt") -or -not $sliceReceiptIds.ContainsKey([string]$scope.receipt)) {
     Add-Issue $issues "$subject must name a slice receipt."
     continue
   }
+  $scopeReceiptIds[[string]$scope.receipt] = $true
   $apprReceipt = $receiptById[[string]$scope.receipt]
   if ($apprReceipt.com_verb -ne "approved") {
     Add-Issue $issues "$subject must reference an approved receipt, found verb: $($apprReceipt.com_verb)."
@@ -1010,12 +1064,19 @@ foreach ($scope in $approvedScopes) {
   else {
     $approvedDraftObj = $drafts | Where-Object { [string]$_.draftId -eq [string]$scope.approvedDraft } | Select-Object -First 1
     if ($null -ne $approvedDraftObj) {
+      if ($approvedDraftObj.draftKind -ne "external_reply") {
+        Add-Issue $issues "$subject approvedDraft must be an external_reply draft (AC3), found: $($approvedDraftObj.draftKind)."
+      }
       if (-not ($approvedDraftObj.outboundApproved -is [bool] -and $approvedDraftObj.outboundApproved)) {
         Add-Issue $issues "$subject approvedDraft must have outboundApproved=true."
       }
       if (-not ($approvedDraftObj.releasable -is [bool] -and $approvedDraftObj.releasable)) {
         Add-Issue $issues "$subject approvedDraft must have releasable=true."
       }
+    }
+    # The scope's approvedDraft must equal the approval receipt's approvedDraftId (scope trace is bound to the receipt).
+    if ((Test-HasNonEmptyField -Record $apprReceipt -Field "approvedDraftId") -and [string]$apprReceipt.approvedDraftId -ne [string]$scope.approvedDraft) {
+      Add-Issue $issues "$subject approvedDraft ($($scope.approvedDraft)) must equal the approval receipt's approvedDraftId ($($apprReceipt.approvedDraftId))."
     }
   }
   $releasedIds = @($scope.releasedDraftIds | Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
@@ -1029,6 +1090,10 @@ foreach ($scope in $approvedScopes) {
   if ($unreleasedIds.Count -lt 1) {
     Add-Issue $issues "$subject unreleasedDraftIds must list at least one other draft that stays unreleased (AC3: approval authorizes ONLY that draft)."
   }
+  # The released draft must NOT also appear in the unreleased list (a draft cannot be both released and held).
+  if (($releasedIds | Where-Object { $unreleasedIds -contains $_ }).Count -gt 0) {
+    Add-Issue $issues "$subject releasedDraftIds and unreleasedDraftIds must be disjoint; a draft cannot be both released and unreleased under one approval."
+  }
   foreach ($uId in $unreleasedIds) {
     if (-not $seenDraftIds.ContainsKey($uId)) {
       Add-Issue $issues "$subject unreleasedDraftIds must reference drafts in this slice, found: $uId."
@@ -1039,6 +1104,9 @@ foreach ($scope in $approvedScopes) {
       if ($uDraft.releasable -is [bool] -and $uDraft.releasable) {
         Add-Issue $issues "$subject unreleasedDraft $uId must have releasable=false."
       }
+      if ($uDraft.outboundApproved -is [bool] -and $uDraft.outboundApproved) {
+        Add-Issue $issues "$subject unreleasedDraft $uId must have outboundApproved=false; approval authorizes ONLY the approved draft."
+      }
     }
   }
   if ($scope.outboundOccurred -isnot [bool] -or $scope.outboundOccurred) {
@@ -1046,9 +1114,22 @@ foreach ($scope in $approvedScopes) {
   }
   Test-StrictBooleanTrue -Issues $issues -Record $scope -Field "liveSendDeferredToEpic2" -Subject $subject
 }
+# Bidirectional bind: every approval receipt has exactly one scope entry and every scope entry references an approval receipt.
+foreach ($apprReceipt in $approvalReceipts) {
+  $apprId = [string]$apprReceipt.com_receipt_id
+  if (-not $scopeReceiptIds.ContainsKey($apprId)) {
+    Add-Issue $issues "Approval receipt $apprId must have a matching approvedOutboundScopes entry; the scope trace is not optional."
+  }
+}
 
 # --- No-outbound-without-approval proof (AC2 guard) --------------------------------------------------
+# Finding 2: the per-draft `value:true` booleans and free-text proof must be decorations of structural
+# negative evidence, not self-assertions. The structural fact is that the slice emits ZERO external_action
+# receipts (verified by the global verb ban tripwire below and re-derived here per draft). Each proof's
+# `value` must equal the structurally-derived value, and the proof text must be consistent with the
+# draft's actual approval/denial state (not just name the banned verbs).
 
+$extActionReceipts = @($receipts | Where-Object { $_.com_verb -eq "external_action_requested" -or $_.com_verb -eq "external_action_completed" })
 $noOutboundProof = @($run.noOutboundWithoutApprovalProof | Where-Object { $null -ne $_ })
 if ($noOutboundProof.Count -lt $drafts.Count) {
   Add-Issue $issues "noOutboundWithoutApprovalProof must bind every draft to a guard entry; found $($noOutboundProof.Count) for $($drafts.Count) drafts."
@@ -1070,8 +1151,19 @@ foreach ($proof in $noOutboundProof) {
   if ($proof.guard -ne "noOutboundWithoutApproval") {
     Add-Issue $issues "$subject guard must be noOutboundWithoutApproval, found: $($proof.guard)."
   }
-  if ($proof.value -isnot [bool] -or -not $proof.value) {
-    Add-Issue $issues "$subject value must be strict boolean true."
+  # Derive the expected value from structure: no external_action receipt in the slice may reference this draft.
+  $proofDraft = $drafts | Where-Object { [string]$_.draftId -eq $proofDraftId } | Select-Object -First 1
+  $refsThisDraft = @($extActionReceipts | Where-Object {
+    ([string]$_.com_evidence_refs -match [regex]::Escape($proofDraftId)) -or
+    ([string]$_.attemptedAction -match [regex]::Escape($proofDraftId)) -or
+    ([string]$_.com_after_state -match [regex]::Escape($proofDraftId))
+  })
+  $derivedValue = ($refsThisDraft.Count -eq 0)
+  if ($proof.value -isnot [bool]) {
+    Add-Issue $issues "$subject value must be strict boolean, found: $($proof.value)."
+  }
+  elseif ($proof.value -ne $derivedValue) {
+    Add-Issue $issues "$subject value ($($proof.value)) must equal the structurally-derived value ($($derivedValue): no external_action receipt references this draft); the guard boolean is a decoration of the structural negative evidence, not a self-assertion."
   }
   if (-not (Test-HasNonEmptyField -Record $proof -Field "proof")) {
     Add-Issue $issues "$subject must carry a non-empty proof rationale."
@@ -1080,6 +1172,25 @@ foreach ($proof in $noOutboundProof) {
     # The proof must mention the absence of external_action_requested / external_action_completed receipts.
     if ([string]$proof.proof -notmatch "external_action_requested|external_action_completed") {
       Add-Issue $issues "$subject proof must cite the absence of external_action_requested/external_action_completed receipts as the negative evidence."
+    }
+    # The proof text must be consistent with the draft's actual state (not a free assertion).
+    if ($null -ne $proofDraft) {
+      if (($proofDraft.releasable -is [bool] -and $proofDraft.releasable) -and -not [string]::IsNullOrWhiteSpace([string]$proofDraft.approvalReceipt)) {
+        if ([string]$proof.proof -notmatch [regex]::Escape([string]$proofDraft.approvalReceipt)) {
+          Add-Issue $issues "$subject proof must reference the draft's approval receipt ($($proofDraft.approvalReceipt)) since the draft is releasable; the proof must be consistent with the draft's actual approval state."
+        }
+      }
+      elseif (-not [string]::IsNullOrWhiteSpace([string]$proofDraft.denialReceipt)) {
+        if ([string]$proof.proof -notmatch [regex]::Escape([string]$proofDraft.denialReceipt)) {
+          Add-Issue $issues "$subject proof must reference the draft's denial receipt ($($proofDraft.denialReceipt)) since the draft was denied; the proof must be consistent with the draft's actual denial state."
+        }
+      }
+      else {
+        # Unapproved, not denied: the proof must state the draft is unapproved (outboundApproved=false).
+        if ([string]$proof.proof -notmatch "outboundApproved\s*=\s*false|unapproved|outboundApproved false") {
+          Add-Issue $issues "$subject proof must state that the draft is outboundApproved=false (unapproved, not denied); the proof must be consistent with the draft's actual unapproved state."
+        }
+      }
     }
   }
 }
@@ -1157,18 +1268,57 @@ foreach ($dr in $drafts) {
 }
 
 # --- Acceptance mapping -------------------------------------------------------------------------------
+# Finding 9: a non-whitespace string was enough to rubber-stamp AC coverage. Bind each localEvidence
+# string to the actual slice graph: it must contain at least one resolvable identifier (a slice receipt
+# id, a known prior Source Record id, or a known prior Work Item id) OR a dotted path into a real slice
+# property. Bare assertions with no anchor fail.
 
+$validSlicePathTokens = @(
+  "draftRun.drafts", "draftRun.receipts", "draftRun.receiptSourceLinks", "draftRun.outboundDenials",
+  "draftRun.approvedOutboundScopes", "draftRun.noOutboundWithoutApprovalProof", "draftRun.deferredOutboundActions",
+  "draftRun.workItemStateChangesDeferred", "draftRun.failureCodeVocabulary", "draftRun.decisionPolicy",
+  "draftRun.inputSourceRecordsFrom", "draftRun.inputWorkItemsFrom", "guards.", "acceptanceMapping.",
+  "drafts", "receipts", "receiptSourceLinks", "outboundDenials", "approvedOutboundScopes",
+  "noOutboundWithoutApprovalProof", "deferredOutboundActions", "workItemStateChangesDeferred",
+  "failureCodeVocabulary", "decisionPolicy"
+)
 foreach ($criterion in @(1, 2, 3)) {
   $mapping = @($draft.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
   if (-not $mapping) {
     Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+    continue
   }
-  else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  $evidenceStrings = @($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+  if ($evidenceStrings.Count -lt 1) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+  }
+  if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
+    Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+  }
+  foreach ($evidence in $evidenceStrings) {
+    $text = [string]$evidence
+    $resolved = $false
+    foreach ($rid in @($sliceReceiptIds.Keys)) {
+      if ($text -match [regex]::Escape($rid)) { $resolved = $true; break }
     }
-    if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
+    if (-not $resolved) {
+      foreach ($sid in $linkableSourceIds) {
+        if ($text -match [regex]::Escape($sid)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      foreach ($wid in $knownWorkItemIds) {
+        if ($text -match [regex]::Escape($wid)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      foreach ($token in $validSlicePathTokens) {
+        if ($text -match [regex]::Escape($token)) { $resolved = $true; break }
+      }
+    }
+    if (-not $resolved) {
+      $preview = $text.Substring(0, [Math]::Min(80, $text.Length))
+      Add-Issue $issues "Acceptance mapping for AC $criterion localEvidence must anchor to a resolvable slice identifier or a real slice path; unanchored string: '$preview...'."
     }
   }
 }

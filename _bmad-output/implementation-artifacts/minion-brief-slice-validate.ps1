@@ -145,6 +145,82 @@ function Read-JsonInput {
   }
 }
 
+function Invoke-CollectSiblingIds {
+  # Recursively walk a parsed sibling slice JSON and harvest every canonical
+  # Council id / idempotency key / runId by property name, plus the demo-evidence
+  # workItemIds/receiptIds arrays. This is the single source of truth for
+  # cross-slice collision checks so they cover ALL co-located slices (Story hard
+  # rule: ids unique across ALL slices), not just the named 1.1-1.5 siblings.
+  param(
+    [Parameter(Mandatory = $false)][AllowNull()]$Node,
+    [Parameter(Mandatory = $true)][hashtable]$WorkItems,
+    [Parameter(Mandatory = $true)][hashtable]$Receipts,
+    [Parameter(Mandatory = $true)][hashtable]$Keys,
+    [Parameter(Mandatory = $true)][hashtable]$SourceRecords,
+    [Parameter(Mandatory = $true)][hashtable]$Briefs,
+    [Parameter(Mandatory = $true)][hashtable]$RunIds
+  )
+
+  if ($null -eq $Node) { return }
+  if ($Node -is [System.Collections.IList]) {
+    foreach ($item in $Node) {
+      Invoke-CollectSiblingIds -Node $item -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Briefs $Briefs -RunIds $RunIds
+    }
+    return
+  }
+  if ($Node -is [pscustomobject]) {
+    foreach ($prop in $Node.PSObject.Properties) {
+      switch ($prop.Name) {
+        "com_council_work_item_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $WorkItems[$id] = $true }
+          break
+        }
+        "com_receipt_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $Receipts[$id] = $true }
+          break
+        }
+        "com_idempotency_key" {
+          $k = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($k)) { $Keys[$k] = $true }
+          break
+        }
+        "com_council_source_record_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $SourceRecords[$id] = $true }
+          break
+        }
+        "com_council_brief_id" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $Briefs[$id] = $true }
+          break
+        }
+        "runId" {
+          $id = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($id)) { $RunIds[$id] = $true }
+          break
+        }
+        "workItemIds" {
+          if ($prop.Value -is [System.Collections.IList]) {
+            foreach ($v in $prop.Value) { $id = [string]$v; if (-not [string]::IsNullOrWhiteSpace($id)) { $WorkItems[$id] = $true } }
+          }
+          break
+        }
+        "receiptIds" {
+          if ($prop.Value -is [System.Collections.IList]) {
+            foreach ($v in $prop.Value) { $id = [string]$v; if (-not [string]::IsNullOrWhiteSpace($id)) { $Receipts[$id] = $true } }
+          }
+          break
+        }
+        default {
+          Invoke-CollectSiblingIds -Node $prop.Value -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Briefs $Briefs -RunIds $RunIds
+        }
+      }
+    }
+  }
+}
+
 foreach ($path in @($ManifestPath, $BriefSlicePath, $ManualSlicePath, $OutlookSlicePath, $Story13ExtractionPath, $Story14ExtractionPath, $Story15DriftPath, $DemoEvidencePath)) {
   if (-not (Test-Path -LiteralPath $path)) {
     throw "Required minion brief validation input not found: $path"
@@ -279,6 +355,55 @@ foreach ($sliceLoad in @(
 }
 
 # ---------------------------------------------------------------------------
+# Generic all-slice id harvest: walk EVERY sibling slice JSON in this folder so
+# collision tripwires cover ALL co-located slices (Story hard rule: ids unique
+# across ALL slices), not only the named 1.1-1.5 + demo siblings. This makes the
+# CB-LOCAL-* / CR-LOCAL-* / idempotency-key / runId collision checks genuinely
+# live: a rename into any co-located slice namespace (including epic-2 slices
+# receipt-backed-state-changes, work-item-execution-shell, idempotent-mutations,
+# delegation-support, failure-policy-denial, handoff-drafts, approval-boundaries,
+# auto-creation-policy) will fire here. Hashtables make membership O(1).
+# ---------------------------------------------------------------------------
+
+$allSliceWorkItemIds = @{}
+$allSliceReceiptIds = @{}
+$allSliceIdempotencyKeys = @{}
+$allSliceSourceIds = @{}
+$allSliceBriefIds = @{}
+$allSliceRunIds = @{}
+$selfSliceBasename = (Split-Path -Leaf $BriefSlicePath)
+$siblingSliceFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*.json" -File |
+  Where-Object { $_.Name -ne "dataverse-mvp-schema-manifest.json" -and $_.Name -ne $selfSliceBasename } |
+  ForEach-Object { $_.FullName })
+if ($siblingSliceFiles.Count -eq 0) {
+  Add-Issue $issues "No sibling slice JSON files found in $PSScriptRoot; all-slice id-collision checks would silently no-op."
+}
+foreach ($siblingFile in $siblingSliceFiles) {
+  $siblingJson = Read-JsonInput -Path $siblingFile
+  Invoke-CollectSiblingIds -Node $siblingJson -WorkItems $allSliceWorkItemIds -Receipts $allSliceReceiptIds -Keys $allSliceIdempotencyKeys -SourceRecords $allSliceSourceIds -Briefs $allSliceBriefIds -RunIds $allSliceRunIds
+}
+
+if ($allSliceWorkItemIds.Count -eq 0) {
+  Add-Issue $issues "No CWI-* ids harvested from sibling slices; Work Item collision checks would silently no-op."
+}
+if ($allSliceReceiptIds.Count -eq 0) {
+  Add-Issue $issues "No CR-* ids harvested from sibling slices; receipt collision checks would silently no-op."
+}
+if ($allSliceSourceIds.Count -eq 0) {
+  Add-Issue $issues "No CSR-* ids harvested from sibling slices; source-record collision checks would silently no-op."
+}
+
+# Resolution sets: the named epic-2 siblings are authoritative for "references a
+# real epic-2 id", unioned with the broad harvest so a referenced id resolves if
+# it appears in ANY co-located slice (superset, conservative).
+$resolvableWorkItemIds = @{}
+foreach ($id in @($allKnownWorkItemIds + @($allSliceWorkItemIds.Keys))) { if (-not [string]::IsNullOrWhiteSpace($id)) { $resolvableWorkItemIds[$id] = $true } }
+$resolvableReceiptIds = @{}
+foreach ($id in @($allKnownReceiptIds + @($allSliceReceiptIds.Keys))) { if (-not [string]::IsNullOrWhiteSpace($id)) { $resolvableReceiptIds[$id] = $true } }
+$resolvableSourceIds = @{}
+foreach ($id in @($knownSourceIds + @($allSliceSourceIds.Keys))) { if (-not [string]::IsNullOrWhiteSpace($id)) { $resolvableSourceIds[$id] = $true } }
+
+# ---------------------------------------------------------------------------
 # Brief run structure
 # ---------------------------------------------------------------------------
 
@@ -296,6 +421,9 @@ if (-not (Test-HasNonEmptyField -Record $run -Field "runId")) {
 }
 elseif (@([string]$story13Extraction.extractionRun.runId, [string]$story14Extraction.extractionRun.runId, [string]$story15Drift.driftRun.runId) -contains [string]$run.runId) {
   Add-Issue $issues "Brief run must use a new local runId, not a sibling-slice runId: $($run.runId)."
+}
+elseif ($allSliceRunIds.ContainsKey([string]$run.runId)) {
+  Add-Issue $issues "Brief run runId collides with a runId harvested from a sibling slice: $($run.runId); new run ids must be unique across ALL slices."
 }
 if ($run.semanticContractVersion -ne "2026-07-07") {
   Add-Issue $issues "Brief run semanticContractVersion must be 2026-07-07."
@@ -519,43 +647,46 @@ $referencedReceiptIds = @($referencedReceiptIds | Where-Object { -not [string]::
 $referencedSourceIds = @($referencedSourceIds | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
 
 foreach ($cwiId in $referencedWorkItemIds) {
-  if ($allKnownWorkItemIds -notcontains $cwiId) {
+  if (-not $resolvableWorkItemIds.ContainsKey($cwiId)) {
     Add-Issue $issues "Referenced Work Item does not resolve in sibling slices: $cwiId."
   }
 }
 foreach ($crId in $referencedReceiptIds) {
-  if ($allKnownReceiptIds -notcontains $crId) {
+  if (-not $resolvableReceiptIds.ContainsKey($crId)) {
     Add-Issue $issues "Referenced receipt does not resolve in sibling slices: $crId."
   }
 }
 foreach ($csrId in $referencedSourceIds) {
-  if ($knownSourceIds -notcontains $csrId) {
+  if (-not $resolvableSourceIds.ContainsKey($csrId)) {
     Add-Issue $issues "Referenced source record does not resolve in sibling slices: $csrId."
   }
 }
 
 # ---------------------------------------------------------------------------
-# Cross-slice ID uniqueness — new slice IDs must not collide with prior slices
+# Cross-slice ID uniqueness — new slice IDs must not collide with ANY co-located
+# slice (live harvest), not just the named 1.1-1.5 + demo siblings. The generic
+# all-slice harvest above is the collision surface; the expected-id constants
+# below are a story-fixture presence check only.
 # ---------------------------------------------------------------------------
 
-# New CR-LOCAL-* receipt IDs must not collide with sibling receipt IDs
-$sliceReceiptIds = @{}
 $expectedReceiptIds = @("CR-LOCAL-BRIEF-CREATE-001", "CR-LOCAL-BRIEF-REFRESH-001")
 foreach ($receiptId in $expectedReceiptIds) {
-  if ($allKnownReceiptIds -contains $receiptId) {
-    Add-Issue $issues "New receipt ID collides with an existing sibling-slice receipt ID: $receiptId."
-  }
-  if ($demoReceiptIds -contains $receiptId) {
-    Add-Issue $issues "New receipt ID collides with a reserved state-transition-demo receipt ID: $receiptId."
+  if ($allSliceReceiptIds.ContainsKey($receiptId)) {
+    Add-Issue $issues "New receipt ID collides with a receipt id harvested from a sibling slice (unique across ALL slices required): $receiptId."
   }
 }
 
-# New CB-LOCAL-* brief IDs must not collide with any existing IDs across all slices
-# (CB-LOCAL-* is a new ID family; check it does not appear in any sibling slice)
-$allSiblingIds = @($allKnownWorkItemIds + $allKnownReceiptIds + $knownSourceIds)
+# New CB-LOCAL-* brief IDs must not collide with ANY id harvested from any
+# sibling slice (work items, receipts, source records, briefs, run ids,
+# idempotency keys). Union into one membership set so the tripwire is live for
+# every id family — a rename into any sibling namespace fires here.
+$allSiblingAnyIds = @{}
+foreach ($id in @($allSliceWorkItemIds.Keys + $allSliceReceiptIds.Keys + $allSliceSourceIds.Keys + $allSliceBriefIds.Keys + $allSliceRunIds.Keys + $allSliceIdempotencyKeys.Keys)) {
+  if (-not [string]::IsNullOrWhiteSpace($id)) { $allSiblingAnyIds[$id] = $true }
+}
 foreach ($briefId in @($sliceBriefIds.Keys)) {
-  if ($allSiblingIds -contains $briefId) {
-    Add-Issue $issues "New brief ID collides with an existing sibling-slice ID: $briefId."
+  if ($allSiblingAnyIds.ContainsKey($briefId)) {
+    Add-Issue $issues "New brief ID collides with an id harvested from a sibling slice (unique across ALL slices required): $briefId."
   }
 }
 
@@ -587,9 +718,18 @@ else {
     Add-Issue $issues "queueChangeScenario.refreshedSnapshot must be CB-LOCAL-BRIEF-002, found: $refreshedId."
   }
 
-  # Original must be generated before the refreshed
-  $originalSnap = @($snapshots | Where-Object { [string]$_.com_council_brief_id -eq $originalId } | Select-Object -First 1)
-  $refreshedSnap = @($snapshots | Where-Object { [string]$_.com_council_brief_id -eq $refreshedId } | Select-Object -First 1)
+  # Resolve snapshot handles WITHOUT wrapping in @(...) so a missed selection is
+  # $null (not an empty array that always tests non-null). Hard-fail if a name
+  # that passed the ContainsKey check above nevertheless fails to select.
+  $originalSnap = $snapshots | Where-Object { [string]$_.com_council_brief_id -eq $originalId } | Select-Object -First 1
+  $refreshedSnap = $snapshots | Where-Object { [string]$_.com_council_brief_id -eq $refreshedId } | Select-Object -First 1
+  if ($null -eq $originalSnap) {
+    Add-Issue $issues "queueChangeScenario.originalSnapshot could not be resolved to a snapshot handle: $originalId."
+  }
+  if ($null -eq $refreshedSnap) {
+    Add-Issue $issues "queueChangeScenario.refreshedSnapshot could not be resolved to a snapshot handle: $refreshedId."
+  }
+
   if ($null -ne $originalSnap -and $null -ne $refreshedSnap) {
     $originalDate = Get-ComparableInstant $originalSnap.com_brief_date
     $refreshedDate = Get-ComparableInstant $refreshedSnap.com_brief_date
@@ -598,18 +738,78 @@ else {
     }
   }
 
-  # Original must be untouched
-  if ($queueChange.originalUntouched -isnot [bool] -or -not $queueChange.originalUntouched) {
-    Add-Issue $issues "queueChangeScenario.originalUntouched must be strict boolean true."
+  # Original must be untouched — proven by recomputing the original's
+  # frozenProjectionHash from its frozenProjectionJson AND requiring the inline
+  # isProjection/sourceOfTruth/sections still match the frozen JSON. This is a
+  # real SHA-256 crypto check, NOT a self-asserted boolean authored by the slice.
+  if ($null -ne $originalSnap) {
+    if (-not (Test-HasNonEmptyField -Record $originalSnap -Field "frozenProjectionJson")) {
+      Add-Issue $issues "Original snapshot must carry frozenProjectionJson so its byte-stability (untouched) can be rechecked."
+    }
+    elseif (-not (Test-HasNonEmptyField -Record $originalSnap -Field "frozenProjectionHash")) {
+      Add-Issue $issues "Original snapshot must carry frozenProjectionHash so its byte-stability (untouched) can be rechecked."
+    }
+    else {
+      $oFrozenJson = [string]$originalSnap.frozenProjectionJson
+      $oFrozenHash = [string]$originalSnap.frozenProjectionHash
+      if ($oFrozenHash -notmatch "^sha256:[0-9a-f]{64}$") {
+        Add-Issue $issues "Original snapshot frozenProjectionHash must use sha256:<64 hex> format, found: $oFrozenHash."
+      }
+      else {
+        $oBytes = [System.Text.Encoding]::UTF8.GetBytes($oFrozenJson)
+        $oSha = [System.Security.Cryptography.SHA256]::Create()
+        $oHashBytes = $oSha.ComputeHash($oBytes)
+        $oRecomputed = "sha256:" + [BitConverter]::ToString($oHashBytes).Replace("-", "").ToLower()
+        if ($oRecomputed -ne $oFrozenHash) {
+          Add-Issue $issues "Original snapshot frozenProjectionHash must match recomputed SHA-256 of frozenProjectionJson; the original Brief is not byte-stable (it was touched). Expected $oFrozenHash, recomputed $oRecomputed."
+        }
+      }
+      try {
+        $oFrozenObj = $oFrozenJson | ConvertFrom-Json
+        $oInlineObj = $originalSnap | Select-Object -Property isProjection, sourceOfTruth, sections
+        $oFrozenReserialized = $oFrozenObj | ConvertTo-Json -Depth 20 -Compress
+        $oInlineReserialized = $oInlineObj | ConvertTo-Json -Depth 20 -Compress
+        if ($oFrozenReserialized -ne $oInlineReserialized) {
+          Add-Issue $issues "Original snapshot inline isProjection/sourceOfTruth/sections must match its frozenProjectionJson; the original Brief was rewritten after its hash was recorded (not untouched)."
+        }
+      }
+      catch {
+        Add-Issue $issues "Original snapshot frozenProjectionJson must be valid JSON; parse failed: $($_.Exception.Message)"
+      }
+    }
   }
 
-  # Sections that differ must be non-empty
+  # sectionsThatDiffer must be a FAITHFUL, COMPLETE declaration of the delta:
+  # every listed section must actually differ in content between original and
+  # refreshed, and every UNLISTED section must be byte-identical. A slice cannot
+  # game this by listing arbitrary names or omitting the true delta sections.
   $sectionsDiffer = @($queueChange.sectionsThatDiffer | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
   if ($sectionsDiffer.Count -eq 0) {
     Add-Issue $issues "queueChangeScenario.sectionsThatDiffer must list at least one section name."
   }
   if (-not (Test-HasNonEmptyField -Record $queueChange -Field "differReason")) {
     Add-Issue $issues "queueChangeScenario.differReason must be non-empty."
+  }
+  $sectionsDifferSet = @{}
+  foreach ($name in $sectionsDiffer) { $sectionsDifferSet[$name] = $true }
+  if ($null -ne $originalSnap -and $null -ne $refreshedSnap -and $null -ne $originalSnap.sections -and $null -ne $refreshedSnap.sections) {
+    foreach ($sectionName in $requiredEightSections) {
+      $origHas = $originalSnap.sections.PSObject.Properties.Name -contains $sectionName
+      $refreshHas = $refreshedSnap.sections.PSObject.Properties.Name -contains $sectionName
+      if (-not $origHas -or -not $refreshHas) {
+        Add-Issue $issues "queueChangeScenario section content diff requires section $sectionName to exist on both snapshots."
+        continue
+      }
+      $origSig = ($originalSnap.sections.$sectionName | ConvertTo-Json -Depth 20 -Compress)
+      $refreshSig = ($refreshedSnap.sections.$sectionName | ConvertTo-Json -Depth 20 -Compress)
+      $actuallyDiffers = ($origSig -ne $refreshSig)
+      if ($sectionsDifferSet.ContainsKey($sectionName) -and -not $actuallyDiffers) {
+        Add-Issue $issues "queueChangeScenario.sectionsThatDiffer lists $sectionName but the section content is identical between original and refreshed; the list is unfaithful."
+      }
+      if (-not $sectionsDifferSet.ContainsKey($sectionName) -and $actuallyDiffers) {
+        Add-Issue $issues "queueChangeScenario.sectionsThatDiffer omits $sectionName but the section content actually differs between original and refreshed; the list is incomplete."
+      }
+    }
   }
 
   # Change events must reference real receipts from sibling slices
@@ -626,7 +826,7 @@ else {
     }
     else {
       $changeReceipts += $eventReceipt
-      if ($allKnownReceiptIds -notcontains $eventReceipt) {
+      if (-not $resolvableReceiptIds.ContainsKey($eventReceipt)) {
         Add-Issue $issues "$eventSubject references an unknown receipt in sibling slices."
       }
     }
@@ -661,6 +861,49 @@ else {
     $refreshHash = [string]$refreshedSnap.frozenProjectionHash
     if (-not [string]::IsNullOrWhiteSpace($origHash) -and -not [string]::IsNullOrWhiteSpace($refreshHash) -and $origHash -eq $refreshHash) {
       Add-Issue $issues "Original and refreshed snapshots must have different frozenProjectionHash values; identical hashes mean the refresh changed nothing."
+    }
+  }
+
+  # Each change event must DRIVE a real content delta: its anchor id (workItem or
+  # sourceRecord) must appear in at least one section listed in sectionsThatDiffer
+  # of the refreshed snapshot, and the matching entry in the original's same
+  # section must be absent or carry a different reason. This proves the queue
+  # change is reflected where the change dictates — not just in receipts/hash.
+  if ($null -ne $originalSnap -and $null -ne $refreshedSnap -and $null -ne $originalSnap.sections -and $null -ne $refreshedSnap.sections) {
+    foreach ($event in $changeEvents) {
+      $anchorField = $null
+      $anchorId = $null
+      if (Test-HasNonEmptyField -Record $event -Field "workItem") {
+        $anchorField = "workItem"
+        $anchorId = [string]$event.workItem
+      }
+      elseif (Test-HasNonEmptyField -Record $event -Field "sourceRecord") {
+        $anchorField = "sourceRecord"
+        $anchorId = [string]$event.sourceRecord
+      }
+      if ([string]::IsNullOrWhiteSpace($anchorId)) { continue }
+
+      $droveDelta = $false
+      foreach ($sectionName in $sectionsDiffer) {
+        if (-not ($originalSnap.sections.PSObject.Properties.Name -contains $sectionName)) { continue }
+        if (-not ($refreshedSnap.sections.PSObject.Properties.Name -contains $sectionName)) { continue }
+        $refreshedAnchorEntries = @($refreshedSnap.sections.$sectionName | Where-Object { $null -ne $_ -and (Test-HasNonEmptyField -Record $_ -Field $anchorField) -and [string]$_.$anchorField -eq $anchorId })
+        if ($refreshedAnchorEntries.Count -eq 0) { continue }
+        $originalAnchorEntries = @($originalSnap.sections.$sectionName | Where-Object { $null -ne $_ -and (Test-HasNonEmptyField -Record $_ -Field $anchorField) -and [string]$_.$anchorField -eq $anchorId })
+        if ($originalAnchorEntries.Count -eq 0) {
+          $droveDelta = $true
+          break
+        }
+        $refreshedReasons = @($refreshedAnchorEntries | ForEach-Object { [string]$_.reason } | Sort-Object) -join "|"
+        $originalReasons = @($originalAnchorEntries | ForEach-Object { [string]$_.reason } | Sort-Object) -join "|"
+        if ($refreshedReasons -ne $originalReasons) {
+          $droveDelta = $true
+          break
+        }
+      }
+      if (-not $droveDelta) {
+        Add-Issue $issues "Change event anchor $anchorId did not drive a content delta in any section listed in sectionsThatDiffer; the queue change must be reflected where the change dictates, not only in receipts/hash."
+      }
     }
   }
 }
@@ -706,8 +949,8 @@ foreach ($receipt in $receipts) {
     else {
       $sliceReceiptIdMap[$receiptId] = $true
     }
-    if ($allKnownReceiptIds -contains $receiptId) {
-      Add-Issue $issues "$subject collides with an existing sibling-slice receipt ID."
+    if ($allSliceReceiptIds.ContainsKey($receiptId)) {
+      Add-Issue $issues "$subject collides with a receipt id harvested from a sibling slice (unique across ALL slices required)."
     }
     if ($demoReceiptIds -contains $receiptId) {
       Add-Issue $issues "$subject collides with a reserved state-transition-demo receipt ID."
@@ -735,6 +978,9 @@ foreach ($receipt in $receipts) {
     }
     else {
       $seenIdempotencyKeys[$idempotencyKey] = $true
+    }
+    if ($allSliceIdempotencyKeys.ContainsKey($idempotencyKey)) {
+      Add-Issue $issues "$subject idempotency key collides with one harvested from a sibling slice (unique across ALL slices required): $idempotencyKey."
     }
   }
 
