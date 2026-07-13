@@ -1,0 +1,300 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "4-2-explain-work-through-graph-provenance",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove that Queue/Brief explanations of a Work Item show full graph provenance and distinguish evidence from inference on every element, with per-element confidence and an explicit evidenceKind marker (FR20, FR19). A second explanation covers a conflicting/uncertain-evidence case where uncertainty is made visible and a guard plus receipt trail proves the Work Item was NOT auto-approved from graph evidence: its state group is unchanged and noAutoApprovalFromGraph is true. Explanations here are read-only local contract projections; every would-be live state mutation stays receipt-gated to Epic 2 and no tenant write occurs.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnly": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "noAutoApprovalFromGraph": true,
+    "uncertaintyMustBeVisible": true,
+    "explanationsAreReadOnlyProjections": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "explanationRun": {
+    "runId": "EXPLAIN-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 4.2 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputWorkItemsFrom": [
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "explanationsDistinguishEvidenceFromInference": true,
+      "everyElementCarriesEvidenceKind": true,
+      "uncertaintyIsAlwaysVisible": true,
+      "graphEvidenceNeverAutoApproves": true,
+      "stateChangesRequireNewReceiptAndStayDeferredToEpic2": true,
+      "explanationsAreReadOnlyProjections": true
+    },
+    "explanations": [
+      {
+        "explanationId": "EXPLAIN-LOCAL-001",
+        "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+        "workItemHomeSlice": "zero-multi-item-extraction-slice.json",
+        "workItemStateGroupClaimed": "proposed",
+        "summary": "Doug committed in the 2026-07-13 platform sync meeting note (CSR-MANUAL-MEETING-001) to send the revised tenant readiness checklist to Priya by Friday. The explanation traces the commitment back to its source record, the people and roles it names, the project/topic it concerns, and the receipt that reviewed the graph evidence without changing Work Item state.",
+        "elements": [
+          {
+            "elementId": "ELEM-EXPLAIN-001-SOURCE-001",
+            "elementType": "source",
+            "label": "Manual meeting note - 2026-07-13 platform sync",
+            "sourceRecord": "CSR-MANUAL-MEETING-001",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "Primary source record for CWI-LOCAL-MEETING-ACTION-001 per zero-multi-item-extraction-slice.json workItemSourceLinks; summary_allowed manual capture."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-PERSON-001",
+            "elementType": "person",
+            "label": "Doug",
+            "graphBinding": "owner_candidate",
+            "evidenceKind": "evidence",
+            "confidence": 0.88,
+            "provenance": "Named as the committer and owner_candidate in the meeting summary and in CWI-LOCAL-MEETING-ACTION-001 com_owner_candidate with com_owner_candidate_confidence 0.88."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-PERSON-002",
+            "elementType": "person",
+            "label": "Priya",
+            "graphBinding": "recipient",
+            "evidenceKind": "evidence",
+            "confidence": 0.7,
+            "provenance": "Named as the recipient of the revised checklist in the meeting summary; Priya's full identity is a local sample fact and should be confirmed before execution (see CWI-LOCAL-MEETING-ACTION-001 uncertainty)."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-ROLE-001",
+            "elementType": "role",
+            "label": "owner_candidate",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "CWI-LOCAL-MEETING-ACTION-001 com_owner_candidate assigns Doug the owner_candidate role; the role binding is sourced from the proposed Work Item record."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-PROJECT-001",
+            "elementType": "project",
+            "label": "Tenant readiness checklist",
+            "evidenceKind": "evidence",
+            "confidence": 0.9,
+            "provenance": "The meeting summary names the revised tenant readiness checklist as the concrete artifact Doug committed to send; the artifact is evidence from the source summary."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-TOPIC-001",
+            "elementType": "topic",
+            "label": "Epic 5 tenant readiness gate",
+            "evidenceKind": "inference",
+            "confidence": 0.6,
+            "provenance": "The checklist is contextually linked to the Epic 5 tenant readiness gate referenced by CWI-LOCAL-RISK-001 from the same source; that linkage is inferred, not stated verbatim in the meeting note, so it is marked inference."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-001-RECEIPT-001",
+            "elementType": "receipt",
+            "label": "CR-LOCAL-EXPLAIN-REVIEW-001 graph provenance review",
+            "receipt": "CR-LOCAL-EXPLAIN-REVIEW-001",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "This slice's review receipt records that the graph provenance explanation for CWI-LOCAL-MEETING-ACTION-001 was assembled and reviewed without changing Work Item state (result no_op, proposed to proposed)."
+          }
+        ],
+        "supportingReceipts": [
+          "CR-LOCAL-EXPLAIN-REVIEW-001"
+        ],
+        "overallConfidence": 0.86,
+        "uncertaintyVisible": false,
+        "noAutoApprovalFromGraph": true,
+        "stateGroupChangedInThisSlice": false
+      },
+      {
+        "explanationId": "EXPLAIN-LOCAL-002",
+        "workItem": "CWI-LOCAL-FOLLOWUP-001",
+        "workItemHomeSlice": "proposed-work-item-extraction-slice.json",
+        "workItemStateGroupClaimed": "proposed",
+        "summary": "CWI-LOCAL-FOLLOWUP-001 is a proposed follow-up extracted from the mock Outlook message reference CSR-OUTLOOK-MESSAGE-MOCK-001. The source record is hash/link-only mock evidence with no authorized body content, so whether it represents actionable work is uncertain and conflicts with the inference that a follow-up is plausible. Uncertainty is made visible, the conflict is described, and a guard plus receipt trail proves the Work Item was NOT auto-approved from graph evidence: its state group stays proposed.",
+        "conflict": {
+          "description": "The mock Outlook message reference shape suggests a plausible follow-up, but the source record is explicitly mock/manual evidence with no authorized body content, no sensitivity labels, and no tenant permission context. The graph therefore contains evidence that a message exists but only an inference that it represents actionable work; these conflict and the matter cannot be resolved from graph evidence alone.",
+          "conflictingElements": [
+            "ELEM-EXPLAIN-002-SOURCE-001",
+            "ELEM-EXPLAIN-002-TOPIC-001"
+          ],
+          "resolution": "Unresolved from graph evidence. Uncertainty is surfaced to a human for review; no auto-approval occurred and the Work Item state group is unchanged at proposed."
+        },
+        "elements": [
+          {
+            "elementId": "ELEM-EXPLAIN-002-SOURCE-001",
+            "elementType": "source",
+            "label": "Mock Outlook message reference - link only",
+            "sourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "Primary source record for CWI-LOCAL-FOLLOWUP-001 per proposed-work-item-extraction-slice.json workItemSourceLinks; mock_manual_not_tenant_verified link_only capture."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-002-PERSON-001",
+            "elementType": "person",
+            "label": "Doug",
+            "graphBinding": "owner_candidate",
+            "evidenceKind": "evidence",
+            "confidence": 0.7,
+            "provenance": "Named as com_owner_candidate in CWI-LOCAL-FOLLOWUP-001 with com_owner_candidate_confidence 0.70; the mock source does not confirm the real message participant set."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-002-TOPIC-001",
+            "elementType": "topic",
+            "label": "Plausible follow-up from Outlook message shape",
+            "evidenceKind": "inference",
+            "confidence": 0.5,
+            "provenance": "A follow-up is inferred from the Outlook message/conversation reference shape, but the record is mock evidence with no authorized body content, so actionability is an inference, not evidence. CWI-LOCAL-FOLLOWUP-001 uncertainty states it may produce zero actionable Work Items after verification."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-002-RECEIPT-001",
+            "elementType": "receipt",
+            "label": "CR-LOCAL-EXPLAIN-CONFLICT-001 conflicting-evidence review",
+            "receipt": "CR-LOCAL-EXPLAIN-CONFLICT-001",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "This slice's review receipt records that conflicting/uncertain graph evidence was found for CWI-LOCAL-FOLLOWUP-001 and that no state change resulted (result no_op, proposed to proposed)."
+          },
+          {
+            "elementId": "ELEM-EXPLAIN-002-RECEIPT-002",
+            "elementType": "receipt",
+            "label": "CR-LOCAL-EXPLAIN-NOAUTO-001 no-auto-approval guard",
+            "receipt": "CR-LOCAL-EXPLAIN-NOAUTO-001",
+            "evidenceKind": "evidence",
+            "confidence": 1.0,
+            "provenance": "This slice's guard receipt records that graph evidence did NOT auto-approve CWI-LOCAL-FOLLOWUP-001; state group stays proposed and any approval requires a human-backed receipt deferred to Epic 2."
+          }
+        ],
+        "supportingReceipts": [
+          "CR-LOCAL-EXPLAIN-CONFLICT-001",
+          "CR-LOCAL-EXPLAIN-NOAUTO-001"
+        ],
+        "overallConfidence": 0.55,
+        "uncertaintyVisible": true,
+        "noAutoApprovalFromGraph": true,
+        "stateGroupChangedInThisSlice": false
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-EXPLAIN-REVIEW-001",
+        "com_work_item": "CWI-LOCAL-MEETING-ACTION-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.2 contract validation",
+        "com_occurred_at": "2026-07-13T17:05:00-04:00",
+        "com_idempotency_key": "explain:CWI-LOCAL-MEETING-ACTION-001:review:2026-07-13T17:05:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "explanations[EXPLAIN-LOCAL-001]; CSR-MANUAL-MEETING-001; ELEM-EXPLAIN-001-SOURCE-001; ELEM-EXPLAIN-001-PERSON-001",
+        "com_decision_rationale": "Graph provenance explanation for CWI-LOCAL-MEETING-ACTION-001 was assembled and reviewed; every element carries an evidenceKind marker distinguishing evidence from inference. The explanation is a read-only projection and moves no Work Item state.",
+        "com_confidence": 0.9,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; no_auto_approval_from_graph",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-EXPLAIN-CONFLICT-001",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.2 contract validation",
+        "com_occurred_at": "2026-07-13T17:10:00-04:00",
+        "com_idempotency_key": "explain:CWI-LOCAL-FOLLOWUP-001:conflict:2026-07-13T17:10:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "explanations[EXPLAIN-LOCAL-002].conflict; CSR-OUTLOOK-MESSAGE-MOCK-001; ELEM-EXPLAIN-002-SOURCE-001; ELEM-EXPLAIN-002-TOPIC-001",
+        "com_decision_rationale": "Conflicting/uncertain graph evidence found for CWI-LOCAL-FOLLOWUP-001: the mock Outlook source proves a message reference exists but only an inference supports actionable follow-up. Uncertainty is surfaced; the Work Item is not auto-approved and stays proposed.",
+        "com_confidence": 0.55,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; no_auto_approval_from_graph; uncertainty_visible",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-EXPLAIN-NOAUTO-001",
+        "com_work_item": "CWI-LOCAL-FOLLOWUP-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.2 contract validation",
+        "com_occurred_at": "2026-07-13T17:12:00-04:00",
+        "com_idempotency_key": "explain:CWI-LOCAL-FOLLOWUP-001:noauto:2026-07-13T17:12:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "explanations[EXPLAIN-LOCAL-002].noAutoApprovalFromGraph=true; CR-LOCAL-EXPLAIN-CONFLICT-001",
+        "com_decision_rationale": "Explicit no-auto-approval guard: graph evidence did not auto-approve CWI-LOCAL-FOLLOWUP-001. The state group is unchanged at proposed and any approval requires a human-backed receipt deferred to Epic 2 Story 2.3.",
+        "com_confidence": 1.0,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; no_auto_approval_from_graph; uncertainty_visible",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-EXPLAIN-REVIEW-001 evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-EXPLAIN-REVIEW-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-EXPLAIN-CONFLICT-001 evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-EXPLAIN-CONFLICT-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-EXPLAIN-NOAUTO-001 evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-EXPLAIN-NOAUTO-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "liveWritesDeferred": [
+      {
+        "target": "CWI-LOCAL-MEETING-ACTION-001",
+        "deferredUpdate": "Any com_state_group move driven by this explanation (for example proposed to in_review or approved) requires a new human-backed receipt gated to Epic 2 Story 2.3; this slice records the read-only explanation only and performs no state change.",
+        "receiptGate": "Epic 2 Story 2.3 receipt-backed state change"
+      },
+      {
+        "target": "CWI-LOCAL-FOLLOWUP-001",
+        "deferredUpdate": "Approving CWI-LOCAL-FOLLOWUP-001 from conflicting graph evidence is forbidden; any approval requires a human-backed receipt gated to Epic 2 Story 2.3. This slice records the no-auto-approval guard only and performs no state change.",
+        "receiptGate": "Epic 2 Story 2.3 receipt-backed state change (human approval required)"
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "explanationRun.explanations[EXPLAIN-LOCAL-001] for sibling Work Item CWI-LOCAL-MEETING-ACTION-001 with source records, people/roles/projects/topics, supporting receipts, and per-element confidence",
+        "every element in EXPLAIN-LOCAL-001 carries an evidenceKind marker from the closed set {evidence, inference} (ELEM-EXPLAIN-001-TOPIC-001 is marked inference; all others evidence)",
+        "explanationRun.receipts CR-LOCAL-EXPLAIN-REVIEW-001 (verb reviewed, result no_op, proposed to proposed) bound to the source by a supporting receiptSourceLinks entry"
+      ],
+      "tenantEvidenceRequired": "Surfacing this explanation in the live Council Queue/Brief and binding it to live graph entities remains VERIFY IN TENANT; this slice is local contract evidence only and performs no tenant write."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "explanationRun.explanations[EXPLAIN-LOCAL-002] for sibling Work Item CWI-LOCAL-FOLLOWUP-001 with a conflict block describing conflicting/uncertain evidence",
+        "explanations[EXPLAIN-LOCAL-002].uncertaintyVisible=true and noAutoApprovalFromGraph=true",
+        "guard plus receipt trail CR-LOCAL-EXPLAIN-CONFLICT-001 and CR-LOCAL-EXPLAIN-NOAUTO-001 proving the Work Item was NOT auto-approved from graph evidence (both result no_op, before/after proposed)",
+        "explanations[EXPLAIN-LOCAL-002].stateGroupChangedInThisSlice=false and workItemStateGroupClaimed=proposed cross-checked against the referenced Work Item's state group in its home slice proposed-work-item-extraction-slice.json"
+      ],
+      "tenantEvidenceRequired": "Live graph provenance explanation surfacing and any receipt-backed com_state_group change remain gated to Epic 2 Story 2.3; no tenant Work Item was modified for this slice."
+    }
+  ]
+}

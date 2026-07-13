@@ -212,6 +212,62 @@ try {
     }
   }
 
+
+  Invoke-ValidationStep "Meaning graph records slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\meaning-graph-records-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Meaning graph records slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "MEANING_GRAPH_RECORDS_SLICE_VALIDATE_OK") {
+      throw "Meaning graph records slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Graph provenance explanation slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\graph-provenance-explanation-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Graph provenance explanation slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "GRAPH_PROVENANCE_EXPLANATION_SLICE_VALIDATE_OK") {
+      throw "Graph provenance explanation slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Memory candidates slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\memory-candidates-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Memory candidates slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "MEMORY_CANDIDATES_SLICE_VALIDATE_OK") {
+      throw "Memory candidates slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Approved instructions slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\approved-instructions-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Approved instructions slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "APPROVED_INSTRUCTIONS_SLICE_VALIDATE_OK") {
+      throw "Approved instructions slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Semantic contract projection slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\semantic-contract-projection-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Semantic contract projection slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "SEMANTIC_CONTRACT_PROJECTION_SLICE_VALIDATE_OK") {
+      throw "Semantic contract projection slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {

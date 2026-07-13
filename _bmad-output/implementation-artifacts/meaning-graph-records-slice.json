@@ -1,0 +1,276 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "4-1-create-lightweight-meaning-graph-records",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove a lightweight Meaning Graph that links Council objects for explanation only — never for workflow authority. Graph Entities cover two Work Items, two Source Records, a person, a role, a project, and a topic (Work Item / Source Record / receipt bindings resolve to sibling Story 1.x slices; net-new person/role/project/topic entities use fresh GE-LOCAL-* identity). Graph Edges (GEDGE-LOCAL-*) link them with vocabulary-valid edge types, rationale, confidence in [0,1], source/receipt grounding refs, and a declared retained-value tag. An explicit authority guard states edgesOwnNoWorkflowState=true and a demonstration entry proves a Work Item state group is identical before and after edge creation, with no state field on any edge.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "edgesOwnNoWorkflowState": true,
+    "graphIsExplanationNotWorkflowAuthority": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "semanticContractVersion": "2026-07-07",
+  "meaningGraphRun": {
+    "runId": "MGRAPH-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 4.1 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputFromSiblingSlices": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json",
+      "source-drift-supersession-slice.json"
+    ],
+    "decisionPolicy": {
+      "graphIsExplanationOnlyNeverWorkflowAuthority": true,
+      "edgesCarryNoWorkflowStateFields": true,
+      "edgeGroundingResolvesToSiblingSlices": true,
+      "liveGraphMutationReceiptGatedToEpic2": true,
+      "entityBindingsReferenceExistingSiblingIdsOnly": true
+    },
+    "graphEntities": [
+      {
+        "com_name": "Graph entity - person Doug",
+        "com_council_graph_entity_id": "GE-LOCAL-PERSON-001",
+        "com_entity_type": "person",
+        "com_external_binding_ref": null,
+        "com_description": "Doug, the human Council participant who captured the manual meeting note and is materially involved in the Council of Minions MVP work.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - role Council Publisher",
+        "com_council_graph_entity_id": "GE-LOCAL-ROLE-001",
+        "com_entity_type": "role",
+        "com_external_binding_ref": null,
+        "com_description": "The Council Publisher role that carries solution publisher responsibility for the Council of Minions MVP solution.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - project Council of Minions MVP",
+        "com_council_graph_entity_id": "GE-LOCAL-PROJECT-001",
+        "com_entity_type": "project",
+        "com_external_binding_ref": null,
+        "com_description": "The Council of Minions MVP project that the captured source records and proposed Work Items belong to.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - topic tenant readiness checklist",
+        "com_council_graph_entity_id": "GE-LOCAL-TOPIC-001",
+        "com_entity_type": "topic",
+        "com_external_binding_ref": null,
+        "com_description": "The tenant readiness checklist topic that the meeting-action Work Item and its deferral decision concern.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - source manual meeting note",
+        "com_council_graph_entity_id": "GE-LOCAL-SOURCE-MTG-001",
+        "com_entity_type": "source",
+        "com_external_binding_ref": "CSR-MANUAL-MEETING-001",
+        "com_description": "Graph node binding the manual meeting-note Source Record CSR-MANUAL-MEETING-001 captured in Story 1.1/1.4. The binding references an existing sibling-slice id; it creates no new source identity.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - source mock Outlook message",
+        "com_council_graph_entity_id": "GE-LOCAL-SOURCE-MSG-001",
+        "com_entity_type": "source",
+        "com_external_binding_ref": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_description": "Graph node binding the mock Outlook message Source Record CSR-OUTLOOK-MESSAGE-MOCK-001 captured in Story 1.2/1.3. The binding references an existing sibling-slice id; it creates no new source identity.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - decision Work Item CWI-LOCAL-DECISION-001",
+        "com_council_graph_entity_id": "GE-LOCAL-DECISION-001",
+        "com_entity_type": "decision",
+        "com_external_binding_ref": "CWI-LOCAL-DECISION-001",
+        "com_description": "Graph node binding the decision Work Item CWI-LOCAL-DECISION-001 proposed in Story 1.3 from the manual summary source. The Work Item retains its own com_state_group; this entity carries no state.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - decision Work Item CWI-LOCAL-DECISION-002",
+        "com_council_graph_entity_id": "GE-LOCAL-DECISION-002",
+        "com_entity_type": "decision",
+        "com_external_binding_ref": "CWI-LOCAL-DECISION-002",
+        "com_description": "Graph node binding the decision Work Item CWI-LOCAL-DECISION-002 proposed in Story 1.4 from the manual meeting note. The Work Item retains its own com_state_group; this entity carries no state.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      },
+      {
+        "com_name": "Graph entity - commitment Work Item CWI-LOCAL-FOLLOWUP-001",
+        "com_council_graph_entity_id": "GE-LOCAL-FOLLOWUP-001",
+        "com_entity_type": "commitment",
+        "com_external_binding_ref": "CWI-LOCAL-FOLLOWUP-001",
+        "com_description": "Graph node binding the follow-up Work Item CWI-LOCAL-FOLLOWUP-001 proposed in Story 1.3 from the mock Outlook message. The Work Item retains its own com_state_group; this entity carries no state.",
+        "com_semantic_contract_version": "2026-07-07",
+        "com_status": "active"
+      }
+    ],
+    "graphEdges": [
+      {
+        "com_name": "GEDGE-LOCAL-001",
+        "com_edge_type": "proposed_from",
+        "com_from_entity": "GE-LOCAL-DECISION-001",
+        "com_to_entity": "GE-LOCAL-SOURCE-MTG-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "CWI-LOCAL-DECISION-001 was extracted from the manual meeting-note Source Record; this edge records the extraction provenance for explanation only and does not restate the source's extraction rationale.",
+        "com_confidence": 0.9,
+        "retainedValueTag": "provenance",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-002",
+        "com_edge_type": "evidenced_by",
+        "com_from_entity": "GE-LOCAL-DECISION-002",
+        "com_to_entity": "GE-LOCAL-SOURCE-MTG-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "The Fabric-ontology-deferral decision CWI-LOCAL-DECISION-002 is evidenced by the same meeting-note source; the edge is an explanation link, not a workflow dependency.",
+        "com_confidence": 0.85,
+        "retainedValueTag": "provenance",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-003",
+        "com_edge_type": "about",
+        "com_from_entity": "GE-LOCAL-DECISION-001",
+        "com_to_entity": "GE-LOCAL-TOPIC-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "The decision concerns the tenant readiness checklist topic, providing retrieval context for the explanation surface.",
+        "com_confidence": 0.8,
+        "retainedValueTag": "retrieval",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-004",
+        "com_edge_type": "involves",
+        "com_from_entity": "GE-LOCAL-PROJECT-001",
+        "com_to_entity": "GE-LOCAL-PERSON-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "The Council of Minions MVP project materially involves Doug, who captured the meeting note and owns the pending publisher-prefix decision.",
+        "com_confidence": 0.95,
+        "retainedValueTag": "context",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-005",
+        "com_edge_type": "assigned_to",
+        "com_from_entity": "GE-LOCAL-ROLE-001",
+        "com_to_entity": "GE-LOCAL-PERSON-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "The Council Publisher role is assigned to Doug, supporting routing of publisher-prefix approval work toward the right human.",
+        "com_confidence": 0.9,
+        "retainedValueTag": "routing",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-006",
+        "com_edge_type": "proposed_from",
+        "com_from_entity": "GE-LOCAL-FOLLOWUP-001",
+        "com_to_entity": "GE-LOCAL-SOURCE-MSG-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-SUPERSEDE-001",
+        "com_rationale": "The follow-up Work Item CWI-LOCAL-FOLLOWUP-001 was extracted from the mock Outlook message source; this edge records extraction provenance for explanation and does not govern the Work Item's state.",
+        "com_confidence": 0.88,
+        "retainedValueTag": "explanation",
+        "com_created_receipt": null
+      },
+      {
+        "com_name": "GEDGE-LOCAL-007",
+        "com_edge_type": "about",
+        "com_from_entity": "GE-LOCAL-PROJECT-001",
+        "com_to_entity": "GE-LOCAL-TOPIC-001",
+        "com_from_work_item": null,
+        "com_to_work_item": null,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_rationale": "The Council of Minions MVP project is about the tenant readiness checklist topic, supporting audit lineage from project to topic to source.",
+        "com_confidence": 0.82,
+        "retainedValueTag": "audit",
+        "com_created_receipt": null
+      }
+    ],
+    "authorityGuard": {
+      "edgesOwnNoWorkflowState": true,
+      "guardStatement": "Meaning Graph edges carry no workflow state. No edge holds a com_state_group, com_work_item_state, status, state, or any field that would make the graph the workflow authority. Work Item state lives only on the Work Item and moves only through receipts gated to Epic 2.",
+      "noStateFieldsOnAnyEdge": true,
+      "demonstration": {
+        "workItem": "CWI-LOCAL-DECISION-001",
+        "boundGraphEntity": "GE-LOCAL-DECISION-001",
+        "beforeStateGroup": "proposed",
+        "afterStateGroup": "proposed",
+        "stateGroupIdenticalBeforeAndAfterEdgeCreation": true,
+        "edgesTouchingThisWorkItem": [
+          "GEDGE-LOCAL-001",
+          "GEDGE-LOCAL-003"
+        ],
+        "note": "CWI-LOCAL-DECISION-001 is bound to graph entity GE-LOCAL-DECISION-001 and is touched by edges GEDGE-LOCAL-001 and GEDGE-LOCAL-003. Neither edge carries a state field; the Work Item's com_state_group is proposed before edge creation and proposed after edge creation — identical. The graph records explanation links only."
+      }
+    },
+    "liveGraphMutationDeferred": [
+      {
+        "subject": "meaning-graph-records-slice",
+        "deferredUpdate": "Persisting these Graph Entity and Graph Edge rows to live Dataverse is a receipt-backed mutation gated to Epic 2; this slice records local contract evidence only and performs no live tenant write."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "meaningGraphRun.graphEntities covers at least two Work Items (GE-LOCAL-DECISION-001 bound to CWI-LOCAL-DECISION-001 and GE-LOCAL-DECISION-002 bound to CWI-LOCAL-DECISION-002; GE-LOCAL-FOLLOWUP-001 bound to CWI-LOCAL-FOLLOWUP-001), two Source Records (GE-LOCAL-SOURCE-MTG-001 bound to CSR-MANUAL-MEETING-001 and GE-LOCAL-SOURCE-MSG-001 bound to CSR-OUTLOOK-MESSAGE-MOCK-001), a person (GE-LOCAL-PERSON-001), a role (GE-LOCAL-ROLE-001), a project (GE-LOCAL-PROJECT-001), and a topic (GE-LOCAL-TOPIC-001); a receipt is referenced as grounding on every edge (CR-LOCAL-DRIFT-001 / CR-LOCAL-SUPERSEDE-001 from the sibling source-drift slice).",
+        "Each entity com_entity_type is drawn from the manifest com_graphentitytype vocabulary (person, role, project, topic, source, decision, commitment).",
+        "Work Item and Source Record bindings use com_external_binding_ref values that resolve to existing sibling-slice ids; net-new person/role/project/topic entities use fresh GE-LOCAL-* identity with a null com_external_binding_ref."
+      ],
+      "tenantEvidenceRequired": "Persisting graph entities to live Dataverse com_councilgraphentity remains a receipt-gated Epic 2 mutation; this slice is local contract evidence only and no tenant write was performed."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "meaningGraphRun.graphEdges are GEDGE-LOCAL-* edges each carrying a vocabulary-valid com_edge_type from manifest com_graphedgetype (proposed_from, evidenced_by, about, involves, assigned_to).",
+        "Every edge carries a non-empty com_rationale, a com_confidence parsed in [0,1], a com_source_record and com_receipt grounding ref resolving to sibling-slice ids, and a declared retainedValueTag from the closed set {routing, retrieval, provenance, context, explanation, audit}.",
+        "Every retained-value tag in the closed set is exercised by at least one edge (provenance, retrieval, context, routing, explanation, audit)."
+      ],
+      "tenantEvidenceRequired": "Persisting graph edges to live Dataverse com_councilgraphedge remains a receipt-gated Epic 2 mutation; edge grounding resolves to local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "guards.edgesOwnNoWorkflowState=true (strict boolean) and meaningGraphRun.authorityGuard.edgesOwnNoWorkflowState=true (strict boolean).",
+        "meaningGraphRun.authorityGuard.demonstration proves CWI-LOCAL-DECISION-001 has com_state_group proposed before and proposed after edge creation (stateGroupIdenticalBeforeAndAfterEdgeCreation=true), touched by GEDGE-LOCAL-001 and GEDGE-LOCAL-003.",
+        "No edge carries a state field: the no-state-fields scan over every edge in meaningGraphRun.graphEdges finds no com_state_group, com_work_item_state, state, status, or workflow-state field."
+      ],
+      "tenantEvidenceRequired": "Authority separation is a contract invariant verified locally; live edge persistence that preserves it remains receipt-gated to Epic 2."
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "4-4-promote-approved-instructions-with-receipts",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove Approved Instruction promotion and supersession locally: one memory candidate is promoted to an active Approved Instruction (CAI-LOCAL-001) via a human/Doug approval receipt carrying authority basis, rationale, and source evidence; then a replacement instruction (CAI-LOCAL-002) is approved via a NEW receipt, and the prior instruction is marked superseded with a link to the new instruction plus a dedicated supersession receipt. The prior instruction text and its original approval receipt stay byte-identical (priorInstructionUnchanged=true); supersession never overwrites. Receipts here are local contract evidence only, and every live mutation stays receipt-gated to Epic 2.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true,
+    "priorInstructionUnchanged": true,
+    "supersessionNeverOverwritesPriorReceiptOrText": true,
+    "promotionRequiresExplicitApprovalReceipt": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "promotionRun": {
+    "runId": "INSTR-LOCAL-2026-07-13-001",
+    "actorType": "human",
+    "actorId": "Doug",
+    "authorityBasis": "local non-tenant Story 4.4 contract validation; instruction promotion is receipt-gated and any live write stays deferred to Epic 2",
+    "semanticContractVersion": "2026-07-07",
+    "inputSlicesFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "sourceCandidateCoordination": {
+      "story43SlicePresent": true,
+      "note": "Story 4-3 (promote memory candidates) slice is not co-located at validation time, so this slice does not hard-depend on its declared ids. A self-contained memory candidate (CMC-LOCAL-PROMO-001) is embedded here so the Approved Instruction has a source candidate ref. Once 4-3 lands, CMC-LOCAL-PROMO-001 should be reconciled with that slice's declared ids; the validator cross-checks 4-3 ids only when a matching slice file is present (parallel development)."
+    },
+    "decisionPolicy": {
+      "promotionRequiresExplicitHumanApprovalReceipt": true,
+      "supersessionIsRecordedByANewReceiptNeverByEditingPriorReceipt": true,
+      "supersededInstructionTextAndOriginalReceiptStayUnchanged": true,
+      "replacementInstructionIsApprovedViaItsOwnNewReceipt": true,
+      "liveInstructionMutationReceiptGatedToEpic2": true,
+      "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "embeddedMemoryCandidate": {
+      "evidenceStatus": "mock_manual_not_tenant_verified",
+      "com_name": "Local memory candidate - tenant readiness checklist cadence",
+      "com_council_memory_candidate_id": "CMC-LOCAL-PROMO-001",
+      "com_summary": "Run the tenant readiness checklist on a Wednesday cadence rather than Friday so platform-fit gaps surface before the weekly brief.",
+      "com_scope": "project",
+      "com_review_state": "approved",
+      "com_confidence": 0.8,
+      "com_source_record": "CSR-MANUAL-MEETING-001",
+      "com_rationale": "Observed in the manual meeting note CSR-MANUAL-MEETING-001 where Doug moved the checklist deadline from Friday to Wednesday; the candidate was promoted to an Approved Instruction and later superseded by a Wednesday-cadence replacement.",
+      "com_recall_use_policy": "Surface when planning the weekly brief or scheduling the tenant readiness checklist run.",
+      "candidateOriginNote": "Self-contained in this slice because the Story 4-3 memory-candidate slice is not co-located yet; promotion has a source candidate ref without hard-depending on 4-3."
+    },
+    "approvedInstructions": [
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Approved instruction - checklist cadence (v1 Friday)",
+        "com_council_approved_instruction_id": "CAI-LOCAL-001",
+        "com_instruction_text": "Run the tenant readiness checklist on a Friday cadence, reviewing platform-fit gaps before the weekly brief.",
+        "com_scope": "project",
+        "com_source_memory_candidate": "CMC-LOCAL-PROMO-001",
+        "com_approval_receipt": "CR-LOCAL-INSTR-APPROVE-001",
+        "com_status": "superseded",
+        "com_effective_from": "2026-07-13T09:00:00-04:00",
+        "com_superseded_by": "CAI-LOCAL-002",
+        "originalApprovalReceipt": "CR-LOCAL-INSTR-APPROVE-001",
+        "priorInstructionUnchanged": true
+      },
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Approved instruction - checklist cadence (v2 Wednesday)",
+        "com_council_approved_instruction_id": "CAI-LOCAL-002",
+        "com_instruction_text": "Run the tenant readiness checklist on a Wednesday cadence, reviewing platform-fit gaps before the weekly brief.",
+        "com_scope": "project",
+        "com_source_memory_candidate": "CMC-LOCAL-PROMO-001",
+        "com_approval_receipt": "CR-LOCAL-INSTR-APPROVE-002",
+        "com_status": "active",
+        "com_effective_from": "2026-07-13T11:15:00-04:00",
+        "com_superseded_by": null,
+        "originalApprovalReceipt": "CR-LOCAL-INSTR-APPROVE-002",
+        "priorInstructionUnchanged": true
+      }
+    ],
+    "supersessions": [
+      {
+        "supersededInstruction": "CAI-LOCAL-001",
+        "supersedingInstruction": "CAI-LOCAL-002",
+        "supersessionReceipt": "CR-LOCAL-INSTR-SUPERSEDE-001",
+        "replacementApprovalReceipt": "CR-LOCAL-INSTR-APPROVE-002",
+        "supersessionRationale": "The underlying memory candidate was refined after the meeting note moved the checklist deadline from Friday to Wednesday, so a replacement instruction CAI-LOCAL-002 was approved via a NEW receipt CR-LOCAL-INSTR-APPROVE-002. The prior instruction CAI-LOCAL-001 is marked superseded and linked to CAI-LOCAL-002; its original text and original approval receipt CR-LOCAL-INSTR-APPROVE-001 stay byte-identical (priorInstructionUnchanged=true). Supersession never overwrites.",
+        "priorInstructionUnchanged": true,
+        "priorInstructionSnapshot": {
+          "com_council_approved_instruction_id": "CAI-LOCAL-001",
+          "com_instruction_text": "Run the tenant readiness checklist on a Friday cadence, reviewing platform-fit gaps before the weekly brief.",
+          "com_status": "superseded",
+          "com_approval_receipt": "CR-LOCAL-INSTR-APPROVE-001",
+          "com_effective_from": "2026-07-13T09:00:00-04:00",
+          "com_superseded_by": "CAI-LOCAL-002"
+        }
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-INSTR-APPROVE-001",
+        "com_work_item": null,
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 4.4 contract validation; instruction promotion is receipt-gated and any live approval write stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-13T09:00:00-04:00",
+        "com_idempotency_key": "instr:approve:CAI-LOCAL-001:2026-07-13T09:00",
+        "com_before_state": "candidate",
+        "com_after_state": "active",
+        "com_evidence_refs": "CMC-LOCAL-PROMO-001; CSR-MANUAL-MEETING-001; CAI-LOCAL-001",
+        "com_decision_rationale": "Doug approved promoting the memory candidate CMC-LOCAL-PROMO-001 (sourced from the manual meeting note CSR-MANUAL-MEETING-001) to an active Approved Instruction CAI-LOCAL-001 so the tenant readiness checklist runs on a Friday cadence before the weekly brief. No live tenant write was performed; the live instruction row is a receipt-gated deferred update.",
+        "com_confidence": 0.85,
+        "com_result": "accepted",
+        "com_failure_code": null,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; human_approval_required",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-INSTR-APPROVE-002",
+        "com_work_item": null,
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 4.4 contract validation; replacement instruction approval is receipt-gated and any live write stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-13T11:15:00-04:00",
+        "com_idempotency_key": "instr:approve:CAI-LOCAL-002:2026-07-13T11:15",
+        "com_before_state": "candidate",
+        "com_after_state": "active",
+        "com_evidence_refs": "CMC-LOCAL-PROMO-001; CSR-MANUAL-MEETING-001; CAI-LOCAL-002",
+        "com_decision_rationale": "Doug approved the replacement instruction CAI-LOCAL-002 (Wednesday cadence) because the underlying memory candidate was refined after the meeting note moved the checklist deadline from Friday to Wednesday. The prior instruction CAI-LOCAL-001 and its original approval receipt CR-LOCAL-INSTR-APPROVE-001 stay untouched; the supersession itself is recorded by a separate receipt CR-LOCAL-INSTR-SUPERSEDE-001, never by editing the prior receipt.",
+        "com_confidence": 0.88,
+        "com_result": "accepted",
+        "com_failure_code": null,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; human_approval_required",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-INSTR-SUPERSEDE-001",
+        "com_work_item": null,
+        "com_verb": "memory_promoted",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 4.4 contract validation; supersession is receipt-gated and any live status move stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-13T11:15:00-04:00",
+        "com_idempotency_key": "instr:supersede:CAI-LOCAL-001:CAI-LOCAL-002:2026-07-13T11:15",
+        "com_before_state": "active",
+        "com_after_state": "superseded",
+        "com_evidence_refs": "CAI-LOCAL-001; CAI-LOCAL-002; CR-LOCAL-INSTR-APPROVE-001; CR-LOCAL-INSTR-APPROVE-002",
+        "com_decision_rationale": "The replacement instruction CAI-LOCAL-002 was approved via CR-LOCAL-INSTR-APPROVE-002, so the prior instruction CAI-LOCAL-001 is marked superseded and linked to CAI-LOCAL-002 via com_superseded_by. The prior instruction text and its original approval receipt CR-LOCAL-INSTR-APPROVE-001 stay byte-identical; supersession never overwrites. No live tenant write was performed; the live status move is a receipt-gated deferred update.",
+        "com_confidence": 0.9,
+        "com_result": "superseded",
+        "com_failure_code": null,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; human_approval_required; supersession_never_overwrites",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-INSTR-APPROVE-001 approval evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-INSTR-APPROVE-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "approval"
+      },
+      {
+        "com_name": "CR-LOCAL-INSTR-APPROVE-002 approval evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-INSTR-APPROVE-002",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "approval"
+      },
+      {
+        "com_name": "CR-LOCAL-INSTR-SUPERSEDE-001 supporting evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-INSTR-SUPERSEDE-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "instructionUpdatesDeferred": [
+      {
+        "instruction": "CAI-LOCAL-001",
+        "deferredUpdate": "Creating the live Approved Instruction row for CAI-LOCAL-001 with com_status active, and later marking it superseded and setting com_superseded_by to CAI-LOCAL-002, are receipt-backed mutations gated to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "instruction": "CAI-LOCAL-002",
+        "deferredUpdate": "Creating the live Approved Instruction row for CAI-LOCAL-002 with com_status active is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "promotionRun.approvedInstructions CAI-LOCAL-001 with com_instruction_text, com_scope project, com_source_memory_candidate CMC-LOCAL-PROMO-001, com_approval_receipt CR-LOCAL-INSTR-APPROVE-001, com_effective_from 2026-07-13T09:00:00-04:00, and com_status active before supersession",
+        "promotionRun.embeddedMemoryCandidate CMC-LOCAL-PROMO-001 is the source candidate ref; sourceCandidateCoordination.story43SlicePresent=false so the candidate is self-contained in this slice",
+        "promotionRun.receipts CR-LOCAL-INSTR-APPROVE-001 (verb approved, actor human, actor_id Doug, authority basis, rationale, source evidence CSR-MANUAL-MEETING-001, result accepted) is bound to CAI-LOCAL-001 by com_approval_receipt and to the source by an approval receiptSourceLinks entry",
+        "guards.promotionRequiresExplicitApprovalReceipt=true and guards.receiptsAreLocalContractEvidenceOnly=true"
+      ],
+      "tenantEvidenceRequired": "Writing the live Approved Instruction row and the approval receipt to a tenant Dataverse table is receipt-gated to Epic 2; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "promotionRun.approvedInstructions CAI-LOCAL-002 (replacement) with com_status active, com_approval_receipt CR-LOCAL-INSTR-APPROVE-002 (a NEW receipt distinct from CR-LOCAL-INSTR-APPROVE-001), and com_effective_from 2026-07-13T11:15:00-04:00",
+        "promotionRun.supersessions records CAI-LOCAL-001 marked superseded with com_superseded_by linking to CAI-LOCAL-002 and supersessionReceipt CR-LOCAL-INSTR-SUPERSEDE-001 (distinct from both approval receipts)",
+        "promotionRun.supersessions.priorInstructionSnapshot echoes CAI-LOCAL-001 original com_instruction_text and com_approval_receipt CR-LOCAL-INSTR-APPROVE-001 unchanged; supersession.priorInstructionUnchanged=true and guards.priorInstructionUnchanged=true",
+        "guards.supersessionNeverOverwritesPriorReceiptOrText=true; the original approval receipt CR-LOCAL-INSTR-APPROVE-001 is never edited (com_append_only_locked=true)"
+      ],
+      "tenantEvidenceRequired": "Applying the superseded status and com_superseded_by link to the live Approved Instruction row is a receipt-backed mutation gated to Epic 2 Story 2.3; no tenant Approved Instruction was modified for this slice."
+    }
+  ]
+}
