@@ -1,0 +1,380 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "2-3-apply-receipt-backed-queue-state-changes",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove that every meaningful Work Item state change is backed by an append-only Receipt (FR9, FR16, FR17, NFR6): one happy-path chain proposed → approved → in_review → completed, one blocked-path chain proposed → blocked → resumed → failed, and one correction scenario where an erroneous receipt is followed by a NEW correction receipt while the original remains unedited. Receipts here are local contract evidence only; every live tenant mutation stays deferred and receipt-gated.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnly": true,
+    "priorReceiptsUnchanged": true,
+    "correctionsAreNewReceiptsOnly": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true
+  },
+  "stateChangeRun": {
+    "runId": "STATE-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 2.3 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "decisionPolicy": {
+      "everyStateChangeRequiresAppendedReceipt": true,
+      "receiptsAreAppendOnlyNeverEdited": true,
+      "correctionsAreNewReceiptsOnly": true,
+      "verbsDrawnOnlyFromManifest": true,
+      "occurredAtStrictlyOrderedPerChain": true,
+      "liveWorkItemMutationReceiptGated": true
+    },
+    "workItems": [
+      {
+        "com_title": "Queue happy-path sample: tenant readiness checklist",
+        "com_council_work_item_id": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "com_type": "meeting_action",
+        "com_summary": "Local-contract Work Item used only to prove receipt-backed transitions through proposed → approved → in_review → completed.",
+        "com_state_group": "completed",
+        "com_risk_class": "delivery",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "Story 2.3 happy-path sample projected from CSR-MANUAL-MEETING-001; final state completed is the last receipt after_state and is local projection only.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write"
+      },
+      {
+        "com_title": "Queue blocked-path sample: publisher prefix risk",
+        "com_council_work_item_id": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "com_type": "risk",
+        "com_summary": "Local-contract Work Item used only to prove receipt-backed transitions through proposed → blocked → resumed (to approved) → failed.",
+        "com_state_group": "failed",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "Story 2.3 blocked-path sample projected from CSR-MANUAL-MEETING-001; final state failed is the last receipt after_state and is local projection only.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write"
+      },
+      {
+        "com_title": "Queue correction sample: mis-classified hold",
+        "com_council_work_item_id": "CWI-LOCAL-QUEUE-CORR-001",
+        "com_type": "follow_up",
+        "com_summary": "Local-contract Work Item used only to prove that an erroneous held receipt is corrected by a NEW blocked receipt; the original receipt stays byte-identical.",
+        "com_state_group": "blocked",
+        "com_risk_class": "governance",
+        "com_primary_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_rationale": "Story 2.3 correction sample; final projected state blocked comes from the correction receipt after_state after an erroneous held receipt left priorRecommendedState proposed→held.",
+        "com_approval_required": true,
+        "com_semantic_contract_version": "2026-07-07",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write"
+      }
+    ],
+    "transitionChains": [
+      {
+        "chainId": "CHAIN-HAPPY-001",
+        "workItem": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "pathLabel": "proposed → approved → in_review → completed",
+        "receiptIds": [
+          "CR-LOCAL-STATE-HAPPY-PROPOSED-001",
+          "CR-LOCAL-STATE-HAPPY-APPROVED-001",
+          "CR-LOCAL-STATE-HAPPY-REVIEWED-001",
+          "CR-LOCAL-STATE-HAPPY-COMPLETED-001"
+        ],
+        "expectedStates": ["proposed", "approved", "in_review", "completed"]
+      },
+      {
+        "chainId": "CHAIN-BLOCK-001",
+        "workItem": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "pathLabel": "proposed → blocked → resumed → failed",
+        "receiptIds": [
+          "CR-LOCAL-STATE-BLOCK-PROPOSED-001",
+          "CR-LOCAL-STATE-BLOCK-BLOCKED-001",
+          "CR-LOCAL-STATE-BLOCK-RESUMED-001",
+          "CR-LOCAL-STATE-BLOCK-FAILED-001"
+        ],
+        "expectedStates": ["proposed", "blocked", "approved", "failed"]
+      },
+      {
+        "chainId": "CHAIN-CORR-001",
+        "workItem": "CWI-LOCAL-QUEUE-CORR-001",
+        "pathLabel": "proposed → held (erroneous) → blocked (correction)",
+        "receiptIds": [
+          "CR-LOCAL-STATE-CORR-PROPOSED-001",
+          "CR-LOCAL-STATE-CORR-ERR-HELD-001",
+          "CR-LOCAL-STATE-CORR-FIX-BLOCKED-001"
+        ],
+        "expectedStates": ["proposed", "held", "blocked"],
+        "includesCorrection": true
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-HAPPY-PROPOSED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.3 contract validation",
+        "com_occurred_at": "2026-07-13T10:00:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-HAPPY-001:proposed:2026-07-13T10:00:00-04:00",
+        "com_before_state": "none",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "workItems[CWI-LOCAL-QUEUE-HAPPY-001]; CSR-MANUAL-MEETING-001; chain:CHAIN-HAPPY-001",
+        "com_decision_rationale": "Propose the happy-path queue sample Work Item locally so subsequent receipt-backed transitions have an auditable origin.",
+        "com_confidence": 0.95,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-HAPPY-APPROVED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human approval (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T10:15:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-HAPPY-001:approved:2026-07-13T10:15:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "approved",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-HAPPY-PROPOSED-001; chain:CHAIN-HAPPY-001",
+        "com_decision_rationale": "Human approval moves the happy-path sample from proposed to approved within declared authority; approval is recorded as a Receipt, not an in-place state edit.",
+        "com_confidence": 1.0,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-HAPPY-REVIEWED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human review (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T10:30:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-HAPPY-001:reviewed:2026-07-13T10:30:00-04:00",
+        "com_before_state": "approved",
+        "com_after_state": "in_review",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-HAPPY-APPROVED-001; chain:CHAIN-HAPPY-001",
+        "com_decision_rationale": "Review opens after approval so output can be assessed before completion; the approved→in_review move is recorded only by appending this Receipt.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-HAPPY-COMPLETED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "com_verb": "completed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human completion acceptance (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T10:45:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-HAPPY-001:completed:2026-07-13T10:45:00-04:00",
+        "com_before_state": "in_review",
+        "com_after_state": "completed",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-HAPPY-REVIEWED-001; chain:CHAIN-HAPPY-001",
+        "com_decision_rationale": "Happy-path outcome accepted; in_review → completed is projected only after this completed Receipt is appended.",
+        "com_confidence": 1.0,
+        "com_result": "succeeded",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-BLOCK-PROPOSED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.3 contract validation",
+        "com_occurred_at": "2026-07-13T11:00:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-BLOCK-001:proposed:2026-07-13T11:00:00-04:00",
+        "com_before_state": "none",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "workItems[CWI-LOCAL-QUEUE-BLOCK-001]; CSR-MANUAL-MEETING-001; chain:CHAIN-BLOCK-001",
+        "com_decision_rationale": "Propose the blocked-path queue sample so the proposed → blocked → resumed → failed chain is fully receipt-backed.",
+        "com_confidence": 0.95,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-BLOCK-BLOCKED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "com_verb": "blocked",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human block command (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T11:10:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-BLOCK-001:blocked:2026-07-13T11:10:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "blocked",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-BLOCK-PROPOSED-001; chain:CHAIN-BLOCK-001",
+        "com_decision_rationale": "Progress depends on an external dependency (publisher-prefix decision), so the Work Item is blocked via a blocked Receipt rather than a silent state overwrite.",
+        "com_confidence": 1.0,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-BLOCK-RESUMED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "com_verb": "resumed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human resume command after dependency resolution (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T11:25:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-BLOCK-001:resumed:2026-07-13T11:25:00-04:00",
+        "com_before_state": "blocked",
+        "com_after_state": "approved",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-BLOCK-BLOCKED-001; chain:CHAIN-BLOCK-001",
+        "com_decision_rationale": "Dependency cleared; resumed verb projects blocked → approved so work may proceed under declared authority. Resume is a Receipt, not an edit of the block receipt.",
+        "com_confidence": 0.92,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-BLOCK-FAILED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "com_verb": "failed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.3 contract validation of failure recording",
+        "com_occurred_at": "2026-07-13T11:40:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-BLOCK-001:failed:2026-07-13T11:40:00-04:00",
+        "com_before_state": "approved",
+        "com_after_state": "failed",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-BLOCK-RESUMED-001; chain:CHAIN-BLOCK-001",
+        "com_decision_rationale": "Attempted work could not complete after resume; failed Receipt projects approved → failed and preserves the full prior receipt chain for audit and retry review.",
+        "com_confidence": 0.88,
+        "com_result": "failed",
+        "com_failure_code": "DEPENDENCY_RETRY_EXHAUSTED",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; requires_human_review",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-CORR-PROPOSED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-CORR-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 2.3 contract validation",
+        "com_occurred_at": "2026-07-13T12:00:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-CORR-001:proposed:2026-07-13T12:00:00-04:00",
+        "com_before_state": "none",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "workItems[CWI-LOCAL-QUEUE-CORR-001]; CSR-MANUAL-SUMMARY-001; chain:CHAIN-CORR-001",
+        "com_decision_rationale": "Propose the correction-scenario Work Item so an erroneous later receipt has a valid prior state to reference.",
+        "com_confidence": 0.95,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-CORR-ERR-HELD-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-CORR-001",
+        "com_verb": "held",
+        "com_actor_type": "minion",
+        "com_actor_id": "minion-queue-helper-mock",
+        "com_authority_basis": "agent suggestion under local contract; later corrected by human (do not edit this receipt)",
+        "com_occurred_at": "2026-07-13T12:10:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-CORR-001:held:2026-07-13T12:10:00-04:00",
+        "com_before_state": "proposed",
+        "com_after_state": "held",
+        "com_evidence_refs": "prior:CR-LOCAL-STATE-CORR-PROPOSED-001; chain:CHAIN-CORR-001; erroneous_classification:held_instead_of_blocked",
+        "com_decision_rationale": "ERRONEOUS receipt kept intentionally for audit: the agent mis-classified an external dependency wait as held (human judgment) instead of blocked (dependency). This receipt stays append-only locked and is never edited; correction is a NEW receipt.",
+        "com_confidence": 0.55,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; erroneous_pending_correction",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-STATE-CORR-FIX-BLOCKED-001",
+        "com_work_item": "CWI-LOCAL-QUEUE-CORR-001",
+        "com_verb": "blocked",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "explicit human correction of prior receipt CR-LOCAL-STATE-CORR-ERR-HELD-001 (local contract evidence only)",
+        "com_occurred_at": "2026-07-13T12:20:00-04:00",
+        "com_idempotency_key": "state:CWI-LOCAL-QUEUE-CORR-001:blocked:correction:CR-LOCAL-STATE-CORR-ERR-HELD-001",
+        "com_before_state": "held",
+        "com_after_state": "blocked",
+        "com_evidence_refs": "corrects:CR-LOCAL-STATE-CORR-ERR-HELD-001; prior:CR-LOCAL-STATE-CORR-ERR-HELD-001; chain:CHAIN-CORR-001",
+        "com_decision_rationale": "Correction: the prior held classification in CR-LOCAL-STATE-CORR-ERR-HELD-001 was wrong; the wait is an external dependency, so state becomes blocked. The original held receipt remains unchanged and available for audit; this is a NEW append-only Receipt.",
+        "com_confidence": 1.0,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; correction_of_prior_receipt",
+        "com_append_only_locked": true,
+        "correctsReceipt": "CR-LOCAL-STATE-CORR-ERR-HELD-001",
+        "priorReceiptsUnchanged": true
+      }
+    ],
+    "correctionScenario": {
+      "workItem": "CWI-LOCAL-QUEUE-CORR-001",
+      "erroneousReceiptId": "CR-LOCAL-STATE-CORR-ERR-HELD-001",
+      "correctionReceiptId": "CR-LOCAL-STATE-CORR-FIX-BLOCKED-001",
+      "priorReceiptsUnchanged": true,
+      "note": "Corrections are always new Receipts. CR-LOCAL-STATE-CORR-ERR-HELD-001 remains byte-identical with com_append_only_locked=true; CR-LOCAL-STATE-CORR-FIX-BLOCKED-001 references it via correctsReceipt and evidence_refs corrects:CR-LOCAL-STATE-CORR-ERR-HELD-001."
+    },
+    "liveWritesDeferred": [
+      {
+        "target": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "targetKind": "work_item",
+        "deferredUpdate": "Applying projected com_state_group completed (and intermediate approved/in_review values) to a live Dataverse Work Item row requires a receipt-gated tenant write; no live tenant write was performed in this slice. Gate: receipts CR-LOCAL-STATE-HAPPY-*.",
+        "receiptGate": "CR-LOCAL-STATE-HAPPY-COMPLETED-001"
+      },
+      {
+        "target": "CWI-LOCAL-QUEUE-BLOCK-001",
+        "targetKind": "work_item",
+        "deferredUpdate": "Applying projected com_state_group failed (and intermediate blocked/approved values) to a live Dataverse Work Item row requires a receipt-gated tenant write; no live tenant write was performed in this slice. Gate: receipts CR-LOCAL-STATE-BLOCK-*.",
+        "receiptGate": "CR-LOCAL-STATE-BLOCK-FAILED-001"
+      },
+      {
+        "target": "CWI-LOCAL-QUEUE-CORR-001",
+        "targetKind": "work_item",
+        "deferredUpdate": "Applying the corrected com_state_group blocked (after erroneous held) to a live Dataverse Work Item row requires a receipt-gated tenant write of the correction receipt; the erroneous held receipt stays append-only in the ledger. No live tenant write was performed in this slice. Gate: CR-LOCAL-STATE-CORR-FIX-BLOCKED-001.",
+        "receiptGate": "CR-LOCAL-STATE-CORR-FIX-BLOCKED-001"
+      },
+      {
+        "target": "com_councilreceipt ledger (all CR-LOCAL-STATE-*)",
+        "targetKind": "receipt_ledger",
+        "deferredUpdate": "Persisting the Story 2.3 local receipts into the live com_councilreceipt ledger is receipt-gated tenant write work outside this slice; these receipts are local contract evidence only.",
+        "receiptGate": "all CR-LOCAL-STATE-* receipts in this slice"
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "stateChangeRun.transitionChains CHAIN-HAPPY-001 walks CWI-LOCAL-QUEUE-HAPPY-001 through proposed → approved → in_review → completed with four receipts each carrying verb, actor type, actor id, authority basis, occurred-at, before state, after state, evidence refs, rationale, result, and policy flags",
+        "stateChangeRun.transitionChains CHAIN-BLOCK-001 walks CWI-LOCAL-QUEUE-BLOCK-001 through proposed → blocked → resumed (after_state approved) → failed with four full-field receipts; failed receipt includes com_failure_code",
+        "guards.receiptsAreAppendOnly=true and every receipt sets com_append_only_locked=true; verbs are drawn only from manifest com_receiptverb",
+        "occurred-at ISO 8601 timestamps are strictly ordered within each transitionChains[*].receiptIds sequence; before/after states form unbroken chains from none → ..."
+      ],
+      "tenantEvidenceRequired": "Live Dataverse Work Item com_state_group projection and live com_councilreceipt Ledger rows for these transitions remain VERIFY IN TENANT; this slice is local contract evidence only (liveWritesDeferred)."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "stateChangeRun.correctionScenario: erroneous CR-LOCAL-STATE-CORR-ERR-HELD-001 (held) followed by NEW correction CR-LOCAL-STATE-CORR-FIX-BLOCKED-001 (blocked) with correctsReceipt pointing at the original",
+        "correctionScenario.priorReceiptsUnchanged=true and the correction receipt also declares priorReceiptsUnchanged=true; original remains com_append_only_locked=true and is not re-stated with mutated fields",
+        "guards.priorReceiptsUnchanged=true and guards.correctionsAreNewReceiptsOnly=true",
+        "CHAIN-CORR-001 expectedStates proposed → held → blocked records the original as available for audit"
+      ],
+      "tenantEvidenceRequired": "Live correction flow that refuses edit-in-place of prior receipts and requires a new Receipt remains VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "Every stateChangeRun.receipts[*].com_verb is drawn only from manifest com_receiptverb vocabulary (proposed, approved, blocked, held, resumed, reviewed, completed, failed observed on the happy/blocked/correction chains)",
+        "stateChangeRun.decisionPolicy.verbsDrawnOnlyFromManifest=true and occurredAtStrictlyOrderedPerChain=true; validator rejects any receipt verb outside the manifest set",
+        "Each transitionChains[*].receiptIds sequence requires strictly increasing com_occurred_at ISO 8601 timestamps (offset-explicit) along the unbroken before/after state chain",
+        "Correction chain CHAIN-CORR-001 also enforces correction receipt occurred-at strictly after the erroneous held receipt while keeping the original append-only locked"
+      ],
+      "tenantEvidenceRequired": "Live ledger enforcement that every verb is a declared choice and that temporal order of state-change receipts is append-only remains VERIFY IN TENANT; this slice is local contract evidence only."
+    }
+  ]
+}
