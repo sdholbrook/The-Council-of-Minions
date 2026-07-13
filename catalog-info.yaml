@@ -1,0 +1,18 @@
+# Meridian fleet descriptor — declared, human-owned facts. The scanner
+# (SynSci-Meridian/scripts/scan-fleet.py) treats these as source of truth.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: The-Council-of-Minions
+  description: Outlook-first delegation decision engine — governed work-item queue, 15-verb receipt ledger, and memory promotion on Dataverse (Doug-personal, team-ready contracts)
+spec:
+  type: app
+  lifecycle: experimental
+  owner: doug
+  fleet:
+    role: product
+    harness: [bmad, claude, codex, copilot]
+    harness_history: []
+    status: wip
+    goal: "Ship Epic 1 (source intake/extraction vertical slice) so real Outlook mail flows into the Council Queue with receipts; then Epics 2-5. Contract layer feeds SynSci-Axon."
+    notes: "Individual-beneficiary plane of the three-Opens portfolio. 13-table Dataverse schema deployed (sdhdev); receipt demo proven. Audited 2026-07-12 (SynSci-Axon audits/council-report.md): fix state-machine holes + verb drift via Axon vocabulary. PowerShell evidence JSONs carry UTF-8 BOM (use utf-8-sig)."
