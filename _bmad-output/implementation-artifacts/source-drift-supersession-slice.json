@@ -1,0 +1,200 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "1-5-handle-source-drift-and-supersession",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove source drift and supersession handling locally: a drifted Work-Item-producing source gains new source version evidence plus a source_drifted drift receipt and flags only the affected Work Item for review, while a rationale-producing held source is superseded by a new Source Record via com_parent_ref. Prior rationale and receipts stay untouched; receipts here are local contract evidence only, and every live mutation stays receipt-gated to Epic 2.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "noWorkItemCreatedForZeroItemSources": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "priorRationaleAndReceiptsUnchanged": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "driftRun": {
+    "runId": "DRIFT-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 1.5 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "driftNeverRewritesPriorRationaleOrReceipts": true,
+      "driftCreatesNewVersionEvidenceOrSupersedingRecord": true,
+      "affectedWorkItemsAreFlaggedForReviewOnly": true,
+      "stateChangesRequireNewReceiptAndStayDeferredToEpic2": true,
+      "liveSourceMutationReceiptGatedToStory23": true
+    },
+    "driftEvents": [
+      {
+        "sourceRecord": "CSR-MANUAL-MEETING-001",
+        "driftKind": "new_source_version",
+        "priorEvidence": {
+          "capturedFrom": "zero-multi-item-extraction-slice.json embeddedSampleSourceRecords",
+          "com_captured_at": "2026-07-13T09:05:00-04:00",
+          "com_content_snapshot_ref": "summary:manual-meeting-note-001",
+          "com_source_version_ref": null,
+          "priorVersionRefNote": "The Story 1.4 capture of CSR-MANUAL-MEETING-001 records no com_source_version_ref, so there is no prior version token to compare; drift is detected against the captured summary snapshot summary:manual-meeting-note-001."
+        },
+        "observedEvidence": {
+          "com_source_version_ref": "manual-note-version:2026-07-13:v2",
+          "com_content_hash": "sha256:781510e2c041c4e320e8aefa0f6ccb3620aa97616098d5592715405f105539d0",
+          "com_observed_modified_at": "2026-07-13T15:40:00-04:00",
+          "com_content_snapshot_ref": "summary:manual-meeting-note-001-v2"
+        },
+        "driftRationale": "A newer version of the meeting note was observed after capture: commitment (1) now moves the tenant readiness checklist deadline from Friday to Wednesday, while commitments (2) and (3) are unchanged. The prior capture, its extraction rationale, and the Story 1.4 proposed Work Items stay untouched; this drift event records new source version evidence only."
+      }
+    ],
+    "supersessions": [
+      {
+        "supersededSourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "supersededRecordDisposition": "The prior mock thread record from Story 1.2 and its Story 1.4 held outcome stay byte-identical in their own slices; its superseded extraction status is recorded only as a receipt-gated deferred update in sourceUpdatesDeferred.",
+        "supersessionRationale": "A newer mock snapshot of the same Outlook thread was captured with two additional replies, so the prior hash-only record no longer represents the thread as observed. A superseding Source Record is captured instead of editing the prior record or the rationale it produced.",
+        "supersedingRecord": {
+          "evidenceStatus": "mock_manual_not_tenant_verified",
+          "com_name": "Mock Outlook source - superseding thread snapshot",
+          "com_council_source_record_id": "CSR-OUTLOOK-THREAD-MOCK-002",
+          "com_source_system": "outlook",
+          "com_source_kind": "thread",
+          "com_source_object_ref": "mock-outlook-thread:2026-07-13:conversation-001",
+          "com_conversation_ref": "mock-outlook-conversation:2026-07-08:conversation-001",
+          "com_parent_ref": "CSR-OUTLOOK-THREAD-MOCK-001",
+          "com_captured_at": "2026-07-13T16:10:00-04:00",
+          "com_captured_by": "Doug",
+          "com_observed_modified_at": "2026-07-13T16:05:00-04:00",
+          "com_source_version_ref": "mock-thread-version:conversation-001-v2",
+          "com_content_hash": "sha256:2cd2a580e654c773a5a202ba768346831258194c7084099bcd87dcf39352d419",
+          "com_attachment_refs": "mock/manual attachment metadata only, not tenant verified",
+          "com_permission_snapshot": "mock/manual evidence, not tenant verified",
+          "com_sensitivity_label": "unknown",
+          "com_retention_or_hold_flags": "unknown",
+          "com_extraction_status": "new",
+          "com_source_to_work_item_rationale": "Superseding mock capture of the drifted Outlook thread. The record stays hash-only with no authorized body content, so extraction review starts fresh on this record once live Outlook reads are approved; the prior record's rationale is referenced, not restated.",
+          "com_data_boundary_policy": "hash_only"
+        }
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-DRIFT-001",
+        "com_verb": "source_drifted",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 1.5 contract validation",
+        "com_occurred_at": "2026-07-13T15:45:00-04:00",
+        "com_idempotency_key": "drift:CSR-MANUAL-MEETING-001:manual-note-version:2026-07-13:v2",
+        "com_before_state": "CSR-MANUAL-MEETING-001 captured 2026-07-13T09:05:00-04:00 with no com_source_version_ref recorded and no drift observed",
+        "com_after_state": "drift evidence recorded for CSR-MANUAL-MEETING-001: com_source_version_ref manual-note-version:2026-07-13:v2 pending receipt-gated apply in Epic 2",
+        "com_evidence_refs": "driftEvents[CSR-MANUAL-MEETING-001]; summary:manual-meeting-note-001-v2; sha256:781510e2c041c4e320e8aefa0f6ccb3620aa97616098d5592715405f105539d0",
+        "com_decision_rationale": "The meeting note drifted after capture (the checklist deadline moved from Friday to Wednesday), so a drift receipt is appended instead of rewriting the prior capture or its extraction rationale.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SUPERSEDE-001",
+        "com_verb": "source_drifted",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 1.5 contract validation",
+        "com_occurred_at": "2026-07-13T16:15:00-04:00",
+        "com_idempotency_key": "supersede:CSR-OUTLOOK-THREAD-MOCK-001:CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_before_state": "held",
+        "com_after_state": "superseded",
+        "com_evidence_refs": "supersessions[CSR-OUTLOOK-THREAD-MOCK-001]; CSR-OUTLOOK-THREAD-MOCK-002; mock-thread-version:conversation-001-v2",
+        "com_decision_rationale": "A newer mock thread snapshot supersedes the held hash-only record via CSR-OUTLOOK-THREAD-MOCK-002; the prior record and the rationale it produced stay unchanged, and the superseded status move stays receipt-gated to Epic 2.",
+        "com_confidence": 0.85,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-DRIFT-001 drift evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-DRIFT-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "drift_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-SUPERSEDE-001 drift evidence - CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_receipt": "CR-LOCAL-SUPERSEDE-001",
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_evidence_role": "drift_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-SUPERSEDE-001 drift evidence - CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_receipt": "CR-LOCAL-SUPERSEDE-001",
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_evidence_role": "drift_evidence"
+      }
+    ],
+    "workItemsFlaggedForReview": [
+      {
+        "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+        "flaggedBy": "CR-LOCAL-DRIFT-001",
+        "reason": "The drifted meeting note moves the tenant readiness checklist deadline from Friday to Wednesday, so the extraction rationale and urgency behind this proposed meeting action no longer match the observed source version and need human review.",
+        "flagMechanism": "Local review-needed flag recorded in this slice; intended to surface as the Council Queue drift indicator once that review surface lands (no app curation changes in this slice). Any com_state_group move (for example proposed to in_review) requires a new Receipt and stays deferred to Epic 2 Story 2.3.",
+        "stateGroupChangedInThisSlice": false
+      }
+    ],
+    "workItemsUnaffected": [
+      {
+        "workItem": "CWI-LOCAL-DECISION-002",
+        "note": "The observed drift touches only commitment (1)'s checklist deadline; commitment (2)'s deferral decision is unchanged in the newer note version, so this Work Item is explicitly not flagged for review."
+      },
+      {
+        "workItem": "CWI-LOCAL-RISK-001",
+        "note": "The observed drift touches only commitment (1)'s checklist deadline; commitment (3)'s publisher prefix risk is unchanged in the newer note version, so this Work Item is explicitly not flagged for review."
+      }
+    ],
+    "sourceUpdatesDeferred": [
+      {
+        "sourceRecord": "CSR-MANUAL-MEETING-001",
+        "deferredUpdate": "Applying the observed drift evidence (com_source_version_ref manual-note-version:2026-07-13:v2, com_content_hash, com_observed_modified_at) to the live record is a receipt-backed mutation gated to Epic 2 Story 2.3; no live tenant write was performed in this slice."
+      },
+      {
+        "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "deferredUpdate": "com_extraction_status may become superseded only through a receipt-backed mutation once Epic 2 Story 2.3 receipt semantics exist; the prior record and the rationale it produced stay unchanged and no live tenant write was performed in this slice."
+      }
+    ],
+    "workItemStateChangesDeferred": [
+      {
+        "workItem": "CWI-LOCAL-MEETING-ACTION-001",
+        "deferredUpdate": "Any com_state_group move driven by this drift (for example proposed to in_review) requires a new receipt-backed mutation gated to Epic 2 Story 2.3; this slice records the review flag only and performs no state change."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "driftRun.driftEvents for CSR-MANUAL-MEETING-001 with new com_source_version_ref, com_content_hash, and com_observed_modified_at later than capture, plus a prior-evidence block stating no prior version ref was recorded",
+        "driftRun.receipts CR-LOCAL-DRIFT-001 (verb source_drifted) bound to the drifted source by a drift_evidence receiptSourceLinks entry",
+        "driftRun.supersessions embeds CSR-OUTLOOK-THREAD-MOCK-002 superseding CSR-OUTLOOK-THREAD-MOCK-001 via com_parent_ref with receipt CR-LOCAL-SUPERSEDE-001 (before held, after superseded)",
+        "guards.priorRationaleAndReceiptsUnchanged=true; the superseded extraction status appears only inside sourceUpdatesDeferred and no 1.1-1.4 artifact is modified"
+      ],
+      "tenantEvidenceRequired": "Live drift detection plus applying com_source_version_ref or the superseded extraction status to tenant records are receipt-gated to Epic 2 Story 2.3 and remain VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "driftRun.workItemsFlaggedForReview names only CWI-LOCAL-MEETING-ACTION-001 with a drift-specific reason and flag mechanism",
+        "driftRun.workItemsUnaffected explicitly clears CWI-LOCAL-DECISION-002 and CWI-LOCAL-RISK-001, the other two Story 1.4 items from the drifted source",
+        "stateGroupChangedInThisSlice=false and workItemStateChangesDeferred require a new Receipt for any resulting state change",
+        "guards.noWorkItemStateChangeInThisSlice=true"
+      ],
+      "tenantEvidenceRequired": "Surfacing the review flag in the live Council Queue and any receipt-backed com_state_group change remain gated to Epic 2 Story 2.3; no tenant Work Item was modified for this slice."
+    }
+  ]
+}
