@@ -1,0 +1,262 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "4-3-propose-memory-candidates",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove durable context becomes a reviewed Memory Candidate locally, never a silent instruction: two Memory Candidates (CMC-LOCAL-*) from distinct origins (a source-record pattern and a receipt pattern) each carry source refs, rationale, confidence, scope, recall/use policy, receipt history, and actsAsInstruction=false; one candidate is moved to rejected and one to needs_clarification, each transition backed by a manifest-verb receipt with before/after while the candidate stays distinct from evidence and instructions (distinctFromInstruction=true). No live Dataverse mutation occurs; every would-be live write and any later promotion to an Approved Instruction stays receipt-gated to a future story.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "memoryCandidatesRemainDistinctFromInstructions": true,
+    "noInstructionCreatedInThisSlice": true,
+    "noMemoryPromotionInThisSlice": true,
+    "actsAsInstructionStrictlyFalseForNonPromotedCandidates": true,
+    "receiptsAreAppendOnly": true
+  },
+  "memoryRun": {
+    "runId": "MEMORY-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 4.3 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json",
+      "source-drift-supersession-slice.json"
+    ],
+    "decisionPolicy": {
+      "memoryCandidateOriginsAreDistinct": true,
+      "everyCandidateStartsProposedWithReceipt": true,
+      "nonPromotedCandidateNeverActsAsInstruction": true,
+      "reviewStateTransitionsAreReceiptBackedWithBeforeAndAfter": true,
+      "promotionToApprovedInstructionIsReceiptGatedToAFutureStory": true,
+      "liveMemoryCandidateRowCreationReceiptGatedToTenantStory": true,
+      "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "candidates": [
+      {
+        "com_name": "Memory candidate - manual meeting note yields multiple typed work items",
+        "com_council_memory_candidate_id": "CMC-LOCAL-001",
+        "com_summary": "Manual meeting notes captured under the summary_allowed data boundary can carry more than one commitment, so a single Source Record may produce multiple proposed Work Items of distinct types (meeting_action, decision, risk) that must each be reviewed independently rather than collapsed into one task.",
+        "com_scope": "project",
+        "com_review_state": "rejected",
+        "com_confidence": 0.78,
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_rationale": "The 2026-07-13 platform sync meeting note (CSR-MANUAL-MEETING-001) produced three distinct proposed Work Items (CWI-LOCAL-MEETING-ACTION-001, CWI-LOCAL-DECISION-002, CWI-LOCAL-RISK-001) of three different types from one summary-allowed capture. That recurrence is durable context worth remembering: reviewers should expect multi-commitment meeting notes and triage each commitment separately instead of assuming one source maps to one task.",
+        "com_recall_use_policy": "Surface this candidate at extraction review when a meeting note carries two or more commitments; do not auto-apply it as an instruction. A reviewer must confirm the pattern still holds for the note under review before relying on it.",
+        "com_created_receipt": "CR-LOCAL-MEMORY-001",
+        "com_review_receipt": "CR-LOCAL-MEMORY-003",
+        "actsAsInstruction": false,
+        "distinctFromInstruction": true,
+        "origin": "source_record_pattern",
+        "sourceRecordPattern": {
+          "sourceRecord": "CSR-MANUAL-MEETING-001",
+          "sourceRefs": [
+            "CSR-MANUAL-MEETING-001",
+            "CWI-LOCAL-MEETING-ACTION-001",
+            "CWI-LOCAL-DECISION-002",
+            "CWI-LOCAL-RISK-001"
+          ],
+          "patternNote": "One summary_allowed manual meeting source produced three proposed Work Items of distinct com_workitemtype values (meeting_action, decision, risk); the pattern was observed from the Story 1.4 extraction evidence, not invented."
+        },
+        "receiptHistory": [
+          {
+            "receipt": "CR-LOCAL-MEMORY-001",
+            "role": "creation",
+            "fromState": "absent",
+            "toState": "proposed"
+          },
+          {
+            "receipt": "CR-LOCAL-MEMORY-003",
+            "role": "review_transition",
+            "fromState": "proposed",
+            "toState": "rejected"
+          }
+        ]
+      },
+      {
+        "com_name": "Memory candidate - drifted Outlook thread is superseded, never edited in place",
+        "com_council_memory_candidate_id": "CMC-LOCAL-002",
+        "com_summary": "When an Outlook thread source drifts after capture, the Council supersedes it by creating a new Source Record linked via com_parent_ref and appending a source_drifted receipt, rather than editing the held record or its prior extraction rationale; the prior record and its rationale stay byte-identical.",
+        "com_scope": "tenant",
+        "com_review_state": "needs_clarification",
+        "com_confidence": 0.72,
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_rationale": "The Story 1.5 drift run observed that CSR-OUTLOOK-THREAD-MOCK-001 (a held hash-only mock thread) was superseded by CSR-OUTLOOK-THREAD-MOCK-002 via com_parent_ref, backed by receipt CR-LOCAL-SUPERSEDE-001 (verb source_drifted, before held, after superseded), while CR-LOCAL-DRIFT-001 recorded new version evidence for CSR-MANUAL-MEETING-001 without rewriting its capture. The durable lesson is that drift never rewrites prior rationale or receipts; supersession is the sanctioned path.",
+        "com_recall_use_policy": "Surface this candidate whenever a captured source is observed to have a newer version; do not auto-execute supersession. A reviewer must confirm the source kind, the data boundary policy, and that a superseding record is appropriate before relying on the pattern.",
+        "com_created_receipt": "CR-LOCAL-MEMORY-002",
+        "com_review_receipt": "CR-LOCAL-MEMORY-004",
+        "actsAsInstruction": false,
+        "distinctFromInstruction": true,
+        "origin": "receipt_pattern",
+        "receiptPatternOrigin": {
+          "sourceRecord": "CSR-OUTLOOK-THREAD-MOCK-001",
+          "receipts": [
+            "CR-LOCAL-DRIFT-001",
+            "CR-LOCAL-SUPERSEDE-001"
+          ],
+          "sourceRefs": [
+            "CSR-OUTLOOK-THREAD-MOCK-001",
+            "CSR-OUTLOOK-THREAD-MOCK-002"
+          ],
+          "patternNote": "The source_drifted receipt pattern (CR-LOCAL-DRIFT-001 records new version evidence; CR-LOCAL-SUPERSEDE-001 moves the held thread to superseded via a com_parent_ref superseding record) was observed from the Story 1.5 slice, not invented."
+        },
+        "receiptHistory": [
+          {
+            "receipt": "CR-LOCAL-MEMORY-002",
+            "role": "creation",
+            "fromState": "absent",
+            "toState": "proposed"
+          },
+          {
+            "receipt": "CR-LOCAL-MEMORY-004",
+            "role": "review_transition",
+            "fromState": "proposed",
+            "toState": "needs_clarification"
+          }
+        ]
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-MEMORY-001",
+        "com_verb": "memory_proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.3 contract validation",
+        "com_occurred_at": "2026-07-13T17:00:00-04:00",
+        "com_idempotency_key": "memory:propose:CMC-LOCAL-001:001",
+        "com_before_state": "absent",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "candidates[CMC-LOCAL-001]; CSR-MANUAL-MEETING-001; CWI-LOCAL-MEETING-ACTION-001; CWI-LOCAL-DECISION-002; CWI-LOCAL-RISK-001",
+        "com_decision_rationale": "A multi-commitment manual meeting note pattern was observed in Story 1.4 extraction evidence; a Memory Candidate is proposed (not promoted) so a reviewer can accept, reject, or ask for clarification before it ever acts as instruction.",
+        "com_confidence": 0.78,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; acts_as_instruction=false",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-MEMORY-002",
+        "com_verb": "memory_proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.3 contract validation",
+        "com_occurred_at": "2026-07-13T17:05:00-04:00",
+        "com_idempotency_key": "memory:propose:CMC-LOCAL-002:001",
+        "com_before_state": "absent",
+        "com_after_state": "proposed",
+        "com_evidence_refs": "candidates[CMC-LOCAL-002]; CR-LOCAL-DRIFT-001; CR-LOCAL-SUPERSEDE-001; CSR-OUTLOOK-THREAD-MOCK-001; CSR-OUTLOOK-THREAD-MOCK-002",
+        "com_decision_rationale": "A source_drifted receipt pattern was observed in Story 1.5 evidence; a Memory Candidate is proposed (not promoted) capturing that drift supersedes rather than edits in place, so a reviewer can accept, reject, or ask for clarification before it ever acts as instruction.",
+        "com_confidence": 0.72,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; acts_as_instruction=false",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-MEMORY-003",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.3 contract validation",
+        "com_occurred_at": "2026-07-13T17:30:00-04:00",
+        "com_idempotency_key": "memory:review:CMC-LOCAL-001:rejected:001",
+        "com_before_state": "proposed",
+        "com_after_state": "rejected",
+        "com_evidence_refs": "candidates[CMC-LOCAL-001]; CR-LOCAL-MEMORY-001; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "Review rejected this candidate: the multi-commitment meeting-note pattern is sample-derived and not yet tenant-verified, and a reviewer judged that promoting it would risk biasing extraction toward over-proposing work from a single note. The candidate remains distinct from evidence and instructions; no Approved Instruction is created.",
+        "com_confidence": 0.74,
+        "com_result": "rejected",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; acts_as_instruction=false; distinct_from_instruction=true",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-MEMORY-004",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.3 contract validation",
+        "com_occurred_at": "2026-07-13T17:35:00-04:00",
+        "com_idempotency_key": "memory:review:CMC-LOCAL-002:needs_clarification:001",
+        "com_before_state": "proposed",
+        "com_after_state": "needs_clarification",
+        "com_evidence_refs": "candidates[CMC-LOCAL-002]; CR-LOCAL-MEMORY-002; CR-LOCAL-DRIFT-001; CR-LOCAL-SUPERSEDE-001; CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_decision_rationale": "Review moved this candidate to needs_clarification: the supersession lesson is sound but the candidate must clarify which source kinds and data boundary policies it applies to (hash_only threads only, or all drifted sources) before it could be approved. The candidate remains distinct from evidence and instructions; no Approved Instruction is created.",
+        "com_confidence": 0.7,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; acts_as_instruction=false; distinct_from_instruction=true",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-MEMORY-001 supporting source - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-MEMORY-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-MEMORY-002 supporting source - CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_receipt": "CR-LOCAL-MEMORY-002",
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-MEMORY-003 supporting source - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-MEMORY-003",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-MEMORY-004 supporting source - CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_receipt": "CR-LOCAL-MEMORY-004",
+        "com_source_record": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "instructionPromotionDeferred": [
+      {
+        "candidate": "CMC-LOCAL-001",
+        "deferredUpdate": "Promoting this candidate to a com_councilapprovedinstruction row requires a memory_promoted receipt and explicit human approval in a future story; this slice records the rejected review only and creates no instruction. No live tenant write was performed."
+      },
+      {
+        "candidate": "CMC-LOCAL-002",
+        "deferredUpdate": "Promoting this candidate to a com_councilapprovedinstruction row requires a memory_promoted receipt and explicit human approval in a future story; this slice records the needs_clarification review only and creates no instruction. No live tenant write was performed."
+      }
+    ],
+    "deferredMemoryWrites": [
+      {
+        "candidate": "CMC-LOCAL-001",
+        "deferredUpdate": "Creating the live com_councilmemorycandidate row for CMC-LOCAL-001 (and any com_review_state mutation) is a receipt-backed mutation gated to a tenant story; this slice records local contract evidence only and performs no live tenant write."
+      },
+      {
+        "candidate": "CMC-LOCAL-002",
+        "deferredUpdate": "Creating the live com_councilmemorycandidate row for CMC-LOCAL-002 (and any com_review_state mutation) is a receipt-backed mutation gated to a tenant story; this slice records local contract evidence only and performs no live tenant write."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "memoryRun.candidates CMC-LOCAL-001 (origin source_record_pattern) and CMC-LOCAL-002 (origin receipt_pattern) from distinct origins",
+        "each candidate carries com_summary, com_scope, com_confidence, com_source_record, com_rationale, com_recall_use_policy, com_created_receipt, and actsAsInstruction=false",
+        "each candidate starts proposed: CR-LOCAL-MEMORY-001 and CR-LOCAL-MEMORY-002 carry verb memory_proposed, result accepted, com_after_state proposed",
+        "sourceRecordPattern.sourceRefs for CMC-LOCAL-001 resolve to CSR-MANUAL-MEETING-001, CWI-LOCAL-MEETING-ACTION-001, CWI-LOCAL-DECISION-002, CWI-LOCAL-RISK-001; receiptPatternOrigin.receipts for CMC-LOCAL-002 resolve to CR-LOCAL-DRIFT-001 and CR-LOCAL-SUPERSEDE-001"
+      ],
+      "tenantEvidenceRequired": "Live com_councilmemorycandidate row creation and any com_review_state mutation are receipt-gated to a tenant story and remain VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "CMC-LOCAL-001 moved to rejected via CR-LOCAL-MEMORY-003 (verb reviewed, result rejected, com_before_state proposed, com_after_state rejected)",
+        "CMC-LOCAL-002 moved to needs_clarification via CR-LOCAL-MEMORY-004 (verb reviewed, result no_op, com_before_state proposed, com_after_state needs_clarification)",
+        "each transition receipt carries before/after and the candidate com_review_state equals the transition receipt com_after_state (content delta proven, not self-asserted)",
+        "both candidates carry distinctFromInstruction=true and actsAsInstruction=false; no com_councilapprovedinstruction and no memory_promoted receipt exists in this slice"
+      ],
+      "tenantEvidenceRequired": "Promotion of a Memory Candidate to a com_councilapprovedinstruction (verb memory_promoted) and live review-state writes remain receipt-gated to a future story; no tenant instruction was created or promoted for this slice."
+    }
+  ]
+}

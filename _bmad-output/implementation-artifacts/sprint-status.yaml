@@ -68,12 +68,12 @@ development_status:
   3-2-build-delegation-decision-support-packages: done
   3-3-prepare-internal-handoff-and-external-reply-drafts: done
   epic-3-retrospective: optional
-  epic-4: backlog
-  4-1-create-lightweight-meaning-graph-records: backlog
-  4-2-explain-work-through-graph-provenance: backlog
-  4-3-propose-memory-candidates: backlog
-  4-4-promote-approved-instructions-with-receipts: backlog
-  4-5-project-the-semantic-contract-without-dual-authoring: backlog
+  epic-4: done
+  4-1-create-lightweight-meaning-graph-records: done
+  4-2-explain-work-through-graph-provenance: done
+  4-3-propose-memory-candidates: done
+  4-4-promote-approved-instructions-with-receipts: done
+  4-5-project-the-semantic-contract-without-dual-authoring: done
   epic-4-retrospective: optional
   epic-5: backlog
   5-1-maintain-the-minion-skill-registry: backlog

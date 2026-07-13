@@ -1,0 +1,234 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "4-5-project-the-semantic-contract-without-dual-authoring",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove that Council Semantic Contract terms and edge types project into Microsoft knowledge planes (Dataverse semantic model, Fabric IQ ontology) as projections only: the Council Semantic Contract remains the single canonical source; planes never become authoring surfaces. Local contract evidence only — every would-be live plane write is deferred and receipt-gated; one deliberately drifted plane representation is flagged for reconciliation without any in-place plane edit.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "planesAreProjectionsOnly": true,
+    "noCanonicalAuthoringInPlanes": true,
+    "platformInferredTermsProposeContractUpdatesOnly": true,
+    "driftNeverEditsPlaneInPlace": true,
+    "reconciliationIsReceiptBacked": true,
+    "projectionClaimsNoWorkflowAuthority": true
+  },
+  "projectionRun": {
+    "runId": "SCPROJ-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 4.5 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "canonicalSource": "council-semantic-contract",
+    "targetPlanes": [
+      "dataverse-semantic-model",
+      "fabric-iq-ontology"
+    ],
+    "inputVocabularyFrom": [
+      "dataverse-mvp-schema-manifest.json"
+    ],
+    "decisionPolicy": {
+      "planesAreProjectionsOnly": true,
+      "canonicalSourceIsCouncilSemanticContract": true,
+      "platformInferredTermsProposeOnly": true,
+      "driftNeverEditsPlaneInPlace": true,
+      "reconciliationIsReceiptBacked": true,
+      "projectionEntriesCarryNoStateOrApprovalAuthority": true,
+      "livePlaneWritesReceiptGated": true
+    },
+    "projectionManifest": [
+      {
+        "projectionId": "PROJ-LOCAL-SCP-001",
+        "canonicalTermId": "edge:proposed_from",
+        "canonicalVocabulary": "com_graphedgetype",
+        "canonicalValue": "proposed_from",
+        "targetPlane": "dataverse-semantic-model",
+        "projectedRepresentation": "Dataverse relationship display name 'Proposed From' (Work Item → Source Record); glossary binding proposed_from",
+        "projectionDate": "2026-07-13T16:00:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      },
+      {
+        "projectionId": "PROJ-LOCAL-SCP-002",
+        "canonicalTermId": "edge:evidenced_by",
+        "canonicalVocabulary": "com_graphedgetype",
+        "canonicalValue": "evidenced_by",
+        "targetPlane": "dataverse-semantic-model",
+        "projectedRepresentation": "Dataverse relationship display name 'Evidenced By' (Receipt/Work Item → Source Record); glossary binding evidenced_by",
+        "projectionDate": "2026-07-13T16:00:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      },
+      {
+        "projectionId": "PROJ-LOCAL-SCP-003",
+        "canonicalTermId": "edge:assigned_to",
+        "canonicalVocabulary": "com_graphedgetype",
+        "canonicalValue": "assigned_to",
+        "targetPlane": "fabric-iq-ontology",
+        "projectedRepresentation": "Fabric IQ relationship type assigned_to (Work Item → Person/Role); ontology edge label Assigned To",
+        "projectionDate": "2026-07-13T16:05:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      },
+      {
+        "projectionId": "PROJ-LOCAL-SCP-004",
+        "canonicalTermId": "entity:decision",
+        "canonicalVocabulary": "com_graphentitytype",
+        "canonicalValue": "decision",
+        "targetPlane": "fabric-iq-ontology",
+        "projectedRepresentation": "Fabric IQ entity type decision; ontology entity label Decision (graph node, not a Work Item execution shell)",
+        "projectionDate": "2026-07-13T16:05:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      },
+      {
+        "projectionId": "PROJ-LOCAL-SCP-005",
+        "canonicalTermId": "edge:proposed_from",
+        "canonicalVocabulary": "com_graphedgetype",
+        "canonicalValue": "proposed_from",
+        "targetPlane": "fabric-iq-ontology",
+        "projectedRepresentation": "Fabric IQ relationship type proposed_from (Work Item → Source Record); ontology edge label Proposed From",
+        "projectionDate": "2026-07-13T16:05:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      },
+      {
+        "projectionId": "PROJ-LOCAL-SCP-006",
+        "canonicalTermId": "type:meeting_action",
+        "canonicalVocabulary": "com_workitemtype",
+        "canonicalValue": "meeting_action",
+        "targetPlane": "dataverse-semantic-model",
+        "projectedRepresentation": "Dataverse choice value meeting_action on com_workitemtype; semantic model glossary entry Meeting Action",
+        "projectionDate": "2026-07-13T16:00:00+00:00",
+        "canonicalSource": "council-semantic-contract"
+      }
+    ],
+    "driftDetection": {
+      "detectionId": "PROJ-DRIFT-LOCAL-SCP-001",
+      "projectedTermProjectionId": "PROJ-LOCAL-SCP-005",
+      "canonicalTermId": "edge:proposed_from",
+      "canonicalVocabulary": "com_graphedgetype",
+      "canonicalValue": "proposed_from",
+      "targetPlane": "fabric-iq-ontology",
+      "canonicalProjectedRepresentation": "Fabric IQ relationship type proposed_from (Work Item → Source Record); ontology edge label Proposed From",
+      "observedPlaneRepresentation": "Fabric IQ relationship type proposedFromSource (inferred alias processes Work Item to Source); ontology edge label Sourced Proposal — platform-inferred rename NOT approved in the Council Semantic Contract",
+      "detectionRationale": "Fabric IQ ontology surface shows a renamed edge label for the same binding that Council projects as proposed_from. The plane is not authoritative; this slice records the drift detection and flags reconciliation back to the Council Semantic Contract. The plane representation is never edited in place; a reconciliation Work Item / contract update path is the only allowed remediation and stays receipt-gated.",
+      "reconciliationAction": "flag_for_reconciliation_never_edit_in_place",
+      "detectedAt": "2026-07-13T17:30:00+00:00",
+      "flaggedByReceipt": "CR-LOCAL-SCPROJ-DRIFT-001",
+      "planeEditedInPlace": false,
+      "claimsPlaneAuthority": false
+    },
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-SCPROJ-PROJECT-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.5 contract validation",
+        "com_occurred_at": "2026-07-13T16:10:00+00:00",
+        "com_idempotency_key": "scproj:project:dataverse-semantic-model:SCPROJ-LOCAL-2026-07-13-001",
+        "com_before_state": "no local projection entries recorded for dataverse-semantic-model or fabric-iq-ontology from the Council Semantic Contract",
+        "com_after_state": "projectionManifest records PROJ-LOCAL-SCP-001 through PROJ-LOCAL-SCP-006 bound to council-semantic-contract across dataverse-semantic-model and fabric-iq-ontology; planes are projections only",
+        "com_evidence_refs": "projectionManifest[PROJ-LOCAL-SCP-001..006]; dataverse-mvp-schema-manifest.json com_graphedgetype/com_graphentitytype/com_workitemtype; semantic-contract.md Projection Rules",
+        "com_decision_rationale": "Council terms and edge types were projected into the named Microsoft knowledge planes from the Council Semantic Contract. No plane became an authoring surface; every projectedRepresentation is a binding of a manifest vocabulary value with canonicalSource council-semantic-contract.",
+        "com_confidence": 0.92,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; planes_are_projections_only; projection_claims_no_workflow_authority",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SCPROJ-DRIFT-001",
+        "com_verb": "source_drifted",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:35:00+00:00",
+        "com_idempotency_key": "scproj:drift:PROJ-LOCAL-SCP-005:fabric-iq-ontology:proposedFromSource",
+        "com_before_state": "PROJ-LOCAL-SCP-005 projected proposed_from to fabric-iq-ontology as 'Proposed From' per council-semantic-contract",
+        "com_after_state": "drift detected on fabric-iq-ontology projection PROJ-LOCAL-SCP-005: plane shows proposedFromSource / Sourced Proposal; flagged for reconciliation only — plane not edited in place",
+        "com_evidence_refs": "driftDetection[PROJ-DRIFT-LOCAL-SCP-001]; projectionManifest[PROJ-LOCAL-SCP-005]; observedPlaneRepresentation vs projectedRepresentation content delta",
+        "com_decision_rationale": "Platform-inferred rename of the proposed_from projection on Fabric was detected. Dual-authoring is forbidden: the plane representation is not corrected in place and does not become canonical; a reconciliation path is flagged via receipt for later approval-gated contract update or re-projection.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; planes_are_projections_only; drift_never_edits_plane_in_place; reconciliation_flagged",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SCPROJ-RECONCILE-001",
+        "com_verb": "proposed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 4.5 contract validation",
+        "com_occurred_at": "2026-07-13T17:40:00+00:00",
+        "com_idempotency_key": "scproj:reconcile-propose:PROJ-DRIFT-LOCAL-SCP-001",
+        "com_before_state": "drift on PROJ-LOCAL-SCP-005 flagged by CR-LOCAL-SCPROJ-DRIFT-001; no reconciliation proposal recorded",
+        "com_after_state": "reconciliation proposed: re-project proposed_from to fabric-iq-ontology from council-semantic-contract after human review; platform-inferred proposedFromSource may become a Source Record or Memory Candidate only, never a silent canonical rename",
+        "com_evidence_refs": "driftDetection[PROJ-DRIFT-LOCAL-SCP-001]; CR-LOCAL-SCPROJ-DRIFT-001; semantic-contract.md Change Process",
+        "com_decision_rationale": "Reconciliation is receipt-backed. Platform-inferred terms may only propose contract updates; they must surface as a Source Record, Work Item, or Memory Candidate path and never silently update canonical Council meaning.",
+        "com_confidence": 0.88,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; platform_inferred_terms_propose_only; reconciliation_is_receipt_backed",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-SCPROJ-PROJECT-001 projection evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-SCPROJ-PROJECT-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-SCPROJ-DRIFT-001 drift evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-SCPROJ-DRIFT-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "drift_evidence"
+      },
+      {
+        "com_name": "CR-LOCAL-SCPROJ-RECONCILE-001 reconcile evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-SCPROJ-RECONCILE-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "livePlaneWritesDeferred": [
+      {
+        "targetPlane": "dataverse-semantic-model",
+        "deferredUpdate": "Applying projectionManifest glossary/relationship bindings into the live Dataverse semantic model is receipt-gated; no tenant write was performed in this slice."
+      },
+      {
+        "targetPlane": "fabric-iq-ontology",
+        "deferredUpdate": "Applying projectionManifest edge/entity bindings into live Fabric IQ ontology (and any re-projection after CR-LOCAL-SCPROJ-DRIFT-001 reconciliation) is receipt-gated; no tenant write was performed in this slice."
+      }
+    ],
+    "platformInferredCandidatesDeferred": [
+      {
+        "observedTerm": "proposedFromSource / Sourced Proposal",
+        "originPlane": "fabric-iq-ontology",
+        "deferredUpdate": "Platform-inferred rename must surface as a Source Record, Work Item, or Memory Candidate for human review before any Council Semantic Contract change; it must not silently update canonical Council meaning. Live candidate capture is receipt-gated; no tenant write in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "projectionRun.projectionManifest carries six entries covering four+ distinct canonical vocabulary values (proposed_from, evidenced_by, assigned_to, decision, meeting_action) across two named planes (dataverse-semantic-model, fabric-iq-ontology)",
+        "every projection entry carries canonicalTermId, targetPlane, projectedRepresentation, projectionDate (ISO 8601 with offset), and canonicalSource=council-semantic-contract",
+        "every canonicalValue resolves in the Dataverse manifest choice lists com_graphedgetype / com_graphentitytype / com_workitemtype",
+        "receipt CR-LOCAL-SCPROJ-PROJECT-001 (verb reviewed) backs the projection event with policy flag planes_are_projections_only"
+      ],
+      "tenantEvidenceRequired": "Live Dataverse semantic model glossary/relationship projection and live Fabric IQ ontology projection are receipt-gated and remain VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "guards.planesAreProjectionsOnly=true and guards.noCanonicalAuthoringInPlanes=true (strict booleans)",
+        "driftDetection references real projection PROJ-LOCAL-SCP-005 and proves observedPlaneRepresentation content-differs from projectedRepresentation (not self-asserted)",
+        "driftDetection.planeEditedInPlace=false and reconciliationAction=flag_for_reconciliation_never_edit_in_place",
+        "receipt CR-LOCAL-SCPROJ-DRIFT-001 (verb source_drifted) carries policy_flags including drift_never_edits_plane_in_place and reconciliation_flagged",
+        "receipt CR-LOCAL-SCPROJ-RECONCILE-001 (verb proposed) backs reconciliation as a proposal only; platformInferredCandidatesDeferred forbids silent canonical updates"
+      ],
+      "tenantEvidenceRequired": "Live plane drift detection and reconciliation re-projection remain VERIFY IN TENANT; no live plane authoring portion of this slice ran."
+    }
+  ]
+}
