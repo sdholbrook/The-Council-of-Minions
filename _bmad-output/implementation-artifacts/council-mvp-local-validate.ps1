@@ -100,6 +100,17 @@ try {
     }
   }
 
+  Invoke-ValidationStep "Source drift and supersession slice validation" {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\source-drift-supersession-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Source drift and supersession slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "SOURCE_DRIFT_SUPERSESSION_SLICE_VALIDATE_OK") {
+      throw "Source drift and supersession slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {
