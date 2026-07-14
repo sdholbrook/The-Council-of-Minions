@@ -1,7 +1,6 @@
 param(
   [string]$ManifestPath = "$PSScriptRoot\dataverse-mvp-schema-manifest.json",
-  [string]$SkillSlicePath = "$PSScriptRoot\skill-registry-slice.json",
-  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
+  [string]$SkillSlicePath = "$PSScriptRoot\skill-registry-slice.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -197,7 +196,7 @@ function Read-JsonInput {
   }
 }
 
-foreach ($path in @($ManifestPath, $SkillSlicePath, $DemoEvidencePath)) {
+foreach ($path in @($ManifestPath, $SkillSlicePath)) {
   if (-not (Test-Path -LiteralPath $path)) {
     throw "Required skill registry validation input not found: $path"
   }
@@ -205,8 +204,6 @@ foreach ($path in @($ManifestPath, $SkillSlicePath, $DemoEvidencePath)) {
 
 $manifest = Read-JsonInput -Path $ManifestPath
 $slice = Read-JsonInput -Path $SkillSlicePath
-$demoEvidence = Read-JsonInput -Path $DemoEvidencePath
-$rawSliceText = Get-Content -LiteralPath $SkillSlicePath -Raw
 $issues = [System.Collections.Generic.List[string]]::new()
 
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
@@ -296,7 +293,6 @@ foreach ($siblingFile in $siblingSliceFiles) {
 }
 
 $knownPriorSourceIds = @($siblingSourceRecordIds.Keys)
-$demoReceiptIds = @($demoEvidence.receiptIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
 
 if ($knownPriorSourceIds.Count -eq 0) {
   Add-Issue $issues "No Source Record IDs could be harvested from sibling slices; provenance / receipt-source-link checks would silently no-op."
@@ -350,11 +346,21 @@ else {
       Add-Issue $issues "Skill registry run decisionPolicy must declare: $policyName."
     }
   }
-  foreach ($policyProperty in @($decisionPolicy.PSObject.Properties)) {
-    if ($policyProperty.Value -isnot [bool] -or -not $policyProperty.Value) {
-      Add-Issue $issues "Skill registry run decisionPolicy entry must be boolean true: $($policyProperty.Name)."
-    }
-  }
+}
+
+# decisionPolicy entries are INTENT labels, never proof. Each is backed by a
+# structural derivation accumulated in $decisionPolicyProof and verified at the
+# end, so a self-asserted boolean can never stand in for proof on its own: the
+# slice only passes when the derived evidence actually supports the claim.
+$decisionPolicyProof = @{
+  skillUseIsGovernedByRecordStatus = $true
+  deprecatedSkillRecommendedIsFlaggedForHumanReview = $true
+  suspendedSkillRecommendedIsPrevented = $true
+  activeSkillMayBeRecommended = $true
+  outcomesDerivedFromSkillRecordStatusAndAuthorityClass = $true
+  recommendationOutcomesAreReceiptBacked = $true
+  liveSkillMutationReceiptGatedToEpic2 = $true
+  receiptsAreAppendOnlyCorrectionsAreNewReceipts = $true
 }
 
 # Council Skill records.
@@ -363,6 +369,11 @@ $skillRequiredFields = @(@($skillTable.columns) | Where-Object { $_.required -eq
 if ($skillRequiredFields.Count -eq 0) {
   Add-Issue $issues "No required Council Skill columns could be derived from manifest com_councilskill; skill required-field checks would silently no-op."
 }
+# Story 5.1 additionally requires every skill to declare its required inputs
+# (story.md "Slice must prove" item 1). The manifest marks com_required_inputs
+# optional, so this story pins it as story-required on top of the manifest set,
+# the same way receipt fields are pinned below.
+$storyRequiredSkillFields = @($skillRequiredFields + @("com_required_inputs") | Sort-Object -Unique)
 $skills = @($run.skills | Where-Object { $null -ne $_ })
 if ($skills.Count -lt 3) {
   Add-Issue $issues "Skill registry run must include at least three Council Skill records (active, deprecated, suspended), found $($skills.Count)."
@@ -373,9 +384,9 @@ $skillsByStatus = @{}
 foreach ($skill in $skills) {
   $skillId = [string]$skill.com_council_skill_id
   $subject = "Skill $skillId"
-  foreach ($field in $skillRequiredFields) {
+  foreach ($field in $storyRequiredSkillFields) {
     if (-not (Test-HasNonEmptyField -Record $skill -Field $field)) {
-      Add-Issue $issues "$subject missing required manifest Council Skill field: $field."
+      Add-Issue $issues "$subject missing required Council Skill field: $field."
     }
   }
   if ([string]::IsNullOrWhiteSpace($skillId)) {
@@ -412,10 +423,24 @@ foreach ($skill in $skills) {
   if ($skill.evidenceStatus -ne "mock_manual_not_tenant_verified") {
     Add-Issue $issues "$subject must be marked mock_manual_not_tenant_verified evidence, found: $($skill.evidenceStatus)."
   }
-  # REFERENCED id discipline: provenanceSourceRecord (when non-null) must resolve to a known sibling Source Record.
-  if ($skill.PSObject.Properties.Name -contains "provenanceSourceRecord" -and $null -ne $skill.provenanceSourceRecord) {
+  # Local-contract-evidence markers (evidenceStatus / provenanceSourceRecord /
+  # provenanceNote) are NOT com_councilskill manifest columns; they are the
+  # slice-level local-contract-evidence annotation pattern the gold-standard
+  # sibling slice (source-drift-supersession) establishes via evidenceStatus on
+  # its records. They are mandatory here and NOT skippable: every skill must
+  # declare provenanceSourceRecord, which is either null with a non-empty
+  # provenanceNote, or a resolvable sibling Source Record (REFERENCED id).
+  if (@($skill.PSObject.Properties.Name) -notcontains "provenanceSourceRecord") {
+    Add-Issue $issues "$subject must declare provenanceSourceRecord (null with a provenanceNote, or a resolvable sibling Source Record)."
+  }
+  else {
     $provenanceRef = [string]$skill.provenanceSourceRecord
-    if (-not [string]::IsNullOrWhiteSpace($provenanceRef)) {
+    if ($null -eq $skill.provenanceSourceRecord -or [string]::IsNullOrWhiteSpace($provenanceRef)) {
+      if (-not (Test-HasNonEmptyField -Record $skill -Field "provenanceNote")) {
+        Add-Issue $issues "$subject provenanceSourceRecord is null so it must carry a non-empty provenanceNote explaining the absence of a single source record."
+      }
+    }
+    else {
       if ($knownPriorSourceIds -notcontains $provenanceRef) {
         Add-Issue $issues "$subject provenanceSourceRecord must reference a known Source Record from a sibling slice, found: $provenanceRef."
       }
@@ -480,25 +505,43 @@ foreach ($scenario in $recommendationScenarios) {
       $recommendedSkill = $sliceSkillIds[$recommendedSkillId]
       $skillStatus = [string]$recommendedSkill.com_status
       $skillAuthority = [string]$recommendedSkill.com_authority_class
-      # DERIVED outcome: compute the expected outcome from the skill record's status,
-      # not from any self-asserted boolean. deprecated -> flagged, suspended -> prevented.
+      # DERIVED outcome: compute the expected outcome from the skill record's
+      # status (status governs use), not from any self-asserted boolean.
+      # deprecated -> flagged, suspended -> prevented, active -> allowed.
       $derivedOutcome = switch ($skillStatus) {
         "deprecated" { "flagged" }
         "suspended" { "prevented" }
         "active" { "allowed" }
         default { "unknown" }
       }
+      $outcomeMatches = $false
       if (-not (Test-HasNonEmptyField -Record $scenario -Field "expectedOutcome")) {
         Add-Issue $issues "$subject must declare an expectedOutcome."
       }
       elseif ([string]$scenario.expectedOutcome -ne $derivedOutcome) {
         Add-Issue $issues "$subject expectedOutcome must be derived from the recommended skill's com_status ($skillStatus => $derivedOutcome), found: $($scenario.expectedOutcome). The outcome must not be a self-asserted boolean."
       }
+      else {
+        $outcomeMatches = $true
+      }
+      $decisionPolicyProof.skillUseIsGovernedByRecordStatus = $decisionPolicyProof.skillUseIsGovernedByRecordStatus -and $outcomeMatches
+      # STRUCTURAL authority-class consistency (not prose-only): the outcome's
+      # restrictiveness must be at least the authority class's gating stance.
+      # manual_only and ask_before_use both require a human gate, so an outcome
+      # of "allowed" (auto-permit) would contradict them; only approved_automatic
+      # may be auto-allowed. flagged/prevented are always at least as restrictive
+      # as any authority class demands, so they are consistent with any class.
+      $authorityConsistent = $true
+      if ($derivedOutcome -eq "allowed" -and $skillAuthority -ne "approved_automatic") {
+        Add-Issue $issues "$subject expectedOutcome 'allowed' is inconsistent with com_authority_class $skillAuthority, which requires a human gate; only approved_automatic may be auto-allowed."
+        $authorityConsistent = $false
+      }
       if (-not (Test-HasNonEmptyField -Record $scenario -Field "outcomeRationale")) {
         Add-Issue $issues "$subject must carry a non-empty outcomeRationale."
       }
       else {
-        # The outcome rationale must be consistent with the skill's status AND authority class.
+        # The outcome rationale must reference the skill's status AND authority
+        # class (supplementary textual evidence to the structural rule above).
         $rationaleText = [string]$scenario.outcomeRationale
         if ($skillStatus -eq "deprecated" -and $rationaleText -notmatch "deprecated") {
           Add-Issue $issues "$subject outcomeRationale must reference the deprecated status of $recommendedSkillId."
@@ -510,6 +553,7 @@ foreach ($scenario in $recommendationScenarios) {
           Add-Issue $issues "$subject outcomeRationale must reference the skill's authority class ($skillAuthority), found rationale omitting it."
         }
       }
+      $decisionPolicyProof.outcomesDerivedFromSkillRecordStatusAndAuthorityClass = $decisionPolicyProof.outcomesDerivedFromSkillRecordStatusAndAuthorityClass -and $outcomeMatches -and $authorityConsistent
     }
   }
   if ($actorTypes -notcontains [string]$scenario.recommendingActorType) {
@@ -534,10 +578,24 @@ $preventScenarios = @($recommendationScenarios | Where-Object {
 })
 if ($flagScenarios.Count -ne 1) {
   Add-Issue $issues "Skill registry run must include exactly one recommendation scenario for the deprecated skill (FLAG), found $($flagScenarios.Count)."
+  $decisionPolicyProof.deprecatedSkillRecommendedIsFlaggedForHumanReview = $false
+}
+else {
+  $flagScenarioOk = ([string]$flagScenarios[0].expectedOutcome -eq "flagged")
+  $decisionPolicyProof.deprecatedSkillRecommendedIsFlaggedForHumanReview = $decisionPolicyProof.deprecatedSkillRecommendedIsFlaggedForHumanReview -and $flagScenarioOk
 }
 if ($preventScenarios.Count -ne 1) {
   Add-Issue $issues "Skill registry run must include exactly one recommendation scenario for the suspended skill (PREVENT), found $($preventScenarios.Count)."
+  $decisionPolicyProof.suspendedSkillRecommendedIsPrevented = $false
 }
+else {
+  $preventScenarioOk = ([string]$preventScenarios[0].expectedOutcome -eq "prevented")
+  $decisionPolicyProof.suspendedSkillRecommendedIsPrevented = $decisionPolicyProof.suspendedSkillRecommendedIsPrevented -and $preventScenarioOk
+}
+# activeSkillMayBeRecommended: an active skill is present and the status
+# derivation maps active -> allowed (recommendable, not flagged/prevented).
+$activeSkillCount = if ($skillsByStatus.ContainsKey("active")) { $skillsByStatus["active"] } else { 0 }
+$decisionPolicyProof.activeSkillMayBeRecommended = $decisionPolicyProof.activeSkillMayBeRecommended -and ($activeSkillCount -eq 1)
 
 # Receipts.
 $receiptTable = @($manifest.tables) | Where-Object { $_.schemaName -eq "com_councilreceipt" } | Select-Object -First 1
@@ -555,6 +613,7 @@ if ($receipts.Count -lt 2) {
 $sliceReceiptIds = @{}
 $receiptById = @{}
 $seenIdempotencyKeys = @{}
+$appendOnlyProof = $true
 foreach ($receipt in $receipts) {
   $receiptId = [string]$receipt.com_receipt_id
   $subject = "Receipt $receiptId"
@@ -578,12 +637,12 @@ foreach ($receipt in $receipts) {
     else {
       $sliceReceiptIds[$receiptId] = $receipt
     }
-    # MINTED id discipline: receipt ids must be unique across ALL slices.
+    # MINTED id discipline: receipt ids must be unique across ALL slices. The
+    # sibling harvest above already walks every co-located *.json (including the
+    # state-transition-demo evidence file), so demo receipt ids are covered by
+    # $siblingReceiptIds; no separate hard dependency on a non-story artifact.
     if ($siblingReceiptIds.ContainsKey($receiptId)) {
       Add-Issue $issues "$subject collides with a receipt ID from a sibling slice."
-    }
-    if ($demoReceiptIds -contains $receiptId) {
-      Add-Issue $issues "$subject collides with a reserved state-transition-demo receipt ID."
     }
   }
   $receiptById[$receiptId] = $receipt
@@ -603,6 +662,7 @@ foreach ($receipt in $receipts) {
   if (-not [string]::IsNullOrWhiteSpace($idempotencyKey)) {
     if ($seenIdempotencyKeys.ContainsKey($idempotencyKey)) {
       Add-Issue $issues "$subject reuses an idempotency key already used by another receipt in this slice: $idempotencyKey. Receipt idempotency keys are alternate keys and must be unique (append-only)."
+      $appendOnlyProof = $false
     }
     else {
       $seenIdempotencyKeys[$idempotencyKey] = $true
@@ -614,6 +674,7 @@ foreach ($receipt in $receipts) {
 
   if ($receipt.com_append_only_locked -isnot [bool] -or -not $receipt.com_append_only_locked) {
     Add-Issue $issues "$subject com_append_only_locked must be strict boolean true (receipts are append-only)."
+    $appendOnlyProof = $false
   }
   Test-ConfidenceInRange -Issues $issues -Record $receipt -Field "com_confidence" -Subject $subject
 
@@ -650,61 +711,43 @@ foreach ($receipt in $receipts) {
   }
 }
 
-foreach ($expectedReceiptId in @("CR-LOCAL-SKILL-FLAG-001", "CR-LOCAL-SKILL-PREVENT-001")) {
-  if (-not $sliceReceiptIds.ContainsKey($expectedReceiptId)) {
-    Add-Issue $issues "Slice must include receipt $expectedReceiptId."
-  }
-}
-
-# FLAG receipt: verb held, result accepted, before recommended, after flagged_for_review.
-$flagReceipt = $receiptById["CR-LOCAL-SKILL-FLAG-001"]
-if ($null -eq $flagReceipt) {
-  Add-Issue $issues "Slice must include flag receipt CR-LOCAL-SKILL-FLAG-001."
+# Outcome receipts are DISCOVERED BY SHAPE, never bound by hardcoded id (Story
+# 5.1 hardening bar: general rules over collections). A flag receipt is any
+# receipt with verb held / result accepted / before recommended / after
+# flagged_for_review; a prevent receipt is verb policy_denied / result rejected
+# / before recommended / after prevented. Exactly one of each must exist
+# (coverage derived, not named).
+$flagReceipts = @($receipts | Where-Object {
+  [string]$_.com_verb -eq "held" -and [string]$_.com_result -eq "accepted" -and
+  [string]$_.com_before_state -eq "recommended" -and [string]$_.com_after_state -eq "flagged_for_review"
+})
+$preventReceipts = @($receipts | Where-Object {
+  [string]$_.com_verb -eq "policy_denied" -and [string]$_.com_result -eq "rejected" -and
+  [string]$_.com_before_state -eq "recommended" -and [string]$_.com_after_state -eq "prevented"
+})
+if ($flagReceipts.Count -ne 1) {
+  Add-Issue $issues "Slice must include exactly one FLAG receipt by shape (verb held, result accepted, before recommended, after flagged_for_review), found $($flagReceipts.Count)."
 }
 else {
-  $subject = "Receipt CR-LOCAL-SKILL-FLAG-001"
-  if ([string]$flagReceipt.com_verb -ne "held") {
-    Add-Issue $issues "$subject verb must be held (FLAG outcome), found: $($flagReceipt.com_verb)."
-  }
-  if ([string]$flagReceipt.com_result -ne "accepted") {
-    Add-Issue $issues "$subject result must be accepted (flag recorded), found: $($flagReceipt.com_result)."
-  }
-  if ([string]$flagReceipt.com_before_state -ne "recommended") {
-    Add-Issue $issues "$subject com_before_state must be recommended, found: $($flagReceipt.com_before_state)."
-  }
-  if ([string]$flagReceipt.com_after_state -ne "flagged_for_review") {
-    Add-Issue $issues "$subject com_after_state must be flagged_for_review, found: $($flagReceipt.com_after_state)."
-  }
+  $flagReceipt = $flagReceipts[0]
+  $subject = "Receipt $([string]$flagReceipt.com_receipt_id) (flag)"
   if ([string]$flagReceipt.com_policy_flags -notmatch "deprecated_skill_flagged") {
     Add-Issue $issues "$subject com_policy_flags must declare deprecated_skill_flagged."
   }
 }
-
-# PREVENT receipt: verb policy_denied, result rejected, before recommended, after prevented.
-$preventReceipt = $receiptById["CR-LOCAL-SKILL-PREVENT-001"]
-if ($null -eq $preventReceipt) {
-  Add-Issue $issues "Slice must include prevent receipt CR-LOCAL-SKILL-PREVENT-001."
+if ($preventReceipts.Count -ne 1) {
+  Add-Issue $issues "Slice must include exactly one PREVENT receipt by shape (verb policy_denied, result rejected, before recommended, after prevented), found $($preventReceipts.Count)."
 }
 else {
-  $subject = "Receipt CR-LOCAL-SKILL-PREVENT-001"
-  if ([string]$preventReceipt.com_verb -ne "policy_denied") {
-    Add-Issue $issues "$subject verb must be policy_denied (PREVENT outcome), found: $($preventReceipt.com_verb)."
-  }
-  if ([string]$preventReceipt.com_result -ne "rejected") {
-    Add-Issue $issues "$subject result must be rejected (prevent), found: $($preventReceipt.com_result)."
-  }
-  if ([string]$preventReceipt.com_before_state -ne "recommended") {
-    Add-Issue $issues "$subject com_before_state must be recommended, found: $($preventReceipt.com_before_state)."
-  }
-  if ([string]$preventReceipt.com_after_state -ne "prevented") {
-    Add-Issue $issues "$subject com_after_state must be prevented, found: $($preventReceipt.com_after_state)."
-  }
+  $preventReceipt = $preventReceipts[0]
+  $subject = "Receipt $([string]$preventReceipt.com_receipt_id) (prevent)"
   if ([string]$preventReceipt.com_policy_flags -notmatch "suspended_skill_prevented") {
     Add-Issue $issues "$subject com_policy_flags must declare suspended_skill_prevented."
   }
 }
 
 # Bind each scenario's outcomeReceipt to a real slice receipt whose shape matches the scenario.
+$receiptBackingProof = $true
 foreach ($scenario in $recommendationScenarios) {
   $scenarioId = [string]$scenario.scenarioId
   $subject = "Recommendation scenario $scenarioId"
@@ -712,24 +755,22 @@ foreach ($scenario in $recommendationScenarios) {
     $outcomeReceiptId = [string]$scenario.outcomeReceipt
     if (-not $sliceReceiptIds.ContainsKey($outcomeReceiptId)) {
       Add-Issue $issues "$subject outcomeReceipt must reference a receipt that exists in this slice, found: $outcomeReceiptId."
+      $receiptBackingProof = $false
     }
     else {
       $bound = $sliceReceiptIds[$outcomeReceiptId]
       $expectedOutcome = [string]$scenario.expectedOutcome
+      $shapeOk = $true
       if ($expectedOutcome -eq "flagged") {
-        if ([string]$bound.com_verb -ne "held" -or [string]$bound.com_result -ne "accepted") {
-          Add-Issue $issues "$subject outcomeReceipt ($outcomeReceiptId) must be a flag receipt (verb held, result accepted), found verb $($bound.com_verb) result $($bound.com_result)."
-        }
-        if ($outcomeReceiptId -ne "CR-LOCAL-SKILL-FLAG-001") {
-          Add-Issue $issues "$subject flag outcomeReceipt must be CR-LOCAL-SKILL-FLAG-001, found: $outcomeReceiptId."
+        if ([string]$bound.com_verb -ne "held" -or [string]$bound.com_result -ne "accepted" -or [string]$bound.com_before_state -ne "recommended" -or [string]$bound.com_after_state -ne "flagged_for_review") {
+          Add-Issue $issues "$subject outcomeReceipt ($outcomeReceiptId) must be a flag receipt by shape (verb held, result accepted, before recommended, after flagged_for_review), found verb $($bound.com_verb) result $($bound.com_result) after $($bound.com_after_state)."
+          $shapeOk = $false
         }
       }
       elseif ($expectedOutcome -eq "prevented") {
-        if ([string]$bound.com_verb -ne "policy_denied" -or [string]$bound.com_result -ne "rejected") {
-          Add-Issue $issues "$subject outcomeReceipt ($outcomeReceiptId) must be a prevent receipt (verb policy_denied, result rejected), found verb $($bound.com_verb) result $($bound.com_result)."
-        }
-        if ($outcomeReceiptId -ne "CR-LOCAL-SKILL-PREVENT-001") {
-          Add-Issue $issues "$subject prevent outcomeReceipt must be CR-LOCAL-SKILL-PREVENT-001, found: $outcomeReceiptId."
+        if ([string]$bound.com_verb -ne "policy_denied" -or [string]$bound.com_result -ne "rejected" -or [string]$bound.com_before_state -ne "recommended" -or [string]$bound.com_after_state -ne "prevented") {
+          Add-Issue $issues "$subject outcomeReceipt ($outcomeReceiptId) must be a prevent receipt by shape (verb policy_denied, result rejected, before recommended, after prevented), found verb $($bound.com_verb) result $($bound.com_result) after $($bound.com_after_state)."
+          $shapeOk = $false
         }
       }
       # The receipt's com_evidence_refs must cite this scenario's recommended skill.
@@ -737,14 +778,19 @@ foreach ($scenario in $recommendationScenarios) {
       if ((Test-HasNonEmptyField -Record $bound -Field "com_evidence_refs") -and -not [string]::IsNullOrWhiteSpace($recommendedSkillId)) {
         if ([string]$bound.com_evidence_refs -notmatch [regex]::Escape($recommendedSkillId)) {
           Add-Issue $issues "$subject outcomeReceipt ($outcomeReceiptId) com_evidence_refs must cite the recommended skill $recommendedSkillId."
+          $shapeOk = $false
         }
       }
+      $receiptBackingProof = $receiptBackingProof -and $shapeOk
     }
   }
   else {
     Add-Issue $issues "$subject must declare an outcomeReceipt."
+    $receiptBackingProof = $false
   }
 }
+$decisionPolicyProof.recommendationOutcomesAreReceiptBacked = $decisionPolicyProof.recommendationOutcomesAreReceiptBacked -and $receiptBackingProof
+$decisionPolicyProof.receiptsAreAppendOnlyCorrectionsAreNewReceipts = $decisionPolicyProof.receiptsAreAppendOnlyCorrectionsAreNewReceipts -and $appendOnlyProof
 
 # Receipt source links: provenance evidence binding for outcome receipts.
 $links = @($run.receiptSourceLinks | Where-Object { $null -ne $_ })
@@ -775,26 +821,35 @@ foreach ($receiptId in @($sliceReceiptIds.Keys)) {
 
 # Deferred skill updates: every skill's live mutation must be a deferred entry naming a receipt gate.
 $deferredUpdates = @($run.skillUpdatesDeferred | Where-Object { $null -ne $_ })
+$deferredProof = $true
 foreach ($deferred in $deferredUpdates) {
+  $deferredOk = $true
   if (-not (Test-HasNonEmptyField -Record $deferred -Field "skill")) {
     Add-Issue $issues "Deferred skill update must name its skill."
+    $deferredOk = $false
   }
   elseif (-not $sliceSkillIds.ContainsKey([string]$deferred.skill)) {
     Add-Issue $issues "Deferred skill update references an unknown Council Skill: $($deferred.skill)."
+    $deferredOk = $false
   }
   if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate")) {
     Add-Issue $issues "Deferred skill update must carry a non-empty deferredUpdate."
+    $deferredOk = $false
   }
-  elseif ([string]$deferred.deferredUpdate -notmatch "receipt") {
-    Add-Issue $issues "Deferred skill update for $($deferred.skill) must state that the live mutation is receipt-gated."
+  elseif ([string]$deferred.deferredUpdate -notmatch "receipt" -or [string]$deferred.deferredUpdate -notmatch "gated|deferred|epic 2|epic2") {
+    Add-Issue $issues "Deferred skill update for $($deferred.skill) must state that the live mutation is receipt-gated (mention 'receipt' and a gate/defer/epic-2 term), found: $($deferred.deferredUpdate)."
+    $deferredOk = $false
   }
+  $deferredProof = $deferredProof -and $deferredOk
 }
 foreach ($skillId in @($sliceSkillIds.Keys)) {
   $deferred = $deferredUpdates | Where-Object { [string]$_.skill -eq $skillId } | Select-Object -First 1
   if (-not $deferred) {
     Add-Issue $issues "Missing deferred skill update entry for $skillId; live skill mutation must be receipt-gated."
+    $deferredProof = $false
   }
 }
+$decisionPolicyProof.liveSkillMutationReceiptGatedToEpic2 = $decisionPolicyProof.liveSkillMutationReceiptGatedToEpic2 -and $deferredProof
 
 # Acceptance mapping for AC 1, 2. localEvidence must not be self-asserting prose:
 # every CSK-LOCAL-*, CR-LOCAL-SKILL-*, REC-LOCAL-*, and CSR-* id it cites must
@@ -839,6 +894,26 @@ foreach ($criterion in @(1, 2)) {
   }
   if (-not $citedAny) {
     Add-Issue $issues "Acceptance mapping for AC $criterion must cite at least one real slice id (CR-LOCAL-SKILL-*/CSK-LOCAL-*/REC-LOCAL-*) in localEvidence; self-asserting prose is not proof."
+  }
+}
+
+# decisionPolicy backing: each declared policy must be a strict-true intent
+# label AND supported by the structural evidence accumulated above. The boolean
+# alone is never proof (a true boolean without backing fails); a false boolean
+# is a contradictory intent and also fails. This closes the "self-asserted
+# boolean standing in for proof" gap: the slice only passes when the asserted
+# intent matches the derived evidence.
+if ($null -ne $decisionPolicy) {
+  foreach ($policyName in @("skillUseIsGovernedByRecordStatus", "deprecatedSkillRecommendedIsFlaggedForHumanReview", "suspendedSkillRecommendedIsPrevented", "activeSkillMayBeRecommended", "outcomesDerivedFromSkillRecordStatusAndAuthorityClass", "recommendationOutcomesAreReceiptBacked", "liveSkillMutationReceiptGatedToEpic2", "receiptsAreAppendOnlyCorrectionsAreNewReceipts")) {
+    if (@($decisionPolicy.PSObject.Properties.Name) -contains $policyName) {
+      $entry = $decisionPolicy.$policyName
+      if ($entry -isnot [bool] -or -not $entry) {
+        Add-Issue $issues "decisionPolicy $policyName must be declared as boolean true (intent); found: $entry. A false boolean contradicts the policy the slice is meant to prove."
+      }
+      if (-not $decisionPolicyProof[$policyName]) {
+        Add-Issue $issues "decisionPolicy $policyName is asserted but not backed by structural evidence in this slice; a self-asserted boolean is not proof."
+      }
+    }
   }
 }
 

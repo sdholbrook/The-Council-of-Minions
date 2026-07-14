@@ -437,6 +437,7 @@
       {
         "plannedWriteScope": "Epic 2 Story 2.3 apply-receipt-backed-queue-state-changes",
         "storyKey": "2-3-apply-receipt-backed-queue-state-changes",
+        "writeScopeKey": "state-change-mutation",
         "rollbackBoundary": "Roll back to the last append-only receipt boundary: every com_councilreceipt row is append-only (com_append_only_locked=true), so a failed state-change apply is rolled back by appending a corrective receipt rather than editing or deleting prior rows; the affected com_councilworkitem.com_state_group is restored to the before-state recorded on the failed receipt.",
         "auditBoundary": "Every state-change write emits a manifest-verb com_councilreceipt with com_before_state, com_after_state, com_idempotency_key, and com_evidence_refs; the receipt is the audit row. No state change is auditably complete without a backing receipt.",
         "receiptGate": "Live com_councilworkitem.com_state_group mutation is receipt-gated to Epic 2 Story 2.3; no live mutation is performed in this slice.",
@@ -447,6 +448,7 @@
       {
         "plannedWriteScope": "Epic 1 Story 1.5 handle-source-drift-and-supersession live apply",
         "storyKey": "1-5-handle-source-drift-and-supersession",
+        "writeScopeKey": "source-drift-supersession",
         "rollbackBoundary": "Roll back to the prior source version: a supersession is reversed by capturing a new superseding record that points com_parent_ref back at the pre-supersession record, never by editing the superseded record or its prior rationale; the superseded record and its receipts stay byte-identical.",
         "auditBoundary": "Every drift/supersession write emits a source_drifted com_councilreceipt bound to its source evidence by a com_councilreceiptsource row with com_evidence_role=drift_evidence; the drift receipt is the audit row for the version transition.",
         "receiptGate": "Live com_councilsourcerecord version/supersession mutation is receipt-gated to Epic 2 Story 2.3; no live mutation is performed in this slice.",
@@ -457,6 +459,7 @@
       {
         "plannedWriteScope": "Dataverse MVP schema apply (dataverse-apply-mvp-schema.ps1 with -ExecuteWrites)",
         "storyKey": "5-5-validate-dataverse-mvp-operational-store-readiness",
+        "writeScopeKey": "schema-apply",
         "rollbackBoundary": "Roll back the schema apply by deleting the CouncilOfMinionsMVP unmanaged solution in the sandbox environment; unmanaged solution deletion removes the Council tables/choices it introduced. The committed dataverse-mvp-schema-manifest.json is the re-apply source of truth, and the tenant decision packet records Doug's approval before any such apply runs.",
         "auditBoundary": "The schema apply is gated behind a Doug-approved read-only preflight that proves target.environmentId and target.organizationId match `pac env who`; the preflight evidence and the tenant decision packet are the audit trail for the write authorization. The apply script's DRY RUN ONLY marker is the no-write boundary until approval.",
         "receiptGate": "The schema apply itself is not a Council receipt event; it is a platform provisioning step approved through the tenant decision packet. It must stay in DRY RUN ONLY mode (writeScriptsDisabled=true) until Doug approves dataverseSandboxWrites and publisherPrefix.",
@@ -473,7 +476,7 @@
       {
         "id": "CSR-MANUAL-MEETING-001",
         "idType": "CSR",
-        "sourceSlice": "manual-source-record-slice.json",
+        "sourceSlice": "zero-multi-item-extraction-slice.json",
         "referenceRole": "example-existing-source-row-in-scope-of-story-1.5-drift-writes"
       },
       {
@@ -539,11 +542,19 @@
       },
       {
         "deferredWrite": "dataverse-apply-mvp-schema.ps1 -ExecuteWrites (solution/publisher/choice/table/column/relationship creation and publish)",
+        "writeScopeKey": "schema-apply",
         "receiptGate": "Deferred until Doug approves dataverseSandboxWrites (allowed_after_readonly_preflight) and confirms publisherPrefix in the tenant decision packet; writeScriptsDisabled stays true in this slice.",
         "evidenceState": "deferred-to-tenant"
       },
       {
         "deferredWrite": "Any live com_councilworkitem.com_state_group mutation driven by earlier-slice receipts",
+        "writeScopeKey": "state-change-mutation",
+        "receiptGate": "Receipt-gated to Epic 2 Story 2.3 apply-receipt-backed-queue-state-changes; this slice records the rollback/audit boundary only and performs no live mutation.",
+        "evidenceState": "deferred-to-tenant"
+      },
+      {
+        "deferredWrite": "Any live com_councilsourcerecord version/supersession mutation driven by earlier-slice drift receipts",
+        "writeScopeKey": "source-drift-supersession",
         "receiptGate": "Receipt-gated to Epic 2 Story 2.3 apply-receipt-backed-queue-state-changes; this slice records the rollback/audit boundary only and performs no live mutation.",
         "evidenceState": "deferred-to-tenant"
       }

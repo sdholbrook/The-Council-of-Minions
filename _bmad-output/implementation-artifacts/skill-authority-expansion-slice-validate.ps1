@@ -286,9 +286,11 @@ function Test-DeltaExact {
 function Invoke-CollectSiblingIds {
   # Recursively walk a parsed sibling slice JSON and harvest every canonical
   # Council id / idempotency key by property name, plus the demo-evidence
-  # workItemIds/receiptIds arrays. This is the single source of truth for
-  # cross-slice collision checks so they cover ALL co-located slices, not just
-  # the named siblings (Story 5.2 hard rule: ids unique across ALL slices).
+  # workItemIds/receiptIds arrays, AND runId fields (so runId uniqueness is a
+  # live harvest across ALL co-located slices, not a hardcoded two-slice list).
+  # This is the single source of truth for cross-slice collision checks so they
+  # cover ALL co-located slices, not just the named siblings (Story 5.2 hard
+  # rule: ids unique across ALL slices).
   param(
     [Parameter(Mandatory = $false)][AllowNull()]$Node,
     [Parameter(Mandatory = $true)][hashtable]$WorkItems,
@@ -297,13 +299,14 @@ function Invoke-CollectSiblingIds {
     [Parameter(Mandatory = $true)][hashtable]$SourceRecords,
     [Parameter(Mandatory = $true)][hashtable]$Instructions,
     [Parameter(Mandatory = $true)][hashtable]$MemoryCandidates,
-    [Parameter(Mandatory = $true)][hashtable]$Skills
+    [Parameter(Mandatory = $true)][hashtable]$Skills,
+    [Parameter(Mandatory = $true)][hashtable]$RunIds
   )
 
   if ($null -eq $Node) { return }
   if ($Node -is [System.Collections.IList]) {
     foreach ($item in $Node) {
-      Invoke-CollectSiblingIds -Node $item -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Instructions $Instructions -MemoryCandidates $MemoryCandidates -Skills $Skills
+      Invoke-CollectSiblingIds -Node $item -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Instructions $Instructions -MemoryCandidates $MemoryCandidates -Skills $Skills -RunIds $RunIds
     }
     return
   }
@@ -345,6 +348,11 @@ function Invoke-CollectSiblingIds {
           if (-not [string]::IsNullOrWhiteSpace($id)) { $Skills[$id] = $true }
           break
         }
+        "runId" {
+          $r = [string]$prop.Value
+          if (-not [string]::IsNullOrWhiteSpace($r)) { $RunIds[$r] = $true }
+          break
+        }
         "workItemIds" {
           if ($prop.Value -is [System.Collections.IList]) {
             foreach ($v in $prop.Value) { $id = [string]$v; if (-not [string]::IsNullOrWhiteSpace($id)) { $WorkItems[$id] = $true } }
@@ -358,7 +366,7 @@ function Invoke-CollectSiblingIds {
           break
         }
         default {
-          Invoke-CollectSiblingIds -Node $prop.Value -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Instructions $Instructions -MemoryCandidates $MemoryCandidates -Skills $Skills
+          Invoke-CollectSiblingIds -Node $prop.Value -WorkItems $WorkItems -Receipts $Receipts -Keys $Keys -SourceRecords $SourceRecords -Instructions $Instructions -MemoryCandidates $MemoryCandidates -Skills $Skills -RunIds $RunIds
         }
       }
     }
@@ -558,6 +566,7 @@ $siblingSourceRecordIds = @{}
 $siblingInstructionIds = @{}
 $siblingMemoryCandidateIds = @{}
 $siblingSkillIds = @{}
+$siblingRunIds = @{}
 $siblingSliceFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*.json" |
   Where-Object { $_.Name -ne "dataverse-mvp-schema-manifest.json" -and $_.Name -ne "skill-authority-expansion-slice.json" } |
   ForEach-Object { $_.FullName })
@@ -566,7 +575,7 @@ if ($siblingSliceFiles.Count -eq 0) {
 }
 foreach ($siblingFile in $siblingSliceFiles) {
   $siblingJson = Read-JsonInput -Path $siblingFile
-  Invoke-CollectSiblingIds -Node $siblingJson -WorkItems $siblingWorkItemIds -Receipts $siblingReceiptIds -Keys $siblingIdempotencyKeys -SourceRecords $siblingSourceRecordIds -Instructions $siblingInstructionIds -MemoryCandidates $siblingMemoryCandidateIds -Skills $siblingSkillIds
+  Invoke-CollectSiblingIds -Node $siblingJson -WorkItems $siblingWorkItemIds -Receipts $siblingReceiptIds -Keys $siblingIdempotencyKeys -SourceRecords $siblingSourceRecordIds -Instructions $siblingInstructionIds -MemoryCandidates $siblingMemoryCandidateIds -Skills $siblingSkillIds -RunIds $siblingRunIds
 }
 
 # Fold sibling source-record ids into the prior-source set used for resolution.
@@ -597,8 +606,8 @@ if ($null -eq $run) {
 if (-not (Test-HasNonEmptyField -Record $run -Field "runId")) {
   Add-Issue $issues "Expansion run must declare a runId."
 }
-elseif (@([string]$story13Extraction.extractionRun.runId, [string]$story14Extraction.extractionRun.runId) -contains [string]$run.runId) {
-  Add-Issue $issues "Expansion run must use a new local runId, not a sibling slice runId: $($run.runId)."
+elseif ($siblingRunIds.ContainsKey([string]$run.runId)) {
+  Add-Issue $issues "Expansion run must use a new local runId unique across ALL co-located slices, not a sibling slice runId: $($run.runId)."
 }
 if ($run.semanticContractVersion -ne "2026-07-07") {
   Add-Issue $issues "Expansion run semanticContractVersion must be 2026-07-07."
@@ -701,7 +710,14 @@ foreach ($skill in $skills) {
   }
   # The embedded skill record shows the BEFORE state (no live write in this slice); so its
   # authority class must be the before authority class and its status must be non-active
-  # until activation is gated to an approval receipt.
+  # (inactive until activation is gated to an approval receipt). This is ENFORCED, not merely
+  # commented: a skill whose embedded record already shows com_status "active" would bypass
+  # the approval-gating invariant (Story "Slice must prove" #1: proposed -> approval-gated
+  # (inactive until approved) -> activation). Applies to BOTH approved and denied skills
+  # because no live activation write occurs in this slice.
+  if ([string]$skillRecord.com_status -eq "active") {
+    Add-Issue $issues "$subject skillRecord com_status must be non-active in the embedded before-state record (no live activation write in this slice; activation is receipt-gated and deferred to Epic 2), found: active."
+  }
   $expansion = $skill.proposedExpansion
   if ($null -eq $expansion) {
     Add-Issue $issues "$subject must declare a proposedExpansion block."
@@ -840,7 +856,8 @@ foreach ($receipt in $receipts) {
   }
 }
 
-# Approval receipt: verb=approved, actor=human, actor_id=Doug, result=accepted, before/after authority sets present.
+# Approval receipt: verb=approved, actor=human, actor_id bound to run.actorId (general rule
+# over a collection, NOT a hardcoded-id binding), result=accepted, before/after authority sets present.
 $approvalReceipts = @($receipts | Where-Object { [string]$_.com_verb -eq "approved" })
 if ($approvalReceipts.Count -ne 1) {
   Add-Issue $issues "Slice must include exactly one approval receipt (verb approved), found $($approvalReceipts.Count)."
@@ -851,8 +868,15 @@ foreach ($approval in $approvalReceipts) {
   if ([string]$approval.com_actor_type -ne "human") {
     Add-Issue $issues "$subject actor type must be human for an approval receipt, found: $($approval.com_actor_type)."
   }
-  if ([string]$approval.com_actor_id -ne "Doug") {
-    Add-Issue $issues "$subject actor id must be Doug (human approver) for an approval receipt, found: $($approval.com_actor_id)."
+  # The decision receipt's actor must be bound to the run's actor by a general rule over the
+  # collection (receipt.com_actor_id == run.actorId), not a hardcoded identity. This both
+  # prevents over-constraining (a different legitimate human approver false-fails) and
+  # prevents under-checking (a receipt whose actor diverges from run.actorId slips through).
+  if (-not (Test-HasNonEmptyField -Record $approval -Field "com_actor_id")) {
+    Add-Issue $issues "$subject must carry a non-empty com_actor_id (human approver)."
+  }
+  elseif ([string]$approval.com_actor_id -ne [string]$run.actorId) {
+    Add-Issue $issues "$subject com_actor_id must equal the expansion run's actorId ($($run.actorId)); the decision receipt is bound to the run's actor by a general rule, not a hardcoded identity. Found: $($approval.com_actor_id)."
   }
   if ([string]$approval.com_result -ne "accepted") {
     Add-Issue $issues "$subject result must be accepted for an approval receipt, found: $($approval.com_result)."
@@ -863,8 +887,36 @@ foreach ($approval in $approvalReceipts) {
   if (-not (Test-HasNonEmptyField -Record $approval -Field "com_decision_rationale")) {
     Add-Issue $issues "$subject must carry a non-empty com_decision_rationale (approval rationale)."
   }
-  if (-not (Test-HasNonEmptyField -Record $approval -Field "com_evidence_refs")) {
-    Add-Issue $issues "$subject must carry non-empty com_evidence_refs (source evidence)."
+  # The approval receipt's com_evidence_refs must RESOLVE to real evidence, not merely be
+  # present. The denial path resolves denial.evidenceRefsTraced against slice skills /
+  # known Source Records; the approval path must meet the same proof bar so the two
+  # evidence chains are consistent. com_evidence_refs is a semicolon-delimited string of
+  # CR-LOCAL-SKILL-*/CSK-LOCAL-*/CSR-* ids. (Presence is still enforced generally by the
+  # manifest-required receipt-field check above; this block enforces resolution.)
+  $approvalEvidenceRefs = @([string]$approval.com_evidence_refs -split ";" | ForEach-Object { ([string]$_).Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+  if ($approvalEvidenceRefs.Count -eq 0) {
+    Add-Issue $issues "$subject com_evidence_refs must cite at least one resolvable evidence ref."
+  }
+  foreach ($ref in $approvalEvidenceRefs) {
+    $refStr = [string]$ref
+    if ($refStr -like "CR-LOCAL-SKILL-*") {
+      if (-not $sliceReceiptIds.ContainsKey($refStr)) {
+        Add-Issue $issues "$subject com_evidence_refs CR-LOCAL-SKILL ref must resolve to a slice receipt, found: $refStr."
+      }
+    }
+    elseif ($refStr -like "CSK-LOCAL-*") {
+      if (-not $sliceSkillIds.ContainsKey($refStr)) {
+        Add-Issue $issues "$subject com_evidence_refs CSK ref must resolve to a slice skill, found: $refStr."
+      }
+    }
+    elseif ($refStr -like "CSR-*") {
+      if ($knownPriorSourceIds -notcontains $refStr) {
+        Add-Issue $issues "$subject com_evidence_refs CSR ref must resolve to a known Source Record, found: $refStr."
+      }
+    }
+    else {
+      Add-Issue $issues "$subject com_evidence_refs ref must be a CR-LOCAL-SKILL-*/CSK-LOCAL-*/CSR-* id, found: $refStr."
+    }
   }
   Test-AuthoritySetShape -Issues $issues -Set $approval.beforeAuthoritySet -Subject "$subject beforeAuthoritySet" -AuthorityClassVocab $authorityClasses
   Test-AuthoritySetShape -Issues $issues -Set $approval.afterAuthoritySet -Subject "$subject afterAuthoritySet" -AuthorityClassVocab $authorityClasses
@@ -893,6 +945,14 @@ foreach ($denial in $denialReceipts) {
   $subject = "Receipt $denialId"
   if ([string]$denial.com_actor_type -ne "human") {
     Add-Issue $issues "$subject actor type must be human for a skill authority denial receipt, found: $($denial.com_actor_type)."
+  }
+  # The denial decision receipt's actor is likewise bound to run.actorId by the same
+  # general rule (no hardcoded-id binding; the id itself was previously unchecked).
+  if (-not (Test-HasNonEmptyField -Record $denial -Field "com_actor_id")) {
+    Add-Issue $issues "$subject must carry a non-empty com_actor_id (human approver)."
+  }
+  elseif ([string]$denial.com_actor_id -ne [string]$run.actorId) {
+    Add-Issue $issues "$subject com_actor_id must equal the expansion run's actorId ($($run.actorId)); the decision receipt is bound to the run's actor by a general rule, not a hardcoded identity. Found: $($denial.com_actor_id)."
   }
   if ([string]$denial.com_result -ne "rejected") {
     Add-Issue $issues "$subject result must be rejected for a policy_denied receipt, found: $($denial.com_result)."
@@ -995,11 +1055,24 @@ foreach ($skill in $skills) {
       if ($skill.PSObject.Properties.Name -contains "denial") {
         Add-Issue $issues "$subject (approved) must not carry a denial block."
       }
-      # The gateReceipt must not be a self-asserted boolean; the activation must not carry a bare boolean flag
-      # claiming approval (e.g. an "approved": true field). Only the receipt-chain + temporal checks count.
+      # The gateReceipt must not be a self-asserted boolean; the activation must not carry a bare
+      # boolean flag claiming approval (e.g. an "approved": true field). Only the receipt-chain +
+      # temporal checks count. A string-valued truthy assertion (e.g. "approved": "true" / "yes"
+      # / "1" / "approved") is the same class of out-of-band self-asserted approval and is caught
+      # here too — not just bool-typed flags.
       foreach ($forbiddenFlag in @("approved", "isApproved", "activationApproved")) {
-        if ($activation.PSObject.Properties.Name -contains $forbiddenFlag -and $activation.$forbiddenFlag -is [bool]) {
-          Add-Issue $issues "$subject activation must not carry a self-asserted boolean '$forbiddenFlag'; activation follows the approval receipt chain + temporal check, not a flag."
+        if ($activation.PSObject.Properties.Name -contains $forbiddenFlag) {
+          $flagVal = $activation.$forbiddenFlag
+          $isAsserting = $false
+          if ($flagVal -is [bool] -and $flagVal) { $isAsserting = $true }
+          elseif ($flagVal -is [string]) {
+            $trimmed = ([string]$flagVal).Trim().ToLowerInvariant()
+            if (@("true", "yes", "1", "approved") -contains $trimmed) { $isAsserting = $true }
+          }
+          elseif ($flagVal -is [int] -and $flagVal -eq 1) { $isAsserting = $true }
+          if ($isAsserting) {
+            Add-Issue $issues "$subject activation must not carry a self-asserted flag '$forbiddenFlag' (bool true or string 'true'/'yes'/'1'/'approved'); activation follows the approval receipt chain + temporal check, not a flag."
+          }
         }
       }
     }
@@ -1017,10 +1090,9 @@ foreach ($skill in $skills) {
     if ($skill.PSObject.Properties.Name -contains "activation") {
       Add-Issue $issues "$subject (denied) must not carry an activation block; denied expansions do not activate."
     }
-    # Denied skill status must remain non-active.
-    if ([string]$skillRecord.com_status -eq "active") {
-      Add-Issue $issues "$subject (denied) skillRecord com_status must remain non-active (inactive or constrained), found: active."
-    }
+    # Denied skill status must remain non-active (already enforced generally for every
+    # skill above via the embedded before-state com_status != active tripwire; left as a
+    # no-op here to avoid duplicate firing of the same invariant).
     $denial = $skill.denial
     if ($null -eq $denial) {
       Add-Issue $issues "$subject (denied) must declare a denial block with rationale visible for future review."
@@ -1041,6 +1113,20 @@ foreach ($skill in $skills) {
       $policyFlags = @($denial.policyFlagsTraced | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
       if ($policyFlags.Count -lt 2) {
         Add-Issue $issues "$subject denial.policyFlagsTraced must list at least two policy flags driving the denial."
+      }
+      # Cross-field linkage: every traced policy flag must appear in the bound denial
+      # receipt's com_policy_flags. The receipt is the authoritative provenance; the traced
+      # list must be a SUBSET of it, not a self-consistent parallel record. This catches a
+      # slice that traces a flag the receipt never recorded (and vice versa is covered by the
+      # receipt-only count being bounded elsewhere).
+      if ($null -ne $boundReceipt -and (Test-HasNonEmptyField -Record $boundReceipt -Field "com_policy_flags")) {
+        $receiptPolicyFlags = [string]$boundReceipt.com_policy_flags
+        foreach ($flag in $policyFlags) {
+          $flagStr = [string]$flag
+          if ($receiptPolicyFlags -notmatch [regex]::Escape($flagStr)) {
+            Add-Issue $issues "$subject denial.policyFlagsTraced entry '$flagStr' must appear in the denial receipt's com_policy_flags; the traced flags and the receipt flags must be cross-linked, not parallel self-consistent records."
+          }
+        }
       }
       # Traced evidence refs must resolve within the slice (CSK) or cross-slice (CSR).
       $evidenceRefs = @($denial.evidenceRefsTraced | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })

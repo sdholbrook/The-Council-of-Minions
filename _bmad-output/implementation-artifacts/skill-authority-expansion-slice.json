@@ -269,7 +269,7 @@
         "com_confidence": 0.9,
         "com_result": "rejected",
         "com_failure_code": "skill_authority_expansion_denied",
-        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; human_approval_required; write_scope_not_auto_approved; external_action_requires_human_approval; approved_automatic_not_granted_without_prior_use_history",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; authority_expansion_requires_human_approval; human_approval_required; write_scope_not_auto_approved; external_action_requires_human_approval; approved_automatic_not_granted_without_prior_use_history",
         "com_append_only_locked": true,
         "beforeAuthoritySet": {
           "authorityClass": "manual_only",

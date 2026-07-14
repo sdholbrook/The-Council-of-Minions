@@ -539,7 +539,9 @@ foreach ($plan in $plans) {
     Add-Issue $issues "$subject ownsWorkflowState must be strict boolean false; Phase-2 projections never own workflow state."
   }
 
-  # triggeringStabilityCriteria must be a non-empty list of non-empty strings.
+  # triggeringStabilityCriteria must be a non-empty list of non-empty strings,
+  # each naming the MVP contract that must hold (an Epic / Story anchor) —
+  # coverage derived, not counted.
   $criteria = @($plan.triggeringStabilityCriteria | Where-Object { $null -ne $_ })
   if ($criteria.Count -lt 1) {
     Add-Issue $issues "$subject triggeringStabilityCriteria must list at least one non-empty stability criterion."
@@ -547,6 +549,9 @@ foreach ($plan in $plans) {
   foreach ($criterion in $criteria) {
     if ([string]::IsNullOrWhiteSpace([string]$criterion)) {
       Add-Issue $issues "$subject triggeringStabilityCriteria entry must be a non-empty string."
+    }
+    elseif ([string]$criterion -notmatch "(?i)(epic|story)\s*\d") {
+      Add-Issue $issues "$subject triggeringStabilityCriteria entry must name the MVP contract that must hold (an 'Epic <n>' / 'Story <n>' anchor), found: $criterion."
     }
   }
 
@@ -622,6 +627,14 @@ foreach ($attempt in $attempts) {
   $targetPlanId = [string]$attempt.targetPlanId
   if (-not [string]::IsNullOrWhiteSpace($targetPlanId) -and -not $slicePlanIds.ContainsKey($targetPlanId)) {
     Add-Issue $issues "$subject targetPlanId must resolve to a projection plan declared in this slice, found: $targetPlanId."
+  }
+  # attemptedSurface must match the targeted plan's targetSurface (the denial must
+  # be for the same surface the plan projects), not just be a free string.
+  if (-not [string]::IsNullOrWhiteSpace($targetPlanId) -and $slicePlanIds.ContainsKey($targetPlanId)) {
+    $linkedPlan = $slicePlanIds[$targetPlanId]
+    if ([string]$attempt.attemptedSurface -ne [string]$linkedPlan.targetSurface) {
+      Add-Issue $issues "$subject attemptedSurface must match the targeted plan's targetSurface ($($linkedPlan.targetSurface)), found: $($attempt.attemptedSurface)."
+    }
   }
 
   # projectionRemainsDeferred must be strict boolean true (the denial actually holds).
@@ -784,12 +797,16 @@ else {
 # over the attempts collection — no hardcoded id binding.
 foreach ($attempt in $attempts) {
   $deniedById = [string]$attempt.deniedByReceipt
+  $attemptTargetPlanId = [string]$attempt.targetPlanId
   if (-not [string]::IsNullOrWhiteSpace($deniedById)) {
     if (-not $sliceReceiptIdMap.ContainsKey($deniedById)) {
       Add-Issue $issues "Premature activation attempt $([string]$attempt.attemptId) deniedByReceipt must resolve to a receipt declared in this slice, found: $deniedById."
     }
     elseif (-not ($denialRoleReceipts | Where-Object { [string]$_.com_receipt_id -eq $deniedById })) {
       Add-Issue $issues "Premature activation attempt $([string]$attempt.attemptId) deniedByReceipt must bind to a policy_denied role receipt, found: $deniedById."
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($attemptTargetPlanId) -and ([string]$sliceReceiptIdMap[$deniedById].com_evidence_refs -notmatch [regex]::Escape($attemptTargetPlanId))) {
+      Add-Issue $issues "Premature activation attempt $([string]$attempt.attemptId) denial receipt $deniedById must name the targeted plan $attemptTargetPlanId in its com_evidence_refs (direct receipt->plan binding, not merely transitive via the attempt)."
     }
   }
 }
@@ -869,8 +886,8 @@ foreach ($deferred in $deferredPlaneWrites) {
   if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate")) {
     Add-Issue $issues "$subject must carry a non-empty deferredUpdate."
   }
-  elseif ([string]$deferred.deferredUpdate -notmatch "receipt") {
-    Add-Issue $issues "$subject deferredUpdate must state that the live mutation is receipt-gated."
+  elseif (($deferred.deferredUpdate -notmatch "receipt-gat") -and ($deferred.deferredUpdate -notmatch "receipt gate") -and ($deferred.deferredUpdate -notmatch "CR-LOCAL-[A-Z0-9-]+")) {
+    Add-Issue $issues "$subject deferredUpdate must name its receipt gate (e.g. 'receipt-gated' or a CR-LOCAL-* receipt id); the bare word 'receipt' does not name a gate, found: $($deferred.deferredUpdate)."
   }
 }
 foreach ($planId in @($slicePlanIds.Keys)) {
@@ -883,18 +900,61 @@ foreach ($planId in @($slicePlanIds.Keys)) {
 # Acceptance mapping (three ACs derived from the story's Slice must prove list)
 # ---------------------------------------------------------------------------
 
-foreach ($criterion in @(1, 2, 3)) {
-  $mapping = @($slice.acceptanceMapping) | Where-Object { $_.acceptanceCriterion -eq $criterion } | Select-Object -First 1
-  if (-not $mapping) {
-    Add-Issue $issues "Missing acceptance mapping for AC $criterion."
+# Resolvable evidence-id registry: every id cited in an acceptance mapping's
+# localEvidence must resolve either to an id MINTED in this slice (plan,
+# attempt, receipt, run ids) or to a REFERENCED id harvested from a sibling
+# slice (projection / source-record / work-item / run ids). General rule over
+# the union of minted + referenced ids — no hardcoded-id binding.
+$resolvableEvidenceIds = @{}
+foreach ($id in @($slicePlanIds.Keys + $seenAttemptIds.Keys + $sliceReceiptIdMap.Keys + $allSliceProjectionIds.Keys + $allSliceWorkItemIds.Keys + $allSliceSourceIds.Keys + $allSliceRunIds.Keys + $allSliceReceiptIds.Keys)) {
+  $idStr = [string]$id
+  if (-not [string]::IsNullOrWhiteSpace($idStr)) { $resolvableEvidenceIds[$idStr] = $true }
+}
+if (-not [string]::IsNullOrWhiteSpace([string]$run.runId)) {
+  $resolvableEvidenceIds[[string]$run.runId] = $true
+}
+
+$acceptanceMappings = @($slice.acceptanceMapping | Where-Object { $null -ne $_ })
+$seenAcceptanceCriteria = @{}
+foreach ($mapping in $acceptanceMappings) {
+  $acKey = [string]$mapping.acceptanceCriterion
+  if ([string]::IsNullOrWhiteSpace($acKey)) {
+    Add-Issue $issues "Acceptance mapping entry must carry a non-empty acceptanceCriterion."
+  }
+  elseif ($acKey -notin @("1", "2", "3")) {
+    Add-Issue $issues "Acceptance mapping entry references an unknown acceptanceCriterion (only 1, 2, 3 exist for this story), found: $acKey."
+  }
+  elseif ($seenAcceptanceCriteria.ContainsKey($acKey)) {
+    Add-Issue $issues "Acceptance mapping entry for acceptanceCriterion $acKey is duplicated."
   }
   else {
-    if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must list non-empty localEvidence."
+    $seenAcceptanceCriteria[$acKey] = $true
+  }
+
+  if (@($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -lt 1) {
+    Add-Issue $issues "Acceptance mapping for AC $acKey must list non-empty localEvidence."
+  }
+  if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
+    Add-Issue $issues "Acceptance mapping for AC $acKey must state tenantEvidenceRequired."
+  }
+
+  # Derive, don't count: every evidence id cited in localEvidence must resolve to
+  # a real id in this slice or a sibling-harvested id. Free-text citations of
+  # nonexistent evidence must FAIL. (Handles range/shorthand like 001..006 by
+  # resolving each captured id token independently.)
+  foreach ($evidenceLine in @($mapping.localEvidence | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })) {
+    $idMatches = [regex]::Matches([string]$evidenceLine, "[A-Z][A-Z0-9]+(?:-[A-Z0-9]+)*-LOCAL(?:-[A-Z0-9]+)+")
+    foreach ($idMatch in $idMatches) {
+      $citedId = $idMatch.Value
+      if (-not $resolvableEvidenceIds.ContainsKey($citedId)) {
+        Add-Issue $issues "Acceptance mapping for AC $acKey cites an evidence id that does not resolve in this slice or any sibling slice: $citedId."
+      }
     }
-    if (-not (Test-HasNonEmptyField -Record $mapping -Field "tenantEvidenceRequired")) {
-      Add-Issue $issues "Acceptance mapping for AC $criterion must state tenantEvidenceRequired."
-    }
+  }
+}
+foreach ($criterion in @(1, 2, 3)) {
+  if (-not $seenAcceptanceCriteria.ContainsKey([string]$criterion)) {
+    Add-Issue $issues "Missing acceptance mapping for AC $criterion."
   }
 }
 

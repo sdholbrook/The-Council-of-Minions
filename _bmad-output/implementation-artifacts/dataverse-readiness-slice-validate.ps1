@@ -229,6 +229,30 @@ foreach ($id in @($demoEvidence.workItemIds | Where-Object { -not [string]::IsNu
 $resolvableIds = [System.Collections.Generic.HashSet[string]]::new()
 foreach ($id in @($priorCwiIds + $priorCrIds + $priorCsrIds)) { [void]$resolvableIds.Add($id) }
 
+# Per-slice id map: for each sibling slice file, the set of CWI/CR/CSR ids it
+# contains. Used to verify that referencedIds[].sourceSlice actually names the
+# file the id lives in (bound attribution, not decorative prose).
+$sliceFileByName = @{
+  "manual-source-record-slice.json" = $manualSlice
+  "outlook-source-reference-slice.json" = $outlookSlice
+  "proposed-work-item-extraction-slice.json" = $story13Extraction
+  "zero-multi-item-extraction-slice.json" = $story14Extraction
+  "source-drift-supersession-slice.json" = $driftSlice
+  "work-item-execution-shell-slice.json" = $workItemShellSlice
+  "approval-boundaries-slice.json" = $approvalSlice
+  "receipt-backed-state-changes-slice.json" = $receiptStateSlice
+  "memory-candidates-slice.json" = $memorySlice
+}
+$idsBySliceFile = @{}
+foreach ($fileName in @($sliceFileByName.Keys)) {
+  $sliceObj = $sliceFileByName[$fileName]
+  $sliceIds = [System.Collections.Generic.HashSet[string]]::new()
+  foreach ($id in (Collect-Ids -Node $sliceObj -Pattern "CWI-[A-Za-z0-9-]+")) { [void]$sliceIds.Add($id) }
+  foreach ($id in (Collect-Ids -Node $sliceObj -Pattern "CR-[A-Za-z0-9-]+")) { [void]$sliceIds.Add($id) }
+  foreach ($id in (Collect-Ids -Node $sliceObj -Pattern "CSR-[A-Za-z0-9-]+")) { [void]$sliceIds.Add($id) }
+  $idsBySliceFile[$fileName] = $sliceIds
+}
+
 if ($priorCsrIds.Count -eq 0) {
   Add-Issue $issues "No Source Record IDs could be loaded from sibling slices; cross-slice reference checks would silently no-op."
 }
@@ -401,6 +425,15 @@ else {
   }
 
   $expectedCommands = @("pac auth who", "pac env who", "pac env list-settings")
+  # Each preflight command must pin the specific SHAPE fields the live preflight
+  # is required to prove (story 5.5: environment ID, organization ID, user
+  # context fields, environment settings). These are the contract vocabulary
+  # the story mandates, not hardcoded id bindings.
+  $preflightRequiredShapeFields = @{
+    "pac auth who" = @("userContextUPN", "loggedInUser", "tenantId")
+    "pac env who" = @("environmentId", "organizationId")
+    "pac env list-settings" = @("organizationSettings", "settingsHash", "adminMode")
+  }
   $commands = @($preflight.expectedCommands | Where-Object { $null -ne $_ })
   if ($commands.Count -lt 3) {
     Add-Issue $issues "preflightContract.expectedCommands must include all three preflight commands (pac auth who, pac env who, pac env list-settings), found $($commands.Count)."
@@ -455,24 +488,23 @@ else {
         Add-Issue $issues "$subject evidenceShape field '$($fieldProp.Name)' must not carry a fabricated concrete tenant id, found: $fieldValue."
       }
     }
+    # Pin the command-specific required SHAPE fields so the contract is bound
+    # to the identity and user-context the story mandates, without fabricating
+    # their values. A slice that drops a required field from the shape cannot
+    # pass — the "present-and-deferred" assertion must hold for every command.
+    $requiredFields = $preflightRequiredShapeFields[$cmdName]
+    if ($null -ne $requiredFields) {
+      foreach ($reqField in $requiredFields) {
+        if (-not ($shape.PSObject.Properties.Name -contains $reqField)) {
+          Add-Issue $issues "$subject evidenceShape must declare the required field '$reqField' the live preflight proves."
+        }
+      }
+    }
   }
   foreach ($missingCmd in @($expectedCommands | Where-Object { -not $seenCommands.ContainsKey($_) })) {
     Add-Issue $issues "preflightContract.expectedCommands must include: $missingCmd."
   }
 
-  # The pac env who shape MUST name the environment ID and organization ID
-  # fields that the live preflight is required to prove (so the contract is
-  # bound to the actual identity the manifest declares, without fabricating
-  # their values).
-  $envWhoCmd = @($commands | Where-Object { [string]$_.command -eq "pac env who" }) | Select-Object -First 1
-  if ($null -ne $envWhoCmd -and $null -ne $envWhoCmd.evidenceShape) {
-    if (-not ($envWhoCmd.evidenceShape.PSObject.Properties.Name -contains "environmentId")) {
-      Add-Issue $issues "preflightContract pac env who evidenceShape must declare the environmentId field the live preflight proves."
-    }
-    if (-not ($envWhoCmd.evidenceShape.PSObject.Properties.Name -contains "organizationId")) {
-      Add-Issue $issues "preflightContract pac env who evidenceShape must declare the organizationId field the live preflight proves."
-    }
-  }
   if (-not (Test-HasNonEmptyField -Record $preflight -Field "matchPolicy")) {
     Add-Issue $issues "preflightContract must declare a non-empty matchPolicy stating the live env/org ID match rule."
   }
@@ -724,6 +756,7 @@ if ($boundaries.Count -eq 0) {
   Add-Issue $issues "Dataverse readiness run must carry at least one rollbackAuditBoundaries entry."
 }
 $seenBoundaryStoryKeys = @{}
+$seenBoundaryScopeKeys = @{}
 foreach ($boundary in $boundaries) {
   $scope = [string]$boundary.plannedWriteScope
   $subject = "Rollback/audit boundary $scope"
@@ -771,6 +804,20 @@ foreach ($boundary in $boundaries) {
       if (-not $resolvableIds.Contains($rowId)) {
         Add-Issue $issues "$subject exampleExistingRows references an id that does not resolve in any sibling slice or demo evidence: $rowId."
       }
+    }
+  }
+  # writeScopeKey links this boundary to a writesDeferred entry so coverage is
+  # derived per planned write scope, not counted.
+  $bScopeKey = [string]$boundary.writeScopeKey
+  if ([string]::IsNullOrWhiteSpace($bScopeKey)) {
+    Add-Issue $issues "$subject must declare a writeScopeKey linking it to a writesDeferred entry."
+  }
+  else {
+    if ($seenBoundaryScopeKeys.ContainsKey($bScopeKey)) {
+      Add-Issue $issues "Duplicate rollback/audit boundary writeScopeKey: $bScopeKey."
+    }
+    else {
+      $seenBoundaryScopeKeys[$bScopeKey] = $true
     }
   }
 }
@@ -831,8 +878,20 @@ foreach ($ref in $referencedIds) {
   if (-not (Test-HasNonEmptyField -Record $ref -Field "sourceSlice")) {
     Add-Issue $issues "$subject must declare a non-empty sourceSlice."
   }
-  elseif ($ref.sourceSlice -notmatch "\.json$") {
-    Add-Issue $issues "$subject sourceSlice must name a sibling slice file, found: $($ref.sourceSlice)."
+  else {
+    $sourceSliceName = [string]$ref.sourceSlice
+    if ($sourceSliceName -notmatch "\.json$") {
+      Add-Issue $issues "$subject sourceSlice must name a sibling slice file, found: $sourceSliceName."
+    }
+    elseif (-not $idsBySliceFile.ContainsKey($sourceSliceName)) {
+      Add-Issue $issues "$subject sourceSlice '$sourceSliceName' is not a known sibling slice file; the id must be attributed to the file it actually lives in."
+    }
+    else {
+      $sourceIds = $idsBySliceFile[$sourceSliceName]
+      if (-not $sourceIds.Contains($refId)) {
+        Add-Issue $issues "$subject sourceSlice '$sourceSliceName' does not contain id '$refId'; the id was harvested from a different sibling slice. sourceSlice must name the file the id actually lives in."
+      }
+    }
   }
   if (-not (Test-HasNonEmptyField -Record $ref -Field "referenceRole")) {
     Add-Issue $issues "$subject must declare a non-empty referenceRole."
@@ -872,6 +931,7 @@ $writesDeferred = @($run.writesDeferred | Where-Object { $null -ne $_ })
 if ($writesDeferred.Count -eq 0) {
   Add-Issue $issues "Dataverse readiness run must carry a writesDeferred block naming every would-be live write with its receipt gate."
 }
+$writeDeferredScopeKeys = @{}
 foreach ($deferred in $writesDeferred) {
   $subject = "Deferred write"
   if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredWrite")) {
@@ -886,6 +946,24 @@ foreach ($deferred in $writesDeferred) {
   if ([string]$deferred.evidenceState -ne "deferred-to-tenant") {
     Add-Issue $issues "$subject evidenceState must be deferred-to-tenant, found: $($deferred.evidenceState)."
   }
+  # writeScopeKey links a live-write deferred entry to a rollback/audit boundary.
+  # Read-only preflight entries (pac auth/env who/list-settings) do not need a
+  # rollback boundary; every other deferred write MUST declare a writeScopeKey.
+  $deferredWrite = [string]$deferred.deferredWrite
+  if ($deferredWrite -match "preflight|pac auth who|pac env who|pac env list-settings") {
+    continue
+  }
+  $wScopeKey = [string]$deferred.writeScopeKey
+  if ([string]::IsNullOrWhiteSpace($wScopeKey)) {
+    Add-Issue $issues "Deferred write '$deferredWrite' is a live write and must declare a writeScopeKey linking it to a rollback/audit boundary."
+    continue
+  }
+  if ($writeDeferredScopeKeys.ContainsKey($wScopeKey)) {
+    Add-Issue $issues "Duplicate writesDeferred writeScopeKey: $wScopeKey."
+  }
+  else {
+    $writeDeferredScopeKeys[$wScopeKey] = $true
+  }
 }
 # The live preflight and the schema apply must both be present as deferred writes.
 if (@($writesDeferred | Where-Object { [string]$_.deferredWrite -match "preflight|pac auth who|pac env who|pac env list-settings" }).Count -lt 1) {
@@ -893,6 +971,24 @@ if (@($writesDeferred | Where-Object { [string]$_.deferredWrite -match "prefligh
 }
 if (@($writesDeferred | Where-Object { [string]$_.deferredWrite -match "dataverse-apply-mvp-schema|schema apply|ExecuteWrites" }).Count -lt 1) {
   Add-Issue $issues "writesDeferred must include the dataverse-apply-mvp-schema.ps1 -ExecuteWrites schema apply as a deferred write."
+}
+
+# ============================================================
+# Bidirectional boundary ↔ writesDeferred coverage (DERIVED, not counted)
+# ============================================================
+# Every planned write scope (writesDeferred writeScopeKey) must have a matching
+# rollback/audit boundary, and every boundary must correspond to a planned
+# write. This derives coverage per scope instead of counting ≥1 boundary.
+
+foreach ($scopeKey in @($writeDeferredScopeKeys.Keys)) {
+  if (-not $seenBoundaryScopeKeys.ContainsKey($scopeKey)) {
+    Add-Issue $issues "writesDeferred writeScopeKey '$scopeKey' has no matching rollback/audit boundary; every planned write scope must have a boundary."
+  }
+}
+foreach ($scopeKey in @($seenBoundaryScopeKeys.Keys)) {
+  if (-not $writeDeferredScopeKeys.ContainsKey($scopeKey)) {
+    Add-Issue $issues "rollback/audit boundary writeScopeKey '$scopeKey' has no matching writesDeferred entry; every boundary must correspond to a planned write."
+  }
 }
 
 # ============================================================

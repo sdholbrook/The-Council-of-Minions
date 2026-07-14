@@ -190,6 +190,28 @@ if ($manifestRequiredPeFields.Count -eq 0) {
   Add-Issue $issues "No required columns could be derived from manifest com_councilplatformevaluation; row completeness checks would silently no-op."
 }
 
+# The story enumerates the row capture set as tenant gates, permission/DLP impact,
+# licensing/cost, ALM path, contract gaps, decision, and review reference. Six of
+# these (com_tenant_gate, com_permission_dlp_impact, com_licensing_cost_gate,
+# com_lifecycle_alm_path, com_contract_gaps, com_review_reference) are
+# manifest-optional, so a manifest-required-only completeness check silently drops
+# them. Row completeness is therefore asserted over the UNION of the manifest-
+# required PE columns and this story-mandated capture set, never over the
+# manifest-required subset alone. com_decision already sits in the manifest-required
+# set, so the union reproduces all seven story-mandated row fields.
+$storyMandatedRowFields = @(
+  "com_tenant_gate",
+  "com_permission_dlp_impact",
+  "com_licensing_cost_gate",
+  "com_lifecycle_alm_path",
+  "com_contract_gaps",
+  "com_review_reference"
+)
+$rowCompletenessFields = @($manifestRequiredPeFields + $storyMandatedRowFields) | Sort-Object -Unique
+if ($rowCompletenessFields.Count -eq 0) {
+  Add-Issue $issues "Row completeness field set is empty; row completeness checks would silently no-op."
+}
+
 $receiptTable = @($manifest.tables) | Where-Object { $_.schemaName -eq "com_councilreceipt" } | Select-Object -First 1
 $manifestRequiredReceiptFields = @()
 if ($null -ne $receiptTable) {
@@ -360,9 +382,9 @@ foreach ($evaluation in $evaluations) {
       else { $allRowIds.Add($rowId) | Out-Null }
     }
 
-    foreach ($field in $manifestRequiredPeFields) {
+    foreach ($field in $rowCompletenessFields) {
       if (-not (Test-HasNonEmptyField -Record $row -Field $field)) {
-        Add-Issue $issues "$rowSubject missing required manifest com_councilplatformevaluation field: $field."
+        Add-Issue $issues "$rowSubject missing row completeness field (manifest-required or story-mandated capture set): $field."
       }
     }
 
@@ -433,18 +455,32 @@ foreach ($proposal in $proposals) {
       Add-Issue $issues "$pSubject must carry a non-empty gapCitation."
     }
     else {
-      # The citation must reference the recorded gap: it must mention the row id and a substantive token from the row's recorded gap text, not just restating 'gap'.
+      # The citation must reference the RECORDED gap. General rule, no slice-specific
+      # vocabulary: (1) it must cite the row by id; (2) the cited row must actually
+      # record non-empty com_contract_gaps text (a "recorded gap" is not just a row
+      # id + decision label); (3) it must substantively overlap that recorded gap
+      # text — either a verbatim multi-word run, or at least two significant tokens
+      # (length >= 4, minus a small English stopword set) drawn from the cited row's
+      # own com_contract_gaps. The significant-term set is derived from the cited row,
+      # never hardcoded to this slice's contract vocabulary.
       $citation = [string]$proposal.gapCitation
       if ($citation -notmatch [regex]::Escape($gapRowId)) {
         Add-Issue $issues "$pSubject gapCitation must cite the recorded gap row by id ($gapRowId)."
       }
-      $gapNeedle = ($gapText -replace "\s+", " ").Trim()
-      if ([string]::IsNullOrWhiteSpace($gapNeedle) -or $citation.IndexOf($gapNeedle, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
-        # Fall back to requiring key contract terms from the recorded gap to appear in the citation.
-        $keyTerms = @("receipt ledger", "idempotency", "meaning-graph", "com_councilgraphentity", "com_councilgraphedge", "append-only")
-        $matchedTerms = @($keyTerms | Where-Object { $citation -match [regex]::Escape($_) })
-        if ($matchedTerms.Count -lt 2) {
-          Add-Issue $issues "$pSubject gapCitation must reference substantive contract terms from the recorded gap in row $gapRowId; found no verbatim gap text and fewer than two key contract terms."
+      if ([string]::IsNullOrWhiteSpace($gapText)) {
+        Add-Issue $issues "$pSubject addressesGapInRow $gapRowId, but that row records no com_contract_gaps text; the custom proposal must cite a recorded gap, not just a row id and decision label."
+      }
+      else {
+        $gapNeedle = ($gapText -replace "\s+", " ").Trim()
+        $verbatimHit = ($citation.IndexOf($gapNeedle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0)
+        if (-not $verbatimHit) {
+          $stopwords = @("the","and","for","with","that","this","from","have","has","are","not","but","its","their","which","when","while","into","per","via","under","over","does","done","they","them","than","then","also","such","each","must","will","would","could","should","can","may","might","these","those","there","where","what","does","does","about","above","after","before","between","during","through","without","because","while")
+          $tokens = [regex]::Matches($gapText, "[A-Za-z][A-Za-z0-9_/-]{3,}") | ForEach-Object { $_.Value.ToLower() }
+          $significantTerms = @($tokens | Where-Object { $stopwords -notcontains $_ } | Sort-Object -Unique)
+          $matchedTerms = @($significantTerms | Where-Object { $citation -match [regex]::Escape($_) })
+          if ($matchedTerms.Count -lt 2) {
+            Add-Issue $issues "$pSubject gapCitation must substantively reference the recorded gap text in row $gapRowId (a verbatim run or at least two significant terms drawn from that row's com_contract_gaps); found neither."
+          }
         }
       }
     }
@@ -476,6 +512,7 @@ if ($receipts.Count -lt 1) {
 }
 $sliceReceiptIds = @{}
 $seenIdempotencyKeys = @{}
+$receiptTimestamps = @{}
 foreach ($receipt in $receipts) {
   $receiptId = [string]$receipt.com_receipt_id
   $subject = "Receipt $receiptId"
@@ -508,7 +545,10 @@ foreach ($receipt in $receipts) {
   if ($receiptResults -notcontains $receipt.com_result) {
     Add-Issue $issues "$subject result is not in manifest com_receiptresult vocabulary: $($receipt.com_result)."
   }
-  Test-IsoTimestamp -Issues $issues -Record $receipt -Field "com_occurred_at" -Subject $subject | Out-Null
+  $occurredTs = Test-IsoTimestamp -Issues $issues -Record $receipt -Field "com_occurred_at" -Subject $subject
+  if ($null -ne $occurredTs -and -not [string]::IsNullOrWhiteSpace($receiptId)) {
+    $receiptTimestamps[$receiptId] = $occurredTs
+  }
 
   $idempotencyKey = [string]$receipt.com_idempotency_key
   if (-not [string]::IsNullOrWhiteSpace($idempotencyKey)) {
@@ -544,6 +584,56 @@ foreach ($proposal in $proposals) {
   $decisionReceiptId = [string]$proposal.decisionReceipt
   if (-not [string]::IsNullOrWhiteSpace($decisionReceiptId) -and -not $sliceReceiptIds.ContainsKey($decisionReceiptId)) {
     Add-Issue $issues "$pSubject decisionReceipt must resolve to a receipt minted in this slice, found: $decisionReceiptId."
+  }
+}
+
+# Microsoft-native evaluated before custom substrate (story goal FR26-28): a self-asserted
+# guard is not proof. Derive, from receipts alone, which receipts are evaluation-review
+# receipts (their com_evidence_refs references a minted capabilityEvaluationId) and assert
+# that every custom-substrate proposal decision receipt was recorded at or after EVERY
+# evaluation-review receipt. With no evaluation-review receipts the check would silently
+# no-op, so a proposal-bearing slice must produce at least one evaluation-review receipt.
+$proposalDecisionReceiptIds = @{}
+foreach ($proposal in $proposals) {
+  $dr = [string]$proposal.decisionReceipt
+  if (-not [string]::IsNullOrWhiteSpace($dr)) { $proposalDecisionReceiptIds[$dr] = $true }
+}
+$evalReviewTimestamps = [System.Collections.Generic.List[datetimeoffset]]::new()
+foreach ($receipt in $receipts) {
+  $receiptId = [string]$receipt.com_receipt_id
+  # A custom-substrate proposal decision receipt is the "custom substrate" event itself,
+  # not a Microsoft-native evaluation review, even though it may cite an evaluation row
+  # in its evidence_refs. Exclude it so the eval-review set is not poisoned by the very
+  # receipt the ordering rule compares against.
+  if ($proposalDecisionReceiptIds.ContainsKey($receiptId)) { continue }
+  $evrefs = [string]$receipt.com_evidence_refs
+  if ([string]::IsNullOrWhiteSpace($evrefs)) { continue }
+  $matchesEval = $false
+  foreach ($evaluation in $evaluations) {
+    $eid = [string]$evaluation.capabilityEvaluationId
+    if (-not [string]::IsNullOrWhiteSpace($eid) -and $evrefs -match [regex]::Escape($eid)) {
+      $matchesEval = $true
+      break
+    }
+  }
+  if ($matchesEval -and $receiptTimestamps.ContainsKey($receiptId)) {
+    $evalReviewTimestamps.Add($receiptTimestamps[$receiptId]) | Out-Null
+  }
+}
+if ($proposals.Count -gt 0) {
+  if ($evalReviewTimestamps.Count -eq 0) {
+    Add-Issue $issues "Microsoft-native evaluated before custom substrate is unproven: no evaluation-review receipt (a receipt whose com_evidence_refs references a minted capabilityEvaluationId) was recorded before the custom proposal decision."
+  }
+  foreach ($proposal in $proposals) {
+    $proposalKey = [string]$proposal.proposalId
+    $dr = [string]$proposal.decisionReceipt
+    if (-not $receiptTimestamps.ContainsKey($dr)) { continue }
+    $proposalTs = $receiptTimestamps[$dr]
+    foreach ($evalTs in $evalReviewTimestamps) {
+      if ($proposalTs -lt $evalTs) {
+        Add-Issue $issues "Custom proposal $proposalKey decision receipt $dr was recorded at $($proposalTs.ToString('o')) before Microsoft-native evaluation review receipt at $($evalTs.ToString('o')); Microsoft-native planes must be evaluated before custom substrate."
+      }
+    }
   }
 }
 
