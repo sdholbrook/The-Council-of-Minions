@@ -1,0 +1,574 @@
+{
+  "artifactVersion": "2026-07-14",
+  "storyKey": "5-5-validate-dataverse-mvp-operational-store-readiness",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove Dataverse MVP operational store readiness locally as CONTRACT evidence only: a read-only preflight contract describing the expected `pac auth who`, `pac env who`, and environment-settings evidence shape with every tenant value marked VERIFY IN TENANT and deferred-to-tenant; a story-scoped write policy mapping which manifest tables/columns each future implementation story needs (without forcing the full target shape upfront); and rollback/audit boundary statements per planned write scope. Write scripts stay disabled (writeScriptsDisabled=true) until Doug approves Dataverse sandbox writes and publisher prefix; those approvals are present as PENDING entries and no approval receipt is fabricated. No live pac/tenant call is performed in this slice; every would-be live write appears as a deferred entry naming its receipt gate.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "writeScriptsDisabled": true,
+    "preflightEvidenceDeferredToTenant": true,
+    "noApprovalReceiptFabricated": true,
+    "fullShapeNotForcedUpfront": true,
+    "schemaWritesTiedToStoryScope": true,
+    "rollbackAuditBoundaryPerPlannedWriteScope": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "noLivePacCallInThisSlice": true
+  },
+  "dataverseReadinessRun": {
+    "runId": "READINESS-LOCAL-2026-07-14-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 5.5 contract validation; no live pac call and no tenant write performed",
+    "semanticContractVersion": "2026-07-07",
+    "inputManifestRef": "dataverse-mvp-schema-manifest.json",
+    "inputDecisionPacketRef": "tenant-decision-packet.json",
+    "inputSprintStatusRef": "sprint-status.yaml",
+    "inputSourceRecordsFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json",
+      "source-drift-supersession-slice.json"
+    ],
+    "decisionPolicy": {
+      "preflightMustProveExpectedEnvironmentAndOrganizationBeforeAnyWrite": true,
+      "writeScriptsStayDisabledUntilDougApprovesSandboxWritesAndPublisherPrefix": true,
+      "noApprovalReceiptIsFabricatedWhileApprovalsArePending": true,
+      "schemaWritesTiedToCurrentStoryNeededTablesColumnsRelationshipsViews": true,
+      "dryRunManifestMayDescribeFullTargetShapeWithoutForcingItUpfront": true,
+      "rollbackAndAuditBoundaryStatedPerPlannedWriteScope": true,
+      "liveDataverseMutationReceiptGatedToEpic2Story23": true,
+      "receiptsAreLocalContractEvidenceOnly": true
+    },
+    "preflightContract": {
+      "evidenceState": "deferred-to-tenant",
+      "verificationMarker": "VERIFY IN TENANT",
+      "noLivePacCallPerformed": true,
+      "expectedCommands": [
+        {
+          "command": "pac auth who",
+          "purpose": "Prove the authenticated user context that would issue any future write.",
+          "evidenceShape": {
+            "userContextUPN": "VERIFY IN TENANT",
+            "loggedInUser": "VERIFY IN TENANT",
+            "tenantId": "VERIFY IN TENANT"
+          },
+          "evidenceState": "deferred-to-tenant",
+          "deferredTo": "Epic 5 tenant-readiness gate; live run of `pac auth who` is receipt-gated to a Doug-approved read-only preflight"
+        },
+        {
+          "command": "pac env who",
+          "purpose": "Prove the target environment ID, environment name, organization ID, and environment URL match the committed manifest target before any write.",
+          "evidenceShape": {
+            "environmentId": "VERIFY IN TENANT",
+            "environmentName": "VERIFY IN TENANT",
+            "organizationId": "VERIFY IN TENANT",
+            "environmentUrl": "VERIFY IN TENANT"
+          },
+          "evidenceState": "deferred-to-tenant",
+          "deferredTo": "Epic 5 tenant-readiness gate; live `pac env who` match against dataverse-mvp-schema-manifest.json target is receipt-gated to a Doug-approved read-only preflight"
+        },
+        {
+          "command": "pac env list-settings",
+          "purpose": "Capture environment settings evidence (organization settings, admin mode, throttle status) as read-only context for the readiness decision.",
+          "evidenceShape": {
+            "organizationSettings": "VERIFY IN TENANT",
+            "settingsHash": "VERIFY IN TENANT",
+            "adminMode": "VERIFY IN TENANT"
+          },
+          "evidenceState": "deferred-to-tenant",
+          "deferredTo": "Epic 5 tenant-readiness gate; live `pac env list-settings` capture is receipt-gated to a Doug-approved read-only preflight"
+        }
+      ],
+      "matchPolicy": "When the live preflight runs, the `pac env who` environment ID and organization ID MUST equal dataverse-mvp-schema-manifest.json target.environmentId and target.organizationId; a mismatch blocks every write. This slice records the expected SHAPE only and defers the concrete values to the tenant; no concrete environment or organization id is recorded here."
+    },
+    "pendingApprovals": [
+      {
+        "approvalEntryId": "APPR-LOCAL-DV-SANDBOX-WRITES-001",
+        "decision": "dataverseSandboxWrites",
+        "requiredBefore": "dataverse-write",
+        "state": "PENDING",
+        "requiredApprover": "Doug",
+        "question": "Are Dataverse sandbox writes allowed after read-only preflight proves the target environment?",
+        "allowedValues": [
+          "forbidden",
+          "allowed_after_readonly_preflight"
+        ],
+        "receiptGate": "No approval receipt (CR-LOCAL-*) is fabricated for this approval until Doug explicitly approves; dataverse-apply-mvp-schema.ps1 must stay in DRY RUN ONLY mode and writeScriptsDisabled stays true.",
+        "writeScriptsDisabledUntilApproved": true,
+        "backingReceiptId": null
+      },
+      {
+        "approvalEntryId": "APPR-LOCAL-PUBLISHER-PREFIX-001",
+        "decision": "publisherPrefix",
+        "requiredBefore": "solution-creation",
+        "state": "PENDING",
+        "requiredApprover": "Doug",
+        "question": "What Dataverse publisher prefix should confirm the placeholder prefix before any solution creation write?",
+        "allowedValues": [
+          "com"
+        ],
+        "receiptGate": "No approval receipt (CR-LOCAL-*) is fabricated for this approval until Doug confirms the publisher prefix; publisher/solution creation writes stay disabled.",
+        "writeScriptsDisabledUntilApproved": true,
+        "backingReceiptId": null
+      }
+    ],
+    "dryRunSchemaManifest": {
+      "manifestRef": "dataverse-mvp-schema-manifest.json",
+      "manifestVersion": "2026-07-08",
+      "fullShapeNotForcedUpfront": true,
+      "fullShapeDescription": "dataverse-mvp-schema-manifest.json describes the full MVP target shape (14 tables, 15 global choices, model-driven app, sitemap). The dry run MAY reference the full shape for planning, but no implementation story is allowed to force all tables/columns to be created before that story needs them.",
+      "storyScopedWritePolicy": [
+        {
+          "storyKey": "1-1-capture-manual-source-records",
+          "epic": 1,
+          "tables": [
+            "com_councilsourcerecord"
+          ],
+          "columnsByTable": {
+            "com_councilsourcerecord": [
+              "com_name",
+              "com_council_source_record_id",
+              "com_source_system",
+              "com_source_kind",
+              "com_source_object_ref",
+              "com_captured_at",
+              "com_captured_by",
+              "com_extraction_status",
+              "com_source_to_work_item_rationale",
+              "com_data_boundary_policy"
+            ]
+          },
+          "relationships": [],
+          "views": [
+            "New Source Records"
+          ],
+          "writeScopeNote": "Story 1.1 only needs the Source Record table and its capture/boundary columns; it must not force Work Item or Receipt tables to exist.",
+          "exampleExistingRows": [
+            "CSR-MANUAL-SUMMARY-001"
+          ]
+        },
+        {
+          "storyKey": "1-3-extract-proposed-work-items-from-source-records",
+          "epic": 1,
+          "tables": [
+            "com_councilworkitem",
+            "com_councilworkitemsource",
+            "com_councilreceipt"
+          ],
+          "columnsByTable": {
+            "com_councilworkitem": [
+              "com_title",
+              "com_council_work_item_id",
+              "com_type",
+              "com_summary",
+              "com_state_group",
+              "com_risk_class",
+              "com_primary_source_record",
+              "com_rationale",
+              "com_approval_required",
+              "com_semantic_contract_version"
+            ],
+            "com_councilworkitemsource": [
+              "com_name",
+              "com_work_item",
+              "com_source_record",
+              "com_source_role"
+            ],
+            "com_councilreceipt": [
+              "com_receipt_id",
+              "com_work_item",
+              "com_verb",
+              "com_actor_type",
+              "com_actor_id",
+              "com_authority_basis",
+              "com_occurred_at",
+              "com_idempotency_key",
+              "com_result",
+              "com_append_only_locked"
+            ]
+          },
+          "relationships": [
+            "com_councilworkitem.com_primary_source_record -> com_councilsourcerecord",
+            "com_councilworkitemsource.com_work_item -> com_councilworkitem",
+            "com_councilworkitemsource.com_source_record -> com_councilsourcerecord"
+          ],
+          "views": [
+            "Proposed Work Items"
+          ],
+          "writeScopeNote": "Story 1.3 needs Work Item, Work Item Source, and Receipt tables with the proposed verb only; it must not force Graph or Memory tables to exist.",
+          "exampleExistingRows": [
+            "CWI-LOCAL-DECISION-001",
+            "CR-LOCAL-APPROVAL-PROPOSED-001"
+          ]
+        },
+        {
+          "storyKey": "1-5-handle-source-drift-and-supersession",
+          "epic": 1,
+          "tables": [
+            "com_councilsourcerecord",
+            "com_councilreceipt",
+            "com_councilreceiptsource"
+          ],
+          "columnsByTable": {
+            "com_councilsourcerecord": [
+              "com_council_source_record_id",
+              "com_parent_ref",
+              "com_source_version_ref",
+              "com_content_hash",
+              "com_observed_modified_at",
+              "com_extraction_status"
+            ],
+            "com_councilreceipt": [
+              "com_receipt_id",
+              "com_verb",
+              "com_before_state",
+              "com_after_state",
+              "com_evidence_refs",
+              "com_idempotency_key",
+              "com_append_only_locked"
+            ],
+            "com_councilreceiptsource": [
+              "com_name",
+              "com_receipt",
+              "com_source_record",
+              "com_evidence_role"
+            ]
+          },
+          "relationships": [
+            "com_councilreceiptsource.com_receipt -> com_councilreceipt",
+            "com_councilreceiptsource.com_source_record -> com_councilsourcerecord"
+          ],
+          "views": [
+            "Source Records With Drift Risk"
+          ],
+          "writeScopeNote": "Story 1.5 needs the source_drifted verb on Receipt and the drift_evidence role on Receipt Source; it must not force Work Item state columns to change.",
+          "exampleExistingRows": [
+            "CSR-MANUAL-MEETING-001",
+            "CR-LOCAL-DRIFT-001"
+          ]
+        },
+        {
+          "storyKey": "2-1-maintain-the-work-item-execution-shell",
+          "epic": 2,
+          "tables": [
+            "com_councilworkitem",
+            "com_councilreceipt"
+          ],
+          "columnsByTable": {
+            "com_councilworkitem": [
+              "com_council_work_item_id",
+              "com_state_group",
+              "com_owner_candidate",
+              "com_approved_owner",
+              "com_urgency",
+              "com_recommended_next_action",
+              "com_created_receipt"
+            ],
+            "com_councilreceipt": [
+              "com_receipt_id",
+              "com_work_item",
+              "com_verb",
+              "com_occurred_at",
+              "com_idempotency_key",
+              "com_append_only_locked"
+            ]
+          },
+          "relationships": [
+            "com_councilworkitem.com_created_receipt -> com_councilreceipt"
+          ],
+          "views": [
+            "Needs Human Approval"
+          ],
+          "writeScopeNote": "Story 2.1 needs the Work Item execution shell columns and the proposed-verb receipt chain; it must not force approval-scope columns to mutate.",
+          "exampleExistingRows": [
+            "CWI-LOCAL-SHELL-DECISION-001",
+            "CR-LOCAL-SHELL-CREATE-001"
+          ]
+        },
+        {
+          "storyKey": "2-3-apply-receipt-backed-queue-state-changes",
+          "epic": 2,
+          "tables": [
+            "com_councilworkitem",
+            "com_councilreceipt",
+            "com_councilreceiptsource"
+          ],
+          "columnsByTable": {
+            "com_councilworkitem": [
+              "com_council_work_item_id",
+              "com_state_group"
+            ],
+            "com_councilreceipt": [
+              "com_receipt_id",
+              "com_work_item",
+              "com_verb",
+              "com_before_state",
+              "com_after_state",
+              "com_idempotency_key",
+              "com_result",
+              "com_append_only_locked"
+            ],
+            "com_councilreceiptsource": [
+              "com_receipt",
+              "com_source_record",
+              "com_evidence_role"
+            ]
+          },
+          "relationships": [
+            "com_councilreceipt.com_work_item -> com_councilworkitem"
+          ],
+          "views": [
+            "In Review",
+            "Completed Recently",
+            "Failed Needs Review"
+          ],
+          "writeScopeNote": "Story 2.3 is the canonical receipt-backed mutation story; every live Dataverse mutation from earlier slices is gated to this story. It needs only the state-change columns and the receipt verbs it exercises.",
+          "exampleExistingRows": [
+            "CWI-LOCAL-QUEUE-HAPPY-001",
+            "CR-LOCAL-STATE-HAPPY-PROPOSED-001"
+          ]
+        },
+        {
+          "storyKey": "3-1-create-a-minion-brief-snapshot",
+          "epic": 3,
+          "tables": [
+            "com_councilbrief"
+          ],
+          "columnsByTable": {
+            "com_councilbrief": [
+              "com_name",
+              "com_council_brief_id",
+              "com_brief_date",
+              "com_priority_summary",
+              "com_decisions_needed",
+              "com_delegations_ready",
+              "com_risks_if_ignored",
+              "com_blockers",
+              "com_recent_receipts",
+              "com_memory_candidates"
+            ]
+          },
+          "relationships": [],
+          "views": [],
+          "writeScopeNote": "Story 3.1 needs only the Brief table; it must not force Memory or Instruction tables to exist.",
+          "exampleExistingRows": []
+        },
+        {
+          "storyKey": "4-1-create-lightweight-meaning-graph-records",
+          "epic": 4,
+          "tables": [
+            "com_councilgraphentity",
+            "com_councilgraphedge"
+          ],
+          "columnsByTable": {
+            "com_councilgraphentity": [
+              "com_name",
+              "com_council_graph_entity_id",
+              "com_entity_type",
+              "com_external_binding_ref",
+              "com_semantic_contract_version",
+              "com_status"
+            ],
+            "com_councilgraphedge": [
+              "com_name",
+              "com_edge_type",
+              "com_from_entity",
+              "com_to_entity",
+              "com_from_work_item",
+              "com_source_record",
+              "com_receipt"
+            ]
+          },
+          "relationships": [
+            "com_councilgraphedge.com_from_entity -> com_councilgraphentity",
+            "com_councilgraphedge.com_to_entity -> com_councilgraphentity"
+          ],
+          "views": [],
+          "writeScopeNote": "Story 4.1 needs only Graph Entity and Graph Edge tables; it must not force Memory or Instruction tables to exist.",
+          "exampleExistingRows": []
+        },
+        {
+          "storyKey": "4-4-promote-approved-instructions-with-receipts",
+          "epic": 4,
+          "tables": [
+            "com_councilmemorycandidate",
+            "com_councilapprovedinstruction",
+            "com_councilreceipt"
+          ],
+          "columnsByTable": {
+            "com_councilmemorycandidate": [
+              "com_council_memory_candidate_id",
+              "com_review_state",
+              "com_review_receipt"
+            ],
+            "com_councilapprovedinstruction": [
+              "com_council_approved_instruction_id",
+              "com_instruction_text",
+              "com_scope",
+              "com_approval_receipt",
+              "com_status",
+              "com_effective_from",
+              "com_superseded_by"
+            ],
+            "com_councilreceipt": [
+              "com_receipt_id",
+              "com_verb",
+              "com_result",
+              "com_append_only_locked"
+            ]
+          },
+          "relationships": [
+            "com_councilapprovedinstruction.com_approval_receipt -> com_councilreceipt",
+            "com_councilapprovedinstruction.com_source_memory_candidate -> com_councilmemorycandidate"
+          ],
+          "views": [
+            "Memory Receipts"
+          ],
+          "writeScopeNote": "Story 4.4 needs Memory Candidate, Approved Instruction, and Receipt tables with the memory_promoted verb; it must not force Skill or Minion tables to exist.",
+          "exampleExistingRows": [
+            "CR-LOCAL-MEMORY-001"
+          ]
+        }
+      ]
+    },
+    "rollbackAuditBoundaries": [
+      {
+        "plannedWriteScope": "Epic 2 Story 2.3 apply-receipt-backed-queue-state-changes",
+        "storyKey": "2-3-apply-receipt-backed-queue-state-changes",
+        "rollbackBoundary": "Roll back to the last append-only receipt boundary: every com_councilreceipt row is append-only (com_append_only_locked=true), so a failed state-change apply is rolled back by appending a corrective receipt rather than editing or deleting prior rows; the affected com_councilworkitem.com_state_group is restored to the before-state recorded on the failed receipt.",
+        "auditBoundary": "Every state-change write emits a manifest-verb com_councilreceipt with com_before_state, com_after_state, com_idempotency_key, and com_evidence_refs; the receipt is the audit row. No state change is auditably complete without a backing receipt.",
+        "receiptGate": "Live com_councilworkitem.com_state_group mutation is receipt-gated to Epic 2 Story 2.3; no live mutation is performed in this slice.",
+        "exampleExistingRows": [
+          "CWI-LOCAL-QUEUE-HAPPY-001"
+        ]
+      },
+      {
+        "plannedWriteScope": "Epic 1 Story 1.5 handle-source-drift-and-supersession live apply",
+        "storyKey": "1-5-handle-source-drift-and-supersession",
+        "rollbackBoundary": "Roll back to the prior source version: a supersession is reversed by capturing a new superseding record that points com_parent_ref back at the pre-supersession record, never by editing the superseded record or its prior rationale; the superseded record and its receipts stay byte-identical.",
+        "auditBoundary": "Every drift/supersession write emits a source_drifted com_councilreceipt bound to its source evidence by a com_councilreceiptsource row with com_evidence_role=drift_evidence; the drift receipt is the audit row for the version transition.",
+        "receiptGate": "Live com_councilsourcerecord version/supersession mutation is receipt-gated to Epic 2 Story 2.3; no live mutation is performed in this slice.",
+        "exampleExistingRows": [
+          "CSR-OUTLOOK-THREAD-MOCK-001"
+        ]
+      },
+      {
+        "plannedWriteScope": "Dataverse MVP schema apply (dataverse-apply-mvp-schema.ps1 with -ExecuteWrites)",
+        "storyKey": "5-5-validate-dataverse-mvp-operational-store-readiness",
+        "rollbackBoundary": "Roll back the schema apply by deleting the CouncilOfMinionsMVP unmanaged solution in the sandbox environment; unmanaged solution deletion removes the Council tables/choices it introduced. The committed dataverse-mvp-schema-manifest.json is the re-apply source of truth, and the tenant decision packet records Doug's approval before any such apply runs.",
+        "auditBoundary": "The schema apply is gated behind a Doug-approved read-only preflight that proves target.environmentId and target.organizationId match `pac env who`; the preflight evidence and the tenant decision packet are the audit trail for the write authorization. The apply script's DRY RUN ONLY marker is the no-write boundary until approval.",
+        "receiptGate": "The schema apply itself is not a Council receipt event; it is a platform provisioning step approved through the tenant decision packet. It must stay in DRY RUN ONLY mode (writeScriptsDisabled=true) until Doug approves dataverseSandboxWrites and publisherPrefix.",
+        "exampleExistingRows": []
+      }
+    ],
+    "referencedIds": [
+      {
+        "id": "CSR-MANUAL-SUMMARY-001",
+        "idType": "CSR",
+        "sourceSlice": "manual-source-record-slice.json",
+        "referenceRole": "example-existing-source-row-in-scope-of-story-1.1-and-2.3-writes"
+      },
+      {
+        "id": "CSR-MANUAL-MEETING-001",
+        "idType": "CSR",
+        "sourceSlice": "manual-source-record-slice.json",
+        "referenceRole": "example-existing-source-row-in-scope-of-story-1.5-drift-writes"
+      },
+      {
+        "id": "CSR-OUTLOOK-THREAD-MOCK-001",
+        "idType": "CSR",
+        "sourceSlice": "outlook-source-reference-slice.json",
+        "referenceRole": "example-superseded-source-row-in-rollback-boundary-for-story-1.5"
+      },
+      {
+        "id": "CWI-LOCAL-DECISION-001",
+        "idType": "CWI",
+        "sourceSlice": "proposed-work-item-extraction-slice.json",
+        "referenceRole": "example-existing-work-item-row-in-scope-of-story-1.3-writes"
+      },
+      {
+        "id": "CWI-LOCAL-SHELL-DECISION-001",
+        "idType": "CWI",
+        "sourceSlice": "work-item-execution-shell-slice.json",
+        "referenceRole": "example-existing-work-item-row-in-scope-of-story-2.1-writes"
+      },
+      {
+        "id": "CWI-LOCAL-QUEUE-HAPPY-001",
+        "idType": "CWI",
+        "sourceSlice": "receipt-backed-state-changes-slice.json",
+        "referenceRole": "example-existing-work-item-row-in-rollback-boundary-for-story-2.3"
+      },
+      {
+        "id": "CR-LOCAL-APPROVAL-PROPOSED-001",
+        "idType": "CR",
+        "sourceSlice": "approval-boundaries-slice.json",
+        "referenceRole": "example-existing-receipt-row-in-scope-of-story-1.3-writes"
+      },
+      {
+        "id": "CR-LOCAL-DRIFT-001",
+        "idType": "CR",
+        "sourceSlice": "source-drift-supersession-slice.json",
+        "referenceRole": "example-existing-receipt-row-in-audit-boundary-for-story-1.5"
+      },
+      {
+        "id": "CR-LOCAL-SHELL-CREATE-001",
+        "idType": "CR",
+        "sourceSlice": "work-item-execution-shell-slice.json",
+        "referenceRole": "example-existing-receipt-row-in-scope-of-story-2.1-writes"
+      },
+      {
+        "id": "CR-LOCAL-STATE-HAPPY-PROPOSED-001",
+        "idType": "CR",
+        "sourceSlice": "receipt-backed-state-changes-slice.json",
+        "referenceRole": "example-existing-receipt-row-in-rollback-boundary-for-story-2.3"
+      },
+      {
+        "id": "CR-LOCAL-MEMORY-001",
+        "idType": "CR",
+        "sourceSlice": "memory-candidates-slice.json",
+        "referenceRole": "example-existing-receipt-row-in-scope-of-story-4.4-writes"
+      }
+    ],
+    "writesDeferred": [
+      {
+        "deferredWrite": "Live `pac auth who`, `pac env who`, and `pac env list-settings` preflight execution",
+        "receiptGate": "Deferred to a Doug-approved read-only preflight under the Epic 5 tenant-readiness gate; no live pac call is performed in this slice.",
+        "evidenceState": "deferred-to-tenant"
+      },
+      {
+        "deferredWrite": "dataverse-apply-mvp-schema.ps1 -ExecuteWrites (solution/publisher/choice/table/column/relationship creation and publish)",
+        "receiptGate": "Deferred until Doug approves dataverseSandboxWrites (allowed_after_readonly_preflight) and confirms publisherPrefix in the tenant decision packet; writeScriptsDisabled stays true in this slice.",
+        "evidenceState": "deferred-to-tenant"
+      },
+      {
+        "deferredWrite": "Any live com_councilworkitem.com_state_group mutation driven by earlier-slice receipts",
+        "receiptGate": "Receipt-gated to Epic 2 Story 2.3 apply-receipt-backed-queue-state-changes; this slice records the rollback/audit boundary only and performs no live mutation.",
+        "evidenceState": "deferred-to-tenant"
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "dataverseReadinessRun.preflightContract.expectedCommands lists `pac auth who`, `pac env who`, and `pac env list-settings`, each with an evidenceShape whose every field is the literal 'VERIFY IN TENANT' and evidenceState=deferred-to-tenant; no concrete environment/org id is recorded",
+        "dataverseReadinessRun.preflightContract.noLivePacCallPerformed=true and guards.noLivePacCallInThisSlice=true and guards.preflightEvidenceDeferredToTenant=true",
+        "dataverseReadinessRun.pendingApprovals carries dataverseSandboxWrites and publisherPrefix as PENDING entries with requiredApprover=Doug and backingReceiptId=null; guards.writeScriptsDisabled=true (strict) and guards.noApprovalReceiptFabricated=true; no com_receipt_id appears anywhere in the slice",
+        "dataverseReadinessRun.writesDeferred records the live preflight and the schema apply as deferred entries naming their receipt gates"
+      ],
+      "tenantEvidenceRequired": "Live `pac auth who`, `pac env who`, `pac env list-settings` execution and the concrete environment/organization ID match against dataverse-mvp-schema-manifest.json remain VERIFY IN TENANT under the Epic 5 tenant-readiness gate; this slice is local contract evidence only and performs no live pac call."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "dataverseReadinessRun.dryRunSchemaManifest.manifestRef references the committed dataverse-mvp-schema-manifest.json and guards.fullShapeNotForcedUpfront=true (strict)",
+        "dataverseReadinessRun.dryRunSchemaManifest.storyScopedWritePolicy is non-empty; every entry references a real epic story key, and every table/column it lists exists in dataverse-mvp-schema-manifest.json",
+        "dataverseReadinessRun.rollbackAuditBoundaries provides a rollback and an audit boundary statement per planned write scope, each referencing a real epic story key",
+        "guards.schemaWritesTiedToStoryScope=true and guards.rollbackAuditBoundaryPerPlannedWriteScope=true"
+      ],
+      "tenantEvidenceRequired": "Applying story-scoped schema writes to the live tenant (creating only the tables/columns each implementation story needs) remains gated to Doug's sandbox-write approval and the receipt-backed mutation semantics of Epic 2 Story 2.3; this slice records the dry-run mapping and boundaries only and performs no live schema write."
+    }
+  ]
+}

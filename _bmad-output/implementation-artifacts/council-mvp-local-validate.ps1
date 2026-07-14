@@ -268,6 +268,73 @@ try {
     }
   }
 
+
+  Invoke-ValidationStep "Skill registry slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\skill-registry-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Skill registry slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "SKILL_REGISTRY_SLICE_VALIDATE_OK") {
+      throw "Skill registry slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Skill authority expansion slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\skill-authority-expansion-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Skill authority expansion slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "SKILL_AUTHORITY_EXPANSION_SLICE_VALIDATE_OK") {
+      throw "Skill authority expansion slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Platform evaluation slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\platform-evaluation-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Platform evaluation slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "PLATFORM_EVALUATION_SLICE_VALIDATE_OK") {
+      throw "Platform evaluation slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Tenant readiness gates slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\tenant-readiness-gates-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Tenant readiness gates slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "TENANT_READINESS_GATES_SLICE_VALIDATE_OK") {
+      throw "Tenant readiness gates slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Dataverse readiness slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\dataverse-readiness-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Dataverse readiness slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "DATAVERSE_READINESS_SLICE_VALIDATE_OK") {
+      throw "Dataverse readiness slice validation did not print success marker."
+    }
+  }
+
+  Invoke-ValidationStep "Phase 2 projections slice validation" {
+    $output = & powershell -NoProfile -File "_bmad-output\implementation-artifacts\phase2-projections-slice-validate.ps1"
+    $output | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "Phase 2 projections slice validation failed."
+    }
+    if (($output -join "`n") -notmatch "PHASE2_PROJECTIONS_SLICE_VALIDATE_OK") {
+      throw "Phase 2 projections slice validation did not print success marker."
+    }
+  }
+
   Invoke-ValidationStep "Dataverse deployment dry run" {
     $output = & powershell -NoProfile -ExecutionPolicy Bypass -File "_bmad-output\implementation-artifacts\dataverse-deployment-plan.ps1"
     if ($LASTEXITCODE -ne 0) {

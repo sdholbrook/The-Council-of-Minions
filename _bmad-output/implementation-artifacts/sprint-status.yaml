@@ -76,12 +76,12 @@ development_status:
   4-5-project-the-semantic-contract-without-dual-authoring: done
   epic-4-retrospective: optional
   epic-5: backlog
-  5-1-maintain-the-minion-skill-registry: backlog
-  5-2-approve-skill-authority-expansion: backlog
-  5-3-record-microsoft-platform-evaluation-evidence: backlog
-  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog
-  5-5-validate-dataverse-mvp-operational-store-readiness: backlog
-  5-6-manage-phase-2-knowledge-and-analytics-projections: backlog
+  5-1-maintain-the-minion-skill-registry: ready-for-dev
+  5-2-approve-skill-authority-expansion: ready-for-dev
+  5-3-record-microsoft-platform-evaluation-evidence: ready-for-dev
+  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: ready-for-dev
+  5-5-validate-dataverse-mvp-operational-store-readiness: ready-for-dev
+  5-6-manage-phase-2-knowledge-and-analytics-projections: ready-for-dev
   epic-5-retrospective: optional
 
 action_items:
