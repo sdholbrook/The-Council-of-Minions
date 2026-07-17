@@ -14,12 +14,44 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import catch_emit  # noqa: E402  (vendored sibling, stdlib-only)
+
+# Set once in main(); a Gate needs these to record its own decision.
+_CTX = {"export_dir": None, "key": None, "run_id": "unknown", "coupon": False}
+
 
 def sh(cmd, cwd=None, shell=False):
     return subprocess.run(cmd, cwd=cwd, shell=shell, capture_output=True, text=True)
 
 
-def fail(msg):
+def _catch(gate, decision, reason, cause=catch_emit.VERIFICATION, locus=()):
+    """Record a Gate decision as evidence. Never let recording break the Gate.
+
+    A Catch that cannot be written must not turn a clean refusal into a crash —
+    the refusal is the load-bearing part. The failure to record is surfaced on
+    stderr rather than swallowed, because silent evidence loss is the bug this
+    whole mechanism exists to prevent.
+    """
+    if not _CTX["export_dir"] or not _CTX["key"]:
+        return
+    try:
+        catch_emit.emit(_CTX["export_dir"], _CTX["key"], gate, decision, reason,
+                        run_id=_CTX["run_id"], cause=cause, locus=locus,
+                        coupon=_CTX["coupon"])
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"WARNING: could not record Catch for gate '{gate}': {exc}",
+              file=sys.stderr)
+
+
+def fail(msg, gate="check", cause=catch_emit.VERIFICATION, locus=()):
+    """Refuse — and emit the Catch. A refusal nobody can see never happened.
+
+    `locus` is the paths the refusal is ABOUT. Pass it: a Gate that renders its
+    locus only into `msg` has destroyed the evidence that decides whether the
+    refusal was the Line's own bug, and prose is not evidence (AD-2).
+    """
+    _catch(gate, catch_emit.REJECTED, msg, cause, locus=locus)
     print(f"FAIL: {msg}")
     sys.exit(1)
 
@@ -35,14 +67,31 @@ def main():
                     help="semicolon-separated repo-relative paths this worker may touch")
     ap.add_argument("--export-dir", required=True,
                     help="absolute dir OUTSIDE the worktree to write <key>.patch")
+    ap.add_argument("--run-id", default="unknown",
+                    help="Ringer run name; scopes Catch identity to one run")
+    ap.add_argument("--coupon", action="store_true",
+                    help="this Work Item is planted fault injection (FR-14). The "
+                         "flag is recorded on every Catch either way; absence of "
+                         "the FIELD would read as False downstream and authorize "
+                         "the patch, which is exactly what a Coupon must never get.")
+    ap.add_argument("--contract-artifacts", default="notes.md",
+                    help="semicolon-separated artifacts the Line's own prompt "
+                         "MANDATES; exempt from ownership and excluded from the "
+                         "exported patch. The Bridge supplies these — a Gate must "
+                         "not refuse, and an export must not ship, what the Line "
+                         "itself ordered.")
     a = ap.parse_args()
     wt = os.getcwd()
+    _CTX.update(export_dir=a.export_dir, key=a.key, run_id=a.run_id,
+                coupon=a.coupon)
+    contract = [x.strip() for x in a.contract_artifacts.split(";") if x.strip()]
 
     # 1. expected files exist and are non-empty
     for f in [x.strip() for x in a.expect.split(";") if x.strip()]:
         p = os.path.join(wt, f)
         if not os.path.isfile(p) or os.path.getsize(p) == 0:
-            fail(f"expected file missing or empty: {f} (worker did not produce it)")
+            fail(f"expected file missing or empty: {f} (worker did not produce it)",
+                 gate="expect", locus=[f])
 
     # 2. run the acceptance check — this is the contract
     r = sh(a.check_command, cwd=wt, shell=True)
@@ -51,28 +100,46 @@ def main():
         print(r.stdout[-4000:])
         print("---- acceptance check stderr (tail) ----")
         print(r.stderr[-4000:])
-        fail(f"acceptance check '{a.check_command}' exited {r.returncode} for {a.key}")
+        fail(f"acceptance check '{a.check_command}' exited {r.returncode} "
+             f"for {a.key}", gate="check")
 
     # 3. ownership boundary (optional but recommended)
     owned = [x.strip().rstrip("/") for x in a.owned.split(";") if x.strip()]
     if owned:
-        st = sh(["git", "status", "--porcelain"], cwd=wt)
+        # -uall expands untracked DIRECTORIES into their files. Without it git
+        # collapses a new dir to a single entry ("pkg/vendor/") that matches no
+        # owned path, so the gate refuses work the Line's own spec ordered.
+        st = sh(["git", "status", "--porcelain", "-uall"], cwd=wt)
         changed = [ln[3:].strip() for ln in st.stdout.splitlines() if ln.strip()]
+        # An artifact the Line's own prompt ordered is never a stray
+        # (L-2026-07-14-epic21-pilot: this contradiction cost a retry per wave).
         stray = [c for c in changed
-                 if not any(c == o or c.startswith(o + "/") for o in owned)]
+                 if c not in contract
+                 and not any(c == o or c.startswith(o + "/") for o in owned)]
         if stray:
-            fail(f"changes outside owned paths for {a.key}: {stray}")
+            # `stray` IS the locus. Rendering it only into the message would
+            # throw away the fact that decides self_inflicted vs real.
+            fail(f"changes outside owned paths for {a.key}: {stray}",
+                 gate="ownership", locus=stray)
 
     # 4. export a verified patch OUT of the worktree (survives PASS deletion)
     os.makedirs(a.export_dir, exist_ok=True)
     sh(["git", "add", "-A"], cwd=wt)                       # stage, never commit
-    diff = sh(["git", "diff", "--cached", "--binary"], cwd=wt)
+    # A contract artifact is the worker's REPORT, not deliverable code.
+    # Exempting it from the gate (step 3) is only half the fix: if it rides
+    # along in the patch, every patch after the first collides on it and
+    # `git apply` — which is atomic — rejects the WHOLE patch, code included.
+    diff = sh(["git", "diff", "--cached", "--binary", "--", "."]
+              + [f":(exclude){a}" for a in contract], cwd=wt)
     patch_path = os.path.join(a.export_dir, f"{a.key}.patch")
     with open(patch_path, "w") as fh:
         fh.write(diff.stdout)
     if os.path.getsize(patch_path) == 0:
-        fail(f"worker produced an empty patch for {a.key} (no code changes detected)")
+        fail(f"worker produced an empty patch for {a.key} (no code changes detected)",
+             gate="export", cause=catch_emit.ERROR)
 
+    _catch("check", catch_emit.ACCEPTED,
+           f"acceptance check passed; verified patch exported to {patch_path}")
     print(f"PASS: {a.key} — acceptance check passed; "
           f"verified patch exported to {patch_path}")
     sys.exit(0)

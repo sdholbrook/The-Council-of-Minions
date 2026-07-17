@@ -81,7 +81,8 @@ def parse_development_status(path):
 
 
 def find_story_file(story_dir, key):
-    for cand in (f"{key}.md", f"story-{key}.md"):
+    # spec-<key>.md: Axon's convention; the bridge meets repos where they are.
+    for cand in (f"{key}.md", f"story-{key}.md", f"spec-{key}.md"):
         p = os.path.join(story_dir, cand)
         if os.path.isfile(p):
             return p
@@ -109,18 +110,36 @@ def build_spec(key, title, story_md):
         "requires them; keep the change boring and consistent with existing "
         "patterns; mark unknown product facts as assumptions, do not invent.\n\n"
         "OUTPUT CONTRACT: make the code change the story requires, then write "
-        "./notes.md in the worktree listing what you changed, what you read for "
-        "conventions, which command verifies it, and any assumptions/follow-ups.\n\n"
+        f"./{CONTRACT_ARTIFACTS[0]} in the worktree listing what you changed, what "
+        "you read for conventions, which command verifies it, and any "
+        "assumptions/follow-ups.\n\n"
         "=== FULL STORY SPEC (source of truth) ===\n"
         f"{story_md.strip()}\n"
         "=== END STORY SPEC ==="
     )
 
 
-def build_check(key, check_cmd, owned, expect, export_dir):
+# The Line's own OUTPUT CONTRACT. The prompt MANDATES these artifacts, so the
+# Gate must never punish a worker for producing them, and the export must never
+# ship them as deliverable code. Both behaviours derive from this one list —
+# the previous cut hardcoded "notes.md" in three unrelated places, so changing
+# the prompt to demand report.md would have reproduced both bugs verbatim: the
+# gate refusing the work it ordered, and every patch after the first colliding
+# on it. Fix the class, not the instance.
+CONTRACT_ARTIFACTS = ["notes.md"]
+
+
+def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown"):
     parts = ["python3", _q(CHECK), "--key", _q(key),
              "--check-command", _q(check_cmd),
-             "--export-dir", _q(export_dir)]
+             "--export-dir", _q(export_dir),
+             # Catch identity is (runId, key, gate, attempt); without the run id
+             # every run's Catches share an @id and the Ledger cannot tell two
+             # runs of the same story apart.
+             "--run-id", _q(run_id),
+             # The Bridge is the only component that knows what its own prompt
+             # demanded, so it tells the Gate rather than the Gate guessing.
+             "--contract-artifacts", _q(";".join(CONTRACT_ARTIFACTS))]
     if owned:
         parts += ["--owned", _q(owned)]
     if expect:
@@ -202,7 +221,8 @@ def main():
             # the worktree and exports the durable patch outside it.
             "expect_files": [],
             "spec": build_spec(key, title_of(text, key), text),
-            "check": build_check(key, check_cmd, owned, expect, export_dir),
+            "check": build_check(key, check_cmd, owned, expect, export_dir,
+                                 run_id=a.run_name),
             "verified": (f"story {key}: acceptance check passed in an isolated "
                          f"worktree, changes stayed within owned paths, and a "
                          f"non-empty patch was exported for review"),
