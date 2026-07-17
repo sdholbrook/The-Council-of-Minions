@@ -458,11 +458,15 @@ foreach ($proposal in $proposals) {
       # The citation must reference the RECORDED gap. General rule, no slice-specific
       # vocabulary: (1) it must cite the row by id; (2) the cited row must actually
       # record non-empty com_contract_gaps text (a "recorded gap" is not just a row
-      # id + decision label); (3) it must substantively overlap that recorded gap
-      # text — either a verbatim multi-word run, or at least two significant tokens
-      # (length >= 4, minus a small English stopword set) drawn from the cited row's
-      # own com_contract_gaps. The significant-term set is derived from the cited row,
-      # never hardcoded to this slice's contract vocabulary.
+      # id + decision label); (3) it must substantively overlap that recorded gap text
+      # via a verbatim contiguous run of word-tokens drawn from the cited row's own
+      # com_contract_gaps. Counting isolated shared terms is insufficient — two
+      # unrelated rows can share "contract" and "semantics" as isolated tokens while
+      # the citation describes a different row's gap, so a count is not proof. Both
+      # texts are normalized identically (lowercased, non [a-z0-9_/-] runs collapsed
+      # to spaces) so the tie is content-driven and survives punctuation or casing
+      # reflows; the cited row's gap text supplies the phrases, never this slice's
+      # own vocabulary.
       $citation = [string]$proposal.gapCitation
       if ($citation -notmatch [regex]::Escape($gapRowId)) {
         Add-Issue $issues "$pSubject gapCitation must cite the recorded gap row by id ($gapRowId)."
@@ -471,16 +475,36 @@ foreach ($proposal in $proposals) {
         Add-Issue $issues "$pSubject addressesGapInRow $gapRowId, but that row records no com_contract_gaps text; the custom proposal must cite a recorded gap, not just a row id and decision label."
       }
       else {
-        $gapNeedle = ($gapText -replace "\s+", " ").Trim()
-        $verbatimHit = ($citation.IndexOf($gapNeedle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0)
-        if (-not $verbatimHit) {
-          $stopwords = @("the","and","for","with","that","this","from","have","has","are","not","but","its","their","which","when","while","into","per","via","under","over","does","done","they","them","than","then","also","such","each","must","will","would","could","should","can","may","might","these","those","there","where","what","does","does","about","above","after","before","between","during","through","without","because","while")
-          $tokens = [regex]::Matches($gapText, "[A-Za-z][A-Za-z0-9_/-]{3,}") | ForEach-Object { $_.Value.ToLower() }
-          $significantTerms = @($tokens | Where-Object { $stopwords -notcontains $_ } | Sort-Object -Unique)
-          $matchedTerms = @($significantTerms | Where-Object { $citation -match [regex]::Escape($_) })
-          if ($matchedTerms.Count -lt 2) {
-            Add-Issue $issues "$pSubject gapCitation must substantively reference the recorded gap text in row $gapRowId (a verbatim run or at least two significant terms drawn from that row's com_contract_gaps); found neither."
+        # Derive a structural tie between the citation and the cited row's recorded
+        # gap text: a verbatim contiguous run of word-tokens drawn from that row's own
+        # com_contract_gaps must appear in the citation. A contiguous run (not a count
+        # of isolated terms) is required because isolated generic vocabulary recurs
+        # across many rows and would let a citation describing a different row's gap
+        # pass. Both strings are normalized identically so the comparison is purely
+        # content-driven.
+        $normCitation = [string]((([string]$citation).ToLower() -replace '[^a-z0-9_/-]+', ' ') -replace '\s+', ' ')
+        $citationTokens = @($normCitation.Trim() -split ' ' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        $normGap = [string]((([string]$gapText).ToLower() -replace '[^a-z0-9_/-]+', ' ') -replace '\s+', ' ')
+        $gapTokens = @($normGap.Trim() -split ' ' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        # Token-boundary-aware containment: the delimiter never appears inside a
+        # normalized token (tokens are [a-z0-9_/-] only), so a delimited phrase can
+        # only match whole tokens, never a prefix of one (e.g. "semantic" must not
+        # match inside "semantics"). That is what makes the tie a true phrase match
+        # rather than a bare substring scan.
+        $phraseDelim = '|'
+        $citationBlob = $phraseDelim + ($citationTokens -join $phraseDelim) + $phraseDelim
+        $phraseHit = $false
+        $requiredRunLength = 3
+        $lastStart = $gapTokens.Count - $requiredRunLength
+        for ($i = 0; $i -le $lastStart; $i++) {
+          $phrase = $phraseDelim + ($gapTokens[$i..($i + $requiredRunLength - 1)] -join $phraseDelim) + $phraseDelim
+          if ($citationBlob.IndexOf($phrase, [System.StringComparison]::Ordinal) -ge 0) {
+            $phraseHit = $true
+            break
           }
+        }
+        if (-not $phraseHit) {
+          Add-Issue $issues "$pSubject gapCitation must substantively reference the recorded gap text in row $gapRowId (a verbatim contiguous run of at least $requiredRunLength word-tokens drawn from that row's com_contract_gaps); isolated shared vocabulary is not sufficient."
         }
       }
     }

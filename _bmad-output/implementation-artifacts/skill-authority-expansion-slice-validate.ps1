@@ -5,7 +5,8 @@ param(
   [string]$OutlookSlicePath = "$PSScriptRoot\outlook-source-reference-slice.json",
   [string]$Story13ExtractionPath = "$PSScriptRoot\proposed-work-item-extraction-slice.json",
   [string]$Story14ExtractionPath = "$PSScriptRoot\zero-multi-item-extraction-slice.json",
-  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
+  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json",
+  [switch]$SkipCorruptionSelfTest
 )
 
 $ErrorActionPreference = "Stop"
@@ -1274,6 +1275,45 @@ foreach ($criterion in @(1, 2)) {
   }
   if (-not $citedAny) {
     Add-Issue $issues "Acceptance mapping for AC $criterion must cite at least one real slice id (CR-LOCAL-SKILL-*/CSK-LOCAL-*/CSR-*) in localEvidence; self-asserting prose is not proof."
+  }
+}
+
+# Corruption self-test (Story 5.2 hardening bar: "Verify a corrupted slice copy
+# FAILS before finishing."). A deliberately corrupted copy of the slice must cause
+# this validator to exit non-zero; otherwise the validator is vacuously passing
+# and the review swarm's kill list ("coverage derived not counted") fires. Runs
+# only in the top-level invocation and only when all real checks have already
+# passed, so a self-test failure is the sole new failure mode. The child re-run
+# is suppressed via -SkipCorruptionSelfTest to avoid recursion. The corrupted
+# copy lives outside $PSScriptRoot so it is never harvested as a sibling slice.
+if (-not $SkipCorruptionSelfTest -and $issues.Count -eq 0) {
+  $tempDir = [System.IO.Path]::GetTempPath()
+  $selfGuid = [System.Guid]::NewGuid().ToString('N')
+  $tempSlice = [System.IO.Path]::Combine($tempDir, "skill-authority-expansion-slice-corrupt-$selfGuid.json")
+  $tempStdout = [System.IO.Path]::Combine($tempDir, "skill-corrupt-stdout-$selfGuid.tmp")
+  $tempStderr = [System.IO.Path]::Combine($tempDir, "skill-corrupt-stderr-$selfGuid.tmp")
+  try {
+    $corruptObj = $rawSliceText | ConvertFrom-Json
+    $approvalToCorrupt = @($corruptObj.expansionRun.receipts | Where-Object { [string]$_.com_verb -eq "approved" }) | Select-Object -First 1
+    if ($null -ne $approvalToCorrupt) {
+      $approvalToCorrupt.com_result = "rejected"
+    }
+    else {
+      $corruptObj.storyKey = "corrupted"
+    }
+    $corruptObj | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $tempSlice -Encoding UTF8
+    $child = Start-Process -FilePath "pwsh" -ArgumentList @("-NoProfile", "-NonInteractive", "-File", $PSCommandPath, "-SkillSlicePath", $tempSlice, "-SkipCorruptionSelfTest") -Wait -PassThru -RedirectStandardOutput $tempStdout -RedirectStandardError $tempStderr
+    if ($child.ExitCode -eq 0) {
+      Add-Issue $issues "Corruption self-test failed: a corrupted slice copy (approval receipt com_result flipped to rejected) exited 0 under this validator; the validator is vacuously passing and does not reject invalid input."
+    }
+  }
+  catch {
+    Add-Issue $issues "Corruption self-test could not be executed: $($_.Exception.Message)"
+  }
+  finally {
+    if (Test-Path -LiteralPath $tempSlice) { Remove-Item -LiteralPath $tempSlice -Force }
+    if (Test-Path -LiteralPath $tempStdout) { Remove-Item -LiteralPath $tempStdout -Force }
+    if (Test-Path -LiteralPath $tempStderr) { Remove-Item -LiteralPath $tempStderr -Force }
   }
 }
 

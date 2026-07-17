@@ -146,7 +146,7 @@
         "com_before_state": "PHASE2-PLAN-LOCAL-002 deferred until mvp-contracts-stable with three triggering stability criteria unmet",
         "com_after_state": "premature activation of PHASE2-PLAN-LOCAL-002 denied; the Copilot Studio surface projection remains deferred; no plane write occurred in this slice",
         "com_evidence_refs": "prematureActivationAttempts[PHASE2-PREACT-LOCAL-001]; projectionPlans[PHASE2-PLAN-LOCAL-002]; denialRationale names unmet stability criteria",
-        "com_decision_rationale": "A premature-activation attempt against the Copilot Studio surface projection was denied because the approval-boundary, handoff, and approved-instruction MVP contracts are not yet tenant-verified. The denial is append-only; the projection remains deferred and owns no workflow state. No live plane write was performed.",
+        "com_decision_rationale": "A premature-activation attempt against the Copilot Studio surface projection was denied because the projection is deferred until mvp-contracts-stable and the approval-boundary, handoff, and approved-instruction MVP contracts are not yet tenant-verified. The denial is append-only; the projection remains deferred and owns no workflow state. No live plane write was performed.",
         "com_confidence": 0.92,
         "com_result": "rejected",
         "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; premature_activation_policy_denied; projections_never_own_workflow_state; phase2_plans_deferred_until_mvp_contracts_stable",

@@ -303,6 +303,23 @@ if ($siblingReceiptIds.Count -eq 0) {
 if ($siblingIdempotencyKeys.Count -eq 0) {
   Add-Issue $issues "No idempotency keys could be harvested from sibling slices; key collision checks would silently no-op."
 }
+# Two further harvested collections back MINTED-id uniqueness checks that are
+# genuinely cross-slice (skills: skill-authority-expansion mint CSK-LOCAL-*;
+# runIds: every sibling slice carries one). Without these guards, removing the
+# last skill-bearing / runId-bearing sibling would let those collision checks
+# pass without flagging — a skippable mandatory check, which the Story 5.1
+# hardening bar forbids. They mirror the three guards above. (scenarioId is
+# intentionally NOT guarded here: no co-located sibling emits a scenarioId —
+# recommendation-scenario ids are a slice-local namespace — so its collision
+# check is forward-compatible-only and an emptiness guard would false-positive
+# on a legitimately empty collection. The intra-slice duplicate-scenario check
+# below still enforces scenario-id uniqueness within this slice.)
+if ($siblingSkillIds.Count -eq 0) {
+  Add-Issue $issues "No Council Skill IDs could be harvested from sibling slices; minted skill id collision checks would silently no-op."
+}
+if ($siblingRunIds.Count -eq 0) {
+  Add-Issue $issues "No run IDs could be harvested from sibling slices; minted runId collision checks would silently no-op."
+}
 
 $run = $slice.skillRegistryRun
 if ($null -eq $run) {

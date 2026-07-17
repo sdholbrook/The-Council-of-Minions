@@ -12,10 +12,68 @@ param(
   [string]$ApprovalSlicePath = "$PSScriptRoot\approval-boundaries-slice.json",
   [string]$ReceiptStateSlicePath = "$PSScriptRoot\receipt-backed-state-changes-slice.json",
   [string]$MemorySlicePath = "$PSScriptRoot\memory-candidates-slice.json",
-  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
+  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json",
+  [switch]$SelfTest
 )
 
 $ErrorActionPreference = "Stop"
+
+# ============================================================
+# Self-test mode: corrupt a temp copy of the slice and confirm
+# the validator FAILS on it. Encodes the story spec requirement
+# "Verify a corrupted slice copy FAILS before finishing" as a
+# repeatable regression guard. The default invocation (no
+# -SelfTest) is unchanged and still emits
+# DATAVERSE_READINESS_SLICE_VALIDATE_OK on success.
+# ============================================================
+if ($SelfTest) {
+  if (-not (Test-Path -LiteralPath $ReadinessSlicePath)) {
+    throw "SelfTest requires the genuine readiness slice at: $ReadinessSlicePath"
+  }
+  $selfExe = $PSCommandPath
+  if ([string]::IsNullOrWhiteSpace($selfExe)) {
+    throw "SelfTest could not resolve its own script path."
+  }
+
+  # Baseline: the genuine slice must pass before any corruption.
+  $genuineArgs = @("-NoProfile", "-File", $selfExe, "-ReadinessSlicePath", $ReadinessSlicePath)
+  & pwsh @genuineArgs | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "SelfTest FAILED: the genuine slice does not pass (exit $LASTEXITCODE); no baseline to corrupt."
+    exit 1
+  }
+
+  # Corrupt a temp copy by flipping the strict guard writeScriptsDisabled to
+  # false. This is a mandatory guard the validator must reject, so a corrupted
+  # copy that still passes proves the guard is not enforced.
+  $tempSlice = [System.IO.Path]::GetTempFileName()
+  Copy-Item -LiteralPath $ReadinessSlicePath -Destination $tempSlice -Force
+  try {
+    $tempJson = Get-Content -LiteralPath $tempSlice -Raw | ConvertFrom-Json
+    $tempJson.guards.writeScriptsDisabled = $false
+    $tempJson | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $tempSlice -NoNewline
+
+    $corruptArgs = @("-NoProfile", "-File", $selfExe, "-ReadinessSlicePath", $tempSlice)
+    $corruptOutput = (& pwsh @corruptArgs 2>&1) -join "`n"
+    $corruptExit = $LASTEXITCODE
+    if ($corruptExit -eq 0) {
+      Write-Host "SelfTest FAILED: the corrupted copy (writeScriptsDisabled=false) passed validation; the mandatory guard is not enforced."
+      Write-Host $corruptOutput
+      exit 1
+    }
+    if ($corruptOutput -notmatch "writeScriptsDisabled") {
+      Write-Host "SelfTest FAILED: the corrupted copy failed for an unrelated reason; the writeScriptsDisabled guard did not trigger."
+      Write-Host $corruptOutput
+      exit 1
+    }
+    Write-Host "Dataverse readiness slice self-test succeeded: corrupted copy (writeScriptsDisabled=false) correctly failed (exit $corruptExit)."
+    Write-Host "DATAVERSE_READINESS_SLICE_SELFTEST_OK"
+    exit 0
+  }
+  finally {
+    if (Test-Path -LiteralPath $tempSlice) { Remove-Item -LiteralPath $tempSlice -Force }
+  }
+}
 
 function Add-Issue {
   param(

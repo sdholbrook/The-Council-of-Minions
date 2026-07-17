@@ -444,6 +444,19 @@ if ([string]$run.canonicalSource -ne "council-semantic-contract") {
 if ([string]$run.deferredUntil -ne "mvp-contracts-stable") {
   Add-Issue $issues "Phase 2 projection run deferredUntil must be 'mvp-contracts-stable', found: $($run.deferredUntil)."
 }
+# Cross-reference alignment with the 4-5 slice (when present): the 5-6 run must declare
+# the same semanticContractVersion and canonicalSource as the referenced 4-5 slice, since
+# the Phase-2 plans project from the same canonical Council Semantic Contract — not a
+# divergent one. General rule over harvested sibling fields, not a hardcoded value.
+if ($semanticSlicePresent -and $null -ne $semanticSlice.projectionRun) {
+  $semanticRun = $semanticSlice.projectionRun
+  if ((Test-HasNonEmptyField -Record $semanticRun -Field "semanticContractVersion") -and ([string]$semanticRun.semanticContractVersion -ne [string]$run.semanticContractVersion)) {
+    Add-Issue $issues "Phase 2 projection run semanticContractVersion ($($run.semanticContractVersion)) must match the referenced 4-5 slice projectionRun.semanticContractVersion ($($semanticRun.semanticContractVersion)); Phase-2 plans project from the same Council Semantic Contract."
+  }
+  if ((Test-HasNonEmptyField -Record $semanticRun -Field "canonicalSource") -and ([string]$semanticRun.canonicalSource -ne [string]$run.canonicalSource)) {
+    Add-Issue $issues "Phase 2 projection run canonicalSource ($($run.canonicalSource)) must match the referenced 4-5 slice projectionRun.canonicalSource ($($semanticRun.canonicalSource)); both must project from the single canonical Council Semantic Contract."
+  }
+}
 foreach ($expectedInput in @("dataverse-mvp-schema-manifest.json", "semantic-contract-projection-slice.json")) {
   if (@($run.inputVocabularyFrom) -notcontains $expectedInput) {
     Add-Issue $issues "Phase 2 projection run must reference $expectedInput as an input."
@@ -768,6 +781,20 @@ else {
     if ([string]$deferReceipt.com_policy_flags -notmatch "planes_are_projections_only") {
       Add-Issue $issues "$roleSubject com_policy_flags must include planes_are_projections_only."
     }
+    # The deferred-plan catalog receipt must name at least one plan it catalogs in its
+    # com_evidence_refs (general rule over the minted plan ids — no hardcoded binding);
+    # a bare 'projectionPlans' claim without a resolvable plan id would be self-asserted.
+    $deferEvidenceRefs = [string]$deferReceipt.com_evidence_refs
+    $deferReceiptNamesPlan = $false
+    foreach ($planIdKey in @($slicePlanIds.Keys)) {
+      if ($deferEvidenceRefs -match [regex]::Escape($planIdKey)) {
+        $deferReceiptNamesPlan = $true
+        break
+      }
+    }
+    if (-not $deferReceiptNamesPlan) {
+      Add-Issue $issues "$roleSubject com_evidence_refs must name at least one projection plan id declared in this slice (the plans it catalogs), not merely assert the catalog."
+    }
   }
 }
 
@@ -788,6 +815,11 @@ else {
     }
     if ([string]$denialReceipt.com_policy_flags -notmatch "phase2_plans_deferred_until_mvp_contracts_stable") {
       Add-Issue $issues "$roleSubject com_policy_flags must include phase2_plans_deferred_until_mvp_contracts_stable."
+    }
+    # The denial rationale must substantively reference the deferred-until gate
+    # 'mvp-contracts-stable' that grounds the denial — not merely assert the denial.
+    if ([string]$denialReceipt.com_decision_rationale -notmatch "mvp-contracts-stable") {
+      Add-Issue $issues "$roleSubject com_decision_rationale must reference the deferred-until gate 'mvp-contracts-stable' that grounds the denial, not merely assert it."
     }
   }
 }
@@ -861,6 +893,20 @@ foreach ($receiptId in @($sliceReceiptIdMap.Keys)) {
 # and every deferred entry must name a real plan + a receipt gate.
 # ---------------------------------------------------------------------------
 
+# Derived map: plan ids that were the target of a denied premature-activation
+# attempt, mapped to the denial receipt id that denied them. General rule over
+# the attempts collection — used below to require the deferred-write ledger to
+# reference the denial receipt for any plan whose activation was denied, so the
+# denial threads through to the deferred-write entry (not a hardcoded binding).
+$deniedPlanToReceipt = @{}
+foreach ($attempt in $attempts) {
+  $deniedTargetPlanId = [string]$attempt.targetPlanId
+  $deniedByReceiptId = [string]$attempt.deniedByReceipt
+  if (-not [string]::IsNullOrWhiteSpace($deniedTargetPlanId) -and -not [string]::IsNullOrWhiteSpace($deniedByReceiptId)) {
+    $deniedPlanToReceipt[$deniedTargetPlanId] = $deniedByReceiptId
+  }
+}
+
 $deferredPlaneWrites = @($run.livePhase2PlaneWritesDeferred | Where-Object { $null -ne $_ })
 if ($deferredPlaneWrites.Count -lt $plans.Count) {
   Add-Issue $issues "Phase 2 projection run must include a deferred live-write entry for every projection plan, found $($deferredPlaneWrites.Count) for $($plans.Count) plans."
@@ -881,6 +927,14 @@ foreach ($deferred in $deferredPlaneWrites) {
     $linkedPlan = $slicePlanIds[$deferredPlanId]
     if ([string]$linkedPlan.targetSurface -ne $plane) {
       Add-Issue $issues "$subject targetSurface must match its plan's targetSurface ($($linkedPlan.targetSurface)), found: $plane."
+    }
+    # If this plan's activation was denied, the deferred-write ledger must reference
+    # the denial receipt id — the denial threads through to the deferred-write entry.
+    if ($deniedPlanToReceipt.ContainsKey($deferredPlanId)) {
+      $expectedDenialReceipt = $deniedPlanToReceipt[$deferredPlanId]
+      if ((Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate") -and ([string]$deferred.deferredUpdate -notmatch [regex]::Escape($expectedDenialReceipt))) {
+        Add-Issue $issues "$subject deferredUpdate must reference the denial receipt $expectedDenialReceipt that denied plan $deferredPlanId; a denied plan's deferred-write entry must thread the denial through."
+      }
     }
   }
   if (-not (Test-HasNonEmptyField -Record $deferred -Field "deferredUpdate")) {
