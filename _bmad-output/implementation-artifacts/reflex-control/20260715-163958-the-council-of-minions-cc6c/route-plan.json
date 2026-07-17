@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "request_id": "20260715-163958-the-council-of-minions-cc6c",
+  "project": "/srv/bmad/projects/The-Council-of-Minions",
+  "target_branch": "reflex/epic-5",
+  "identity": "meridian-course-correct-0717",
+  "planning_artifacts": [
+    "_bmad-output/implementation-artifacts/stories/5-1-maintain-the-minion-skill-registry.md",
+    "_bmad-output/implementation-artifacts/stories/5-2-approve-skill-authority-expansion.md",
+    "_bmad-output/implementation-artifacts/stories/5-3-record-microsoft-platform-evaluation-evidence.md",
+    "_bmad-output/implementation-artifacts/stories/5-5-validate-dataverse-mvp-operational-store-readiness.md",
+    "_bmad-output/implementation-artifacts/stories/5-6-manage-phase-2-knowledge-and-analytics-projections.md"
+  ],
+  "verify_commands": [
+    "bash .bmad-loop/verify.sh",
+    "env DOTNET_ROOT=/home/doug/.dotnet PATH=/home/doug/.dotnet:/home/doug/.dotnet/tools:/home/doug/.local/bin:/usr/bin:/bin pwsh -File _bmad-output/implementation-artifacts/council-mvp-local-validate.ps1"
+  ],
+  "steps": [
+    {
+      "lane": "ringer",
+      "reason": "5 mechanical, independently-owned, validator-checked slice stories (review-hardened 068ce1b); disjoint ownership verified; one linted wave. 5-4 EXCLUDED: its fabrication-scan validator was disproven by an orchestrator probe on 07-14 and never re-fixed - a gate that cannot fail proves nothing; it needs a validator re-fix before dispatch.",
+      "manifest": "_bmad-output/implementation-artifacts/reflex-control/20260715-163958-the-council-of-minions-cc6c/swarm-epic5-wave1.json",
+      "stories": [
+        "5-1-maintain-the-minion-skill-registry",
+        "5-2-approve-skill-authority-expansion",
+        "5-3-record-microsoft-platform-evaluation-evidence",
+        "5-5-validate-dataverse-mvp-operational-store-readiness",
+        "5-6-manage-phase-2-knowledge-and-analytics-projections"
+      ],
+      "run_name": "council-epic5"
+    }
+  ]
+}
