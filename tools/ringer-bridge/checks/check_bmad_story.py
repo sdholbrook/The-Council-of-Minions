@@ -18,7 +18,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import catch_emit  # noqa: E402  (vendored sibling, stdlib-only)
 
 # Set once in main(); a Gate needs these to record its own decision.
-_CTX = {"export_dir": None, "key": None, "run_id": "unknown", "coupon": False}
+# "origin" stays None when the Story declared no marker — _catch() then omits
+# the kwarg entirely so catch_emit.emit() supplies its own default. The
+# producer owns the default; duplicating it here would be a second copy that
+# can drift (FR-8, AD-14).
+_CTX = {"export_dir": None, "key": None, "run_id": "unknown", "coupon": False,
+        "origin": None}
 
 
 def sh(cmd, cwd=None, shell=False):
@@ -36,9 +41,12 @@ def _catch(gate, decision, reason, cause=catch_emit.VERIFICATION, locus=()):
     if not _CTX["export_dir"] or not _CTX["key"]:
         return
     try:
+        kw = {}
+        if _CTX["origin"] is not None:
+            kw["origin"] = _CTX["origin"]
         catch_emit.emit(_CTX["export_dir"], _CTX["key"], gate, decision, reason,
                         run_id=_CTX["run_id"], cause=cause, locus=locus,
-                        coupon=_CTX["coupon"])
+                        coupon=_CTX["coupon"], **kw)
     except Exception as exc:                                  # noqa: BLE001
         print(f"WARNING: could not record Catch for gate '{gate}': {exc}",
               file=sys.stderr)
@@ -80,10 +88,15 @@ def main():
                          "exported patch. The Bridge supplies these — a Gate must "
                          "not refuse, and an export must not ship, what the Line "
                          "itself ordered.")
+    ap.add_argument("--origin", choices=("human", "factory"), default=None,
+                    help="Story authorship declared by the Story file's "
+                         "ringer-origin marker (FR-8: origin is recorded). "
+                         "Omitted = no marker; the emitter supplies its own "
+                         "default so this Gate never duplicates it.")
     a = ap.parse_args()
     wt = os.getcwd()
     _CTX.update(export_dir=a.export_dir, key=a.key, run_id=a.run_id,
-                coupon=a.coupon)
+                coupon=a.coupon, origin=a.origin)
     contract = [x.strip() for x in a.contract_artifacts.split(";") if x.strip()]
 
     # 1. expected files exist and are non-empty
@@ -104,7 +117,13 @@ def main():
              f"for {a.key}", gate="check")
 
     # 3. ownership boundary (optional but recommended)
-    owned = [x.strip().rstrip("/") for x in a.owned.split(";") if x.strip()]
+    # Tolerate both ';' (bridge convention, bmad_to_ringer.py docs) and ','
+    # (natural prose — every wave-1 spec authors ringer-owned with commas).
+    # A comma is never a valid char in a repo-relative path, so treating it as
+    # a separator never over-matches; refusing it collapses two real paths
+    # into one unmatched string and the gate rejects work the Line ordered
+    # (L-2026-07-17-gitfile-wave1: this cost a retry per story).
+    owned = [x.strip().rstrip("/") for x in a.owned.replace(",", ";").split(";") if x.strip()]
     if owned:
         # -uall expands untracked DIRECTORIES into their files. Without it git
         # collapses a new dir to a single entry ("pkg/vendor/") that matches no

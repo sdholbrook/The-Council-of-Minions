@@ -23,6 +23,10 @@ Per-story overrides (optional HTML comments anywhere in the story .md)
   <!-- ringer-check: <shell command, exit 0 = PASS> -->   overrides --check-command
   <!-- ringer-owned: path/one;path/two -->                repo-relative owned paths
   <!-- ringer-expect: file/a;file/b -->                   files that must exist
+  <!-- ringer-origin: human|factory -->                   Story authorship (FR-8);
+                                                          absent = emitter default
+  <!-- ringer-coupon: true -->                            planted fault injection
+                                                          (FR-14); never merged
 
 Usage
 -----
@@ -129,7 +133,8 @@ def build_spec(key, title, story_md):
 CONTRACT_ARTIFACTS = ["notes.md"]
 
 
-def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown"):
+def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown",
+                origin=None, coupon=False):
     parts = ["python3", _q(CHECK), "--key", _q(key),
              "--check-command", _q(check_cmd),
              "--export-dir", _q(export_dir),
@@ -144,6 +149,14 @@ def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown"):
         parts += ["--owned", _q(owned)]
     if expect:
         parts += ["--expect", _q(expect)]
+    # Absence is omitted, never sent as a value: the emitter owns the default
+    # (FR-8/AD-20 — a missing marker is not a determination).
+    if origin is not None:
+        parts += ["--origin", _q(origin)]
+    # The Bridge is the only component that knows what it planted (AD-9); the
+    # Gate stamps every Catch for the key so no consumer ever infers coupon-ness.
+    if coupon:
+        parts += ["--coupon"]
     return " ".join(parts)
 
 
@@ -210,6 +223,15 @@ def main():
                 f"a Ringer task MUST have an executable check.")
         owned = extract(text, "owned") or ""
         expect = extract(text, "expect") or "notes.md"
+        origin = extract(text, "origin")
+        if origin is not None and origin not in ("human", "factory"):
+            die(f"story {key}: invalid <!-- ringer-origin: {origin} --> — "
+                f"must be 'human' or 'factory' (FR-8 closed vocabulary)")
+        coupon_raw = extract(text, "coupon")
+        if coupon_raw is not None and coupon_raw not in ("true", "false"):
+            die(f"story {key}: invalid <!-- ringer-coupon: {coupon_raw} --> — "
+                f"must be 'true' or 'false' (FR-14)")
+        coupon = coupon_raw == "true"
         task = {
             "key": key,
             "task_type": "code-feature",
@@ -222,7 +244,8 @@ def main():
             "expect_files": [],
             "spec": build_spec(key, title_of(text, key), text),
             "check": build_check(key, check_cmd, owned, expect, export_dir,
-                                 run_id=a.run_name),
+                                 run_id=a.run_name, origin=origin,
+                                 coupon=coupon),
             "verified": (f"story {key}: acceptance check passed in an isolated "
                          f"worktree, changes stayed within owned paths, and a "
                          f"non-empty patch was exported for review"),
