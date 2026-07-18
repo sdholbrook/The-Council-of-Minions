@@ -134,7 +134,7 @@ CONTRACT_ARTIFACTS = ["notes.md"]
 
 
 def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown",
-                origin=None, coupon=False):
+                origin=None, coupon=False, tests_docs_roots=""):
     parts = ["python3", _q(CHECK), "--key", _q(key),
              "--check-command", _q(check_cmd),
              "--export-dir", _q(export_dir),
@@ -157,6 +157,10 @@ def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown",
     # Gate stamps every Catch for the key so no consumer ever infers coupon-ness.
     if coupon:
         parts += ["--coupon"]
+    # Repo-level, not story-level: which source roots the tests+docs gate
+    # governs (FR-10). Empty = omitted = the gate stays inert (AD-20).
+    if tests_docs_roots:
+        parts += ["--tests-docs-roots", _q(tests_docs_roots)]
     return " ".join(parts)
 
 
@@ -184,6 +188,10 @@ def main():
     ap.add_argument("--workdir", default="~/.ringer/work/bmad-hybrid")
     ap.add_argument("--export-dir", default="",
                     help="where verified patches land (default: <workdir>/patches)")
+    ap.add_argument("--tests-docs-roots", default="",
+                    help="path-list of product-source roots for the tests+docs "
+                         "gate (FR-10), e.g. 'meridian_control;scripts'. Empty "
+                         "= gate inert in this repo (AD-20).")
     ap.add_argument("--out", default="swarm.json")
     a = ap.parse_args()
 
@@ -245,7 +253,8 @@ def main():
             "spec": build_spec(key, title_of(text, key), text),
             "check": build_check(key, check_cmd, owned, expect, export_dir,
                                  run_id=a.run_name, origin=origin,
-                                 coupon=coupon),
+                                 coupon=coupon,
+                                 tests_docs_roots=a.tests_docs_roots),
             "verified": (f"story {key}: acceptance check passed in an isolated "
                          f"worktree, changes stayed within owned paths, and a "
                          f"non-empty patch was exported for review"),

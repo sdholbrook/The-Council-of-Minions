@@ -105,6 +105,13 @@ def main():
                          "ringer-origin marker (FR-8: origin is recorded). "
                          "Omitted = no marker; the emitter supplies its own "
                          "default so this Gate never duplicates it.")
+    ap.add_argument("--tests-docs-roots", default="",
+                    help="path-list of product-source roots governed by the "
+                         "tests+docs gate (FR-10/AD-18): a changed <root>/<m>.py "
+                         "must be accompanied by tests/test_<m>.py, and a NEW "
+                         "module under a root needs a docs/ change. Empty = the "
+                         "gate is inert — absence of config is not a "
+                         "determination and must never refuse (AD-20).")
     a = ap.parse_args()
     wt = os.getcwd()
     _CTX.update(export_dir=a.export_dir, key=a.key, run_id=a.run_id,
@@ -128,14 +135,19 @@ def main():
         fail(f"acceptance check '{a.check_command}' exited {r.returncode} "
              f"for {a.key}", gate="check")
 
+    # Change inventory, computed once for gates 3 (ownership) and 3b
+    # (tests+docs). -uall expands untracked DIRECTORIES into their files:
+    # without it git collapses a new dir to a single entry ("pkg/vendor/")
+    # that matches no owned path, so the gate refuses work the Line's own
+    # spec ordered.
+    st = sh(["git", "status", "--porcelain", "-uall"], cwd=wt)
+    entries = [(ln[:2], ln[3:].strip()) for ln in st.stdout.splitlines()
+               if ln.strip()]
+    changed = [p for _, p in entries]
+
     # 3. ownership boundary (optional but recommended)
     owned = [x.rstrip("/") for x in _split_paths(a.owned)]
     if owned:
-        # -uall expands untracked DIRECTORIES into their files. Without it git
-        # collapses a new dir to a single entry ("pkg/vendor/") that matches no
-        # owned path, so the gate refuses work the Line's own spec ordered.
-        st = sh(["git", "status", "--porcelain", "-uall"], cwd=wt)
-        changed = [ln[3:].strip() for ln in st.stdout.splitlines() if ln.strip()]
         # An artifact the Line's own prompt ordered is never a stray
         # (L-2026-07-14-epic21-pilot: this contradiction cost a retry per wave).
         stray = [c for c in changed
@@ -146,6 +158,37 @@ def main():
             # throw away the fact that decides self_inflicted vs real.
             fail(f"changes outside owned paths for {a.key}: {stray}",
                  gate="ownership", locus=stray)
+
+    # 3b. tests+docs concurrent gate (FR-10/AD-18) — after Ownership, before
+    # export, refusing like any other Gate. Decidable via AD-11's 1:1
+    # module↔test pairing, keyed off the path PATTERN (fix the class, not the
+    # instance): a changed <root>/<m>.py pairs with tests/test_<m>.py; a NEW
+    # module under a root is a new public surface and needs a docs/ change.
+    # Patches touching ONLY tests or ONLY docs are legal (test-hardening and
+    # doc stories). Contract artifacts are exempt (AD-6). __init__.py is
+    # exempt from pairing (it pairs with nothing; AD-11 forbids editing it as
+    # a shared file anyway, which is the ownership gate's job, not this one's).
+    td_roots = [x.rstrip("/") for x in _split_paths(a.tests_docs_roots)]
+    if td_roots:
+        rel = [(code, p) for code, p in entries if p not in contract]
+        touched_docs = any(p == "docs" or p.startswith("docs/")
+                           for _, p in rel)
+        for code, p in rel:
+            in_root = any(p.startswith(r + "/") for r in td_roots)
+            if not in_root or not p.endswith(".py"):
+                continue
+            base = os.path.splitext(os.path.basename(p))[0]
+            if base == "__init__":
+                continue
+            pair = f"tests/test_{base}.py"
+            if pair not in changed:
+                fail(f"tests+docs: {p} changed without its paired test {pair} "
+                     f"for {a.key} (FR-10: no test = not done)",
+                     gate="tests-docs", locus=[p, pair])
+            if code.strip() in ("??", "A") and not touched_docs:
+                fail(f"tests+docs: new public surface {p} without a docs/ "
+                     f"change for {a.key} (FR-10: no doc = not done)",
+                     gate="tests-docs", locus=[p, "docs/"])
 
     # 4. export a verified patch OUT of the worktree (survives PASS deletion)
     os.makedirs(a.export_dir, exist_ok=True)

@@ -44,6 +44,13 @@ filesystem, not the logic), and emits a Ringer `swarm.json` where each task:
 Adding a `ringer-check` per story is the single highest-value habit — it makes
 "done" executable. Without it the bridge falls back to `--check-command`.
 
+**Tests+Docs Gate (FR-10):** pass `--tests-docs-roots 'pkg;scripts'` to the
+bridge (repo-level, not per-story) and the Gate refuses a patch that changes
+`<root>/<m>.py` without touching `tests/test_<m>.py`, or adds a NEW module
+under a root without a `docs/` change. Tests-only and docs-only patches are
+always legal; contract artifacts and `__init__.py` are exempt; with no roots
+declared the gate is inert (absence of config never refuses).
+
 `ringer-origin` records Story authorship on every Catch the Gates emit
 (`meridian:origin`). Absent marker = the emitter's default (`factory`) — the
 producer owns the default; the Bridge and Gate never duplicate it. An invalid
