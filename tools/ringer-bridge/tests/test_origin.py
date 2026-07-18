@@ -10,6 +10,7 @@ Run: python3 -m unittest discover -s tools/ringer-bridge/tests -q
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ class ManifestMarkerTests(unittest.TestCase):
 
     def _emit_manifest(self, story_md, key="0-t-origin-probe"):
         tmp = tempfile.mkdtemp(prefix="bridge-origin-")
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         stories = os.path.join(tmp, "stories")
         _write(os.path.join(stories, f"{key}.md"), story_md)
         _write(os.path.join(tmp, "sprint-status.yaml"),
@@ -90,6 +92,7 @@ class GateEmissionTests(unittest.TestCase):
 
     def _run_gate(self, extra_args, key="0-t-gate-probe"):
         tmp = tempfile.mkdtemp(prefix="gate-origin-")
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         repo = os.path.join(tmp, "repo")
         os.makedirs(repo)
         env = dict(os.environ,
@@ -106,6 +109,7 @@ class GateEmissionTests(unittest.TestCase):
         git("commit", "-qm", "seed")
         # a real change so the export gate has a non-empty patch
         _write(os.path.join(repo, "mod.py"), "X = 2\n")
+        _write(os.path.join(repo, "extra.txt"), "y\n")
         export = os.path.join(tmp, "export")
         proc = subprocess.run(
             [sys.executable, GATE, "--key", key,
@@ -133,6 +137,13 @@ class GateEmissionTests(unittest.TestCase):
         for n in nodes:
             self.assertEqual(n.get("meridian:origin"), "factory", n)
             self.assertIs(n.get("meridian:coupon"), False, n)
+
+    def test_expect_list_tolerates_commas(self):
+        # Review 2026-07-18: the comma-tolerance fix must cover --expect too,
+        # not only --owned — same natural-prose habit, same false-refusal cost.
+        proc, nodes = self._run_gate(["--expect", "mod.py, extra.txt"])
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertTrue(nodes)
 
     def test_coupon_flag_stamps_every_node_true(self):
         proc, nodes = self._run_gate(["--coupon"])

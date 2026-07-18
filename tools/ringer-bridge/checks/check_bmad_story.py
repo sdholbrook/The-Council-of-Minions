@@ -30,6 +30,18 @@ def sh(cmd, cwd=None, shell=False):
     return subprocess.run(cmd, cwd=cwd, shell=shell, capture_output=True, text=True)
 
 
+def _split_paths(raw):
+    """Split a path-list argument on ';' (bridge convention) OR ',' — one rule
+    for owned, expect, and contract-artifacts alike, so the comma-tolerance fix
+    can't be half-applied (review 2026-07-18: the first cut fixed only owned,
+    and ringer-expect kept the retry-per-story cost of
+    L-2026-07-17-gitfile-wave1). Natural prose authors these lists with commas.
+    CONSEQUENCE, by fleet convention: a repo-relative path may not contain a
+    comma — treating one as a literal path char is unsupported here.
+    """
+    return [x.strip() for x in raw.replace(",", ";").split(";") if x.strip()]
+
+
 def _catch(gate, decision, reason, cause=catch_emit.VERIFICATION, locus=()):
     """Record a Gate decision as evidence. Never let recording break the Gate.
 
@@ -97,10 +109,10 @@ def main():
     wt = os.getcwd()
     _CTX.update(export_dir=a.export_dir, key=a.key, run_id=a.run_id,
                 coupon=a.coupon, origin=a.origin)
-    contract = [x.strip() for x in a.contract_artifacts.split(";") if x.strip()]
+    contract = _split_paths(a.contract_artifacts)
 
     # 1. expected files exist and are non-empty
-    for f in [x.strip() for x in a.expect.split(";") if x.strip()]:
+    for f in _split_paths(a.expect):
         p = os.path.join(wt, f)
         if not os.path.isfile(p) or os.path.getsize(p) == 0:
             fail(f"expected file missing or empty: {f} (worker did not produce it)",
@@ -117,13 +129,7 @@ def main():
              f"for {a.key}", gate="check")
 
     # 3. ownership boundary (optional but recommended)
-    # Tolerate both ';' (bridge convention, bmad_to_ringer.py docs) and ','
-    # (natural prose — every wave-1 spec authors ringer-owned with commas).
-    # A comma is never a valid char in a repo-relative path, so treating it as
-    # a separator never over-matches; refusing it collapses two real paths
-    # into one unmatched string and the gate rejects work the Line ordered
-    # (L-2026-07-17-gitfile-wave1: this cost a retry per story).
-    owned = [x.strip().rstrip("/") for x in a.owned.replace(",", ";").split(";") if x.strip()]
+    owned = [x.rstrip("/") for x in _split_paths(a.owned)]
     if owned:
         # -uall expands untracked DIRECTORIES into their files. Without it git
         # collapses a new dir to a single entry ("pkg/vendor/") that matches no
