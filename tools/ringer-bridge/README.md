@@ -47,9 +47,21 @@ Adding a `ringer-check` per story is the single highest-value habit — it makes
 **Tests+Docs Gate (FR-10):** pass `--tests-docs-roots 'pkg;scripts'` to the
 bridge (repo-level, not per-story) and the Gate refuses a patch that changes
 `<root>/<m>.py` without touching `tests/test_<m>.py`, or adds a NEW module
-under a root without a `docs/` change. Tests-only and docs-only patches are
-always legal; contract artifacts and `__init__.py` are exempt; with no roots
-declared the gate is inert (absence of config never refuses).
+(absent from HEAD) under a root without a `docs/` change. Tests-only and
+docs-only patches are always legal; contract artifacts, deletions,
+underscore-prefixed modules, `conftest.py`/`setup.py`, and nested files are
+exempt; with no roots declared the gate is inert (absence never refuses).
+
+Deliberate limits, so nobody re-litigates them per refusal: the supported
+layout is FLAT modules directly under a root pairing with repo-root
+`tests/test_<m>.py` and repo-root `docs/` — a repo with colocated tests
+should not declare that root. ANY docs change satisfies the docs leg (the
+gate proves concurrence, not documentation quality — that is review's job).
+Comment-only source edits still require the pair (FR-10 is deliberately
+mechanical: decidable beats clever). AND: a story whose `ringer-owned`
+includes a governed module MUST also own `tests/test_<m>.py` (and `docs/` if
+the module is new) — otherwise the ownership and tests+docs gates are
+jointly unsatisfiable by construction.
 
 `ringer-origin` records Story authorship on every Catch the Gates emit
 (`meridian:origin`). Absent marker = the emitter's default (`factory`) — the

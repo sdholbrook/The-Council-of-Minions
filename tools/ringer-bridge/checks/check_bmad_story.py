@@ -141,8 +141,21 @@ def main():
     # that matches no owned path, so the gate refuses work the Line's own
     # spec ordered.
     st = sh(["git", "status", "--porcelain", "-uall"], cwd=wt)
-    entries = [(ln[:2], ln[3:].strip()) for ln in st.stdout.splitlines()
-               if ln.strip()]
+    entries = []
+    for ln in st.stdout.splitlines():
+        if not ln.strip():
+            continue
+        code, p = ln[:2], ln[3:].strip()
+        # git quotes paths carrying special chars; strip the outer quotes so
+        # prefix/suffix matching keeps working (inner escapes left as-is).
+        if p.startswith('"') and p.endswith('"'):
+            p = p[1:-1]
+        # A rename/copy entry is 'old -> new'; the NEW path is the change —
+        # the raw arrow string matches no owned prefix and no pairing rule
+        # (review 2026-07-18: it false-refused both gates at once).
+        if " -> " in p:
+            p = p.split(" -> ")[-1]
+        entries.append((code, p))
     changed = [p for _, p in entries]
 
     # 3. ownership boundary (optional but recommended)
@@ -174,18 +187,34 @@ def main():
         touched_docs = any(p == "docs" or p.startswith("docs/")
                            for _, p in rel)
         for code, p in rel:
-            in_root = any(p.startswith(r + "/") for r in td_roots)
-            if not in_root or not p.endswith(".py"):
+            # Deletions are legal without a pair change: a cleanup story may
+            # remove a module whose test is already gone — refusing that is
+            # the AD-6 false-refusal class. Pair hygiene on deletes is
+            # review's job, not this gate's.
+            if "D" in code:
+                continue
+            # The decidable convention (AD-11) is a FLAT module directly
+            # under a declared root pairing with repo-root tests/test_<m>.py.
+            # Nested files are outside the convention: undeterminable, so
+            # never refused (AD-20) — and a repo with colocated tests should
+            # simply not declare that root.
+            if os.path.dirname(p) not in td_roots or not p.endswith(".py"):
                 continue
             base = os.path.splitext(os.path.basename(p))[0]
-            if base == "__init__":
+            # Support files pair with nothing: underscore-prefixed modules
+            # (incl. __init__) and pytest/packaging plumbing.
+            if base.startswith("_") or base in ("conftest", "setup"):
                 continue
             pair = f"tests/test_{base}.py"
             if pair not in changed:
                 fail(f"tests+docs: {p} changed without its paired test {pair} "
                      f"for {a.key} (FR-10: no test = not done)",
                      gate="tests-docs", locus=[p, pair])
-            if code.strip() in ("??", "A") and not touched_docs:
+            # NEW = absent from HEAD, asked of git itself — porcelain codes
+            # ('AM', staged 'A ', renames) misclassify on staging state;
+            # existence in HEAD is the fact (review 2026-07-18).
+            if sh(["git", "cat-file", "-e", f"HEAD:{p}"],
+                  cwd=wt).returncode != 0 and not touched_docs:
                 fail(f"tests+docs: new public surface {p} without a docs/ "
                      f"change for {a.key} (FR-10: no doc = not done)",
                      gate="tests-docs", locus=[p, "docs/"])

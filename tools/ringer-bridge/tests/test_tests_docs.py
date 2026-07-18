@@ -91,6 +91,69 @@ class LegalPatches(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
 
+class FalseRefusalGuards(unittest.TestCase):
+    """Review 2026-07-18: the AD-6 class — never refuse legitimate work."""
+
+    def test_deletion_only_cleanup_is_legal(self):
+        proc, nodes = run_gate(
+            self, "0-t-td-delete", seed=SEED,
+            change={"pkg/mod.py": None,
+                    "docs/readme.md": "removed mod\n"}, args=ROOTS)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertFalse(_td_nodes(nodes))
+
+    def test_nested_module_is_outside_the_convention_and_skipped(self):
+        proc, nodes = run_gate(
+            self, "0-t-td-nested",
+            seed=dict(SEED, **{"pkg/sub/deep.py": "Z = 1\n"}),
+            change={"pkg/sub/deep.py": "Z = 2\n"}, args=ROOTS)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+    def test_support_files_are_exempt_from_pairing(self):
+        proc, nodes = run_gate(
+            self, "0-t-td-support",
+            seed=dict(SEED, **{"pkg/conftest.py": "\n", "pkg/_helpers.py": "\n"}),
+            change={"pkg/conftest.py": "# c\n", "pkg/_helpers.py": "# h\n"},
+            args=ROOTS)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+    def test_staged_new_module_still_caught_by_docs_rule(self):
+        # NEW-ness comes from HEAD-absence, not porcelain staging codes: a
+        # worker that git-adds its new module must not escape the docs rule.
+        import os
+        import subprocess
+        from _gate_harness import GATE, write
+        import tempfile, shutil, sys, json
+        tmp = tempfile.mkdtemp(prefix="gate-staged-")
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        repo = os.path.join(tmp, "repo"); os.makedirs(repo)
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
+        def git(*ar):
+            subprocess.run(["git", *ar], cwd=repo, env=env, check=True,
+                           capture_output=True)
+        git("init", "-q")
+        for rel, text in SEED.items():
+            write(os.path.join(repo, rel), text)
+        git("add", "-A"); git("commit", "-qm", "seed")
+        write(os.path.join(repo, "pkg/staged.py"), "S = 1\n")
+        write(os.path.join(repo, "tests/test_staged.py"), "import unittest\n")
+        git("add", "pkg/staged.py")          # 'A ' — then edit again -> 'AM'
+        write(os.path.join(repo, "pkg/staged.py"), "S = 2\n")
+        export = os.path.join(tmp, "export")
+        proc = subprocess.run(
+            [sys.executable, GATE, "--key", "0-t-td-staged",
+             "--check-command", "true", "--export-dir", export,
+             "--run-id", "test-harness", *ROOTS],
+            cwd=repo, capture_output=True, text=True, env=env)
+        self.assertEqual(proc.returncode, 1, proc.stdout)
+        cpath = os.path.join(export, "0-t-td-staged.catches.jsonld")
+        nodes = [json.loads(l) for l in open(cpath) if l.strip()]
+        self.assertTrue(any(n.get("meridian:gate") == "tests-docs"
+                            and n["meridian:locus"] == ["pkg/staged.py", "docs/"]
+                            for n in nodes), nodes)
+
+
 class AbsenceRules(unittest.TestCase):
     def test_no_declared_roots_means_gate_is_inert(self):
         # AD-20: absence of config is not a determination — never refuses.

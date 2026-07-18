@@ -31,9 +31,10 @@ def run_gate(case, key, *, seed=None, change=None, args=()):
     """Build a scratch repo (``seed`` committed, ``change`` left dirty), run
     the real Gate for ``key`` with extra ``args``, return (proc, nodes).
 
-    ``seed``/``change`` are {relpath: content} dicts. Defaults reproduce the
-    minimal one-module repo with a real uncommitted edit so the export gate
-    has a non-empty patch. Temp dirs are cleaned via ``case.addCleanup``.
+    ``seed``/``change`` are {relpath: content} dicts; a ``change`` value of
+    ``None`` DELETES the seeded file. Defaults reproduce the minimal
+    one-module repo with a real uncommitted edit so the export gate has a
+    non-empty patch. Temp dirs are cleaned via ``case.addCleanup``.
     """
     if seed is None:
         seed = {"mod.py": "X = 1\n"}
@@ -55,7 +56,10 @@ def run_gate(case, key, *, seed=None, change=None, args=()):
     git("add", "-A")
     git("commit", "-qm", "seed")
     for rel, text in change.items():
-        write(os.path.join(repo, rel), text)
+        if text is None:
+            os.remove(os.path.join(repo, rel))
+        else:
+            write(os.path.join(repo, rel), text)
     export = os.path.join(tmp, "export")
     proc = subprocess.run(
         [sys.executable, GATE, "--key", key, "--check-command", "true",
