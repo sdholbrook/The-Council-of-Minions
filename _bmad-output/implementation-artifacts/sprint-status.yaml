@@ -135,7 +135,7 @@ action_items:
     evidence: "_bmad-output/test-artifacts/model-driven-screen/README.md"
 
   epic-6: in-progress
-  6-1-pin-and-verify-code-first-toolchain: ready-for-dev
+  6-1-pin-and-verify-code-first-toolchain: done
   6-2-scaffold-track-m-against-existing-tables: ready-for-dev
   6-3-approve-decline-slice-mobile: ready-for-dev
   6-4-minion-brief-read-surface: ready-for-dev
