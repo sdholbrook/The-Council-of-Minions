@@ -95,7 +95,7 @@ delegation state, owners, urgency — the thing to read before a day of meetings
 - Offline checks (no tenant needed): the `*-slice-validate.ps1` scripts validate the
   captured workflow slices in `_bmad-output/implementation-artifacts/*.json` — the same
   sample records shown in the screenshots above.
-- Repo gate: `pwsh .bmad-loop/verify.sh` must stay green.
+- Repo gate: `bash .bmad-loop/verify.sh` must stay green.
 
 ## Troubleshooting
 
