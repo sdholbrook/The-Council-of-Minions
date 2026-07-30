@@ -1,0 +1,18 @@
+# Epic-6 additive block for sprint-status.yaml — STAGED, NOT auto-applied.
+# The Council's sprint-status.yaml is owned by its bmad-loop flow; append this block
+# manually (or via `apply-to-council.sh --with-sprint-block`) AFTER reviewing that no
+# local sprint edits collide. Story files exist => ready-for-dev per the status
+# definitions; epic flips in-progress on first story creation.
+#
+# Dependency waves: 6-1 -> 6-2 -> {6-3 || 6-4} -> 6-5 -> 6-6
+# All lanes native (tenant-coupled); mechanical residues named in each story's
+# ringer-check marker. Tenant gates T1-T5 flip inside 6-1..6-3.
+
+  epic-6: in-progress
+  6-1-pin-and-verify-code-first-toolchain: ready-for-dev
+  6-2-scaffold-track-m-against-existing-tables: ready-for-dev
+  6-3-approve-decline-slice-mobile: ready-for-dev
+  6-4-minion-brief-read-surface: ready-for-dev
+  6-5-scaffold-track-c-code-app: ready-for-dev
+  6-6-alm-and-preview-posture-evidence: ready-for-dev
+  epic-6-retrospective: optional
