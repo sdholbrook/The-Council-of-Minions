@@ -10,7 +10,7 @@ description: >-
   (that is reflex-run), doing BMAD planning itself (PRD/architecture/epics
   skills), and the SynSci-Meridian control plane — Meridian observes the
   fleet and never gets the Reflex installed.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Reflex setup — stand up bmad-loop + Ringer on this project
@@ -58,7 +58,24 @@ shrink the first story: the seed story is historically the expensive one.
   `bmad-loop-setup` skill covers init details (fresh vs upgrade, version skew
   reconciliation for a committed `_bmad/`); delegate to it for that mechanics.
 
-## 4. policy.toml — the lessons, encoded (verify EVERY line)
+## 4. Meridian MCP — designation confers Compass access
+
+Anything designated a project in Meridian gets the Meridian MCP server
+(project mode) and with it the ability to work with Meridian Compass. Install
+the `mcp.json` bundled beside this skill as **`.mcp.json` at the repo root**:
+
+- No `.mcp.json` yet → copy it verbatim.
+- `.mcp.json` already exists → merge the `meridian` entry into its
+  `mcpServers` — **never clobber other declared servers**.
+
+The declared command must be exactly
+`python3 /srv/bmad/projects/SynSci-Meridian/scripts/meridian-mcp.py --mode project`
+— project mode only (fleet/branch/handoff reads + idempotent `request_reflex`);
+control mode is Meridian-owned and is never installed in a project scope
+(ADR-0005). Commit the `.mcp.json`. Note: Claude Code lists `.mcp.json`
+servers as pending until approved once in that repo.
+
+## 5. policy.toml — the lessons, encoded (verify EVERY line)
 
 `.bmad-loop/policy.toml` is machine-local. Confirm each value; these are the
 fleet's paid-for defaults:
@@ -77,25 +94,25 @@ fleet's paid-for defaults:
 Routing economics (lesson `L-2026-07-14-payroll`): flat-rate lanes first while
 headroom >20%, glm-class cheap-metered overflow, premium-metered never for bulk.
 
-## 5. gitignore / untrack
+## 6. gitignore / untrack
 
 - `.gitignore` gets: `*.bak`, `_bmad/config.user.yaml`, `.bmad-loop/runs`,
   `.bmad-loop/cache`, `.bmad-loop/policy.toml`.
 - `git rm --cached .bmad-loop/policy.toml` if it was ever tracked; document the
   routing choices in the project's playbook instead.
 
-## 6. One-time trust dialogs (spawned sessions cannot answer them)
+## 7. One-time trust dialogs (spawned sessions cannot answer them)
 
 Run `claude`, `codex`, and `copilot` once each interactively in the repo root;
 accept trust/hooks/auth prompts for every CLI the policy routes to.
 
-## 7. Validate
+## 8. Validate
 
 `bmad-loop validate` — resolve every FAIL except "no sprint plan yet" (if you
 proceeded past the gate) and "dirty worktree" (explain it instead). Green
 validate + lessons-corrected policy + cleared trust dialogs = ready.
 
-## 8. Confirm & capture
+## 9. Confirm & capture
 
 Report what was installed/changed and the validate outcome. If this setup
 taught anything new, append a dated entry to Meridian's `LESSONS.md`, and if

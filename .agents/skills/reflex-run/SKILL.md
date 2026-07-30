@@ -1,96 +1,58 @@
 ---
 name: reflex-run
 description: >-
-  Launches and supervises a Reflex run (bmad-loop orchestration, with the
-  optional Ringer worker lane) on THIS project. TRIGGER whenever the user asks
-  to "run the reflex", "start the loop", "resume the loop", "launch bmad-loop",
-  "drive the sprint", when handling a paused run or an ATTENTION file, or when
-  choosing between the native dev lane and the ringer swarm lane for ready
-  stories. SKIP for: initial setup or policy work (reflex-setup), fleet
-  monitoring (Meridian Compass on :8710 is read-only observation), and
-  hand-driving a single story outside the loop.
-version: 0.1.0
+  Hand off Reflex start, resume, stop, or sprint-driving requests from a target
+  project to the Meridian fleet control plane while preserving all execution
+  context and artifacts in that target repo. Trigger whenever the user asks to
+  run/start/resume/stop the Reflex, launch bmad-loop, drive the sprint, choose
+  native versus Ringer lanes, or handle a paused Reflex run. Use read-only
+  Compass/status inspection locally, but never launch workers from the
+  project-local session.
 ---
 
-# Reflex run — launch, route, supervise
+# Reflex run — hand off to Meridian
 
-## 0. Standing authorization
+Meridian owns fleet orchestration; this repository owns execution context.
+Never run `bmad-loop run`, `bmad-loop resume`, `bmad-loop stop`, or
+`ringer.py run` from this project-local skill.
 
-Doug (2026-07-13, recorded in Meridian `OPERATIONS.md`): once a project's BMAD
-planning is complete — sprint plan exists, `bmad-loop validate` green,
-lessons-corrected policy, CLI trust dialogs cleared — launching the Reflex
-requires **no further human approval**. Per-epic gates, the verify gate, and
-ATTENTION escalation govern from there. Outward-facing or destructive actions
-stay human-gated as always. If any precondition is missing, that is a
-**reflex-setup** problem — route there, don't improvise.
+## Record the request
 
-## 1. Preflight (every launch, cheap)
-
-1. `bmad-loop validate` — must be green (tolerated FAILs per reflex-setup §7).
-2. Policy hygiene: `.bmad-loop/policy.toml` has `isolation="worktree"`, a real
-   `[verify].commands`, cross-vendor dev/review routing. Fix via reflex-setup
-   before running — never launch on a footgun policy.
-3. Stories: `_bmad-output/implementation-artifacts/sprint-status.yaml` has
-   actionable stories (`ready-for-dev`/`backlog`).
-4. Capacity glance: check the Capacity panel on Meridian Compass
-   (http://10.1.1.22:8710) or `~/.cache/meridian/capacity.json` — do not launch
-   a long run into a nearly-exhausted account or a 402-dead metered key.
-
-## 2. Launch / resume
-
-- New run: `bmad-loop run` (from the repo root; it spawns tmux CLI sessions).
-- Paused run (epic boundary, escalation): `bmad-loop resume <run_id>` — the
-  run id and reason are in `.bmad-loop/runs/<id>/ATTENTION`.
-- Useful: `bmad-loop status`, `bmad-loop list`, `bmad-loop tui`,
-  `bmad-loop attach <run_id>`.
-
-## 3. Lane choice — native dev vs ringer swarm
-
-The loop's native lane types with the `[adapter.dev]` frontier model. The
-**ringer worker lane** types with cheap verified workers and is preferred when
-stories are mechanical, their file ownership is disjoint, and each carries a
-real executable check (the Reflex-v2 economics: cheap workers type, frontier
-specs and adjudicates):
+Resolve the current repo root and create an idempotent handoff:
 
 ```bash
-python3 tools/ringer-bridge/bmad_to_ringer.py \
-  --sprint-status _bmad-output/implementation-artifacts/sprint-status.yaml \
-  --story-dir     _bmad-output/implementation-artifacts/stories \
-  --repo . --check-command "<real test cmd>" --stories <keys> --out swarm.json
-python3 ./ringer/ringer.py lint swarm.json     # always lint first
-python3 ./ringer/ringer.py run  swarm.json --identity <who-you-are>
+python3 /srv/bmad/projects/SynSci-Meridian/scripts/reflex-handoff.py request \
+  --project "$PWD" \
+  --intent start \
+  --requested-by "project-local reflex-run skill" \
+  --note "<the user's request in one sentence>"
 ```
 
-Load the `ringer` skill before any swarm work — it owns manifest craft, check
-rules, engine selection (scoreboard-driven), and the worktree footguns. Stories
-opt in via `<!-- ringer-check: ... -->` / `<!-- ringer-owned: ... -->` markers.
+For resume or stop, use `--intent resume|stop --run-id <id>`. Read the run id
+from `.bmad-loop/runs/` or Compass; never guess it.
 
-## 4. Supervise (observe from the right places)
+After the command succeeds:
 
-- `bmad-loop tui` / `tmux attach` for the loop; Ringside (http://127.0.0.1:8700,
-  LAN http://10.1.1.22:8700) for swarm workers.
-- Meridian Compass (http://10.1.1.22:8710) shows the whole fleet — it is
-  **observation only**; never try to drive a run from Meridian or its host
-  session. Driving happens here, in this repo.
+1. Report the request id and target repo.
+2. Direct the user to Meridian Compass at http://10.1.1.22:8710.
+3. Stop. Do not preflight, author a route plan, choose a lane, or launch a
+   worker in this session. Meridian claims the request and performs those steps.
+4. If the handoff command is missing or fails, report that failure and route the
+   user to `/srv/bmad/projects/SynSci-Meridian`; do not fall back to a direct
+   loop launch.
 
-## 5. ATTENTION & pauses
+Repeated requests are safe: the handoff command returns the existing active
+request for the same project, intent, and run id.
 
-A run that needs a human (or a decision) writes `.bmad-loop/runs/<id>/ATTENTION`
-and pauses. Classify before acting:
+## What stays here
 
-- **epic-boundary** — the per-epic gate. Review the epic's results, then
-  `bmad-loop resume <id>`.
-- **escalation / deferred story** — use `bmad-loop-resolve <story-key>` for the
-  interactive resolution workflow; `bmad-loop sweep` triages the deferred ledger.
-- **usage-limit / capacity** — check the Compass capacity panel; resume when the
-  lane has headroom (or re-route the lane), don't just retry into a dead key.
-- **crash** — read `.bmad-loop/runs/<id>/state.json` (`crash_error`) and
-  `journal.jsonl` tail before anything else; `bmad-loop diagnose <id>` helps.
+Meridian will prepare inside this repo and commit a route plan before Compass
+enables launch. Story specs, `ringer-check`/`ringer-owned` markers, manifests,
+worktrees, patches, tests, sprint updates, commits, and receipts all remain in
+this target repository. Only fleet request/supervision state lives in Meridian.
 
-## 6. After the run
+## Read-only status
 
-- Confirm sprint-status story states advanced and the epic gate/retro entries
-  are consistent (traceability is non-negotiable).
-- Capture new lessons in Meridian `LESSONS.md`; encode inheritable fixes into
-  the `bmad-loop-ringer` seed. Check the Compass board reflects the concluded
-  run before walking away.
+For status questions, inspect Compass or run `bmad-loop status`; do not mutate
+the run. Ringside shows only Ringer worker activity, while Compass shows native
+loops, Ringer swarms, and pending Meridian handoffs.
