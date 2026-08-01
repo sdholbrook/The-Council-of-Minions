@@ -48,6 +48,7 @@ tracking_system: "file-system"
 story_location: "C:/repo/The-Council-of-Minions/_bmad-output/implementation-artifacts"
 
 development_status:
+  5-4b-validator-proven-to-fail: ready-for-dev
   epic-1: done
   1-1-capture-manual-source-records: done
   1-2-capture-outlook-source-references: done
@@ -76,12 +77,12 @@ development_status:
   4-5-project-the-semantic-contract-without-dual-authoring: done
   epic-4-retrospective: optional
   epic-5: backlog
-  5-1-maintain-the-minion-skill-registry: backlog
-  5-2-approve-skill-authority-expansion: backlog
-  5-3-record-microsoft-platform-evaluation-evidence: backlog
-  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog
-  5-5-validate-dataverse-mvp-operational-store-readiness: backlog
-  5-6-manage-phase-2-knowledge-and-analytics-projections: backlog
+  5-1-maintain-the-minion-skill-registry: done
+  5-2-approve-skill-authority-expansion: done
+  5-3-record-microsoft-platform-evaluation-evidence: done
+  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog  # HELD: validator disproven by probe 07-14; gated on 5-4b landing
+  5-5-validate-dataverse-mvp-operational-store-readiness: done
+  5-6-manage-phase-2-knowledge-and-analytics-projections: done
   epic-5-retrospective: optional
 
 action_items:

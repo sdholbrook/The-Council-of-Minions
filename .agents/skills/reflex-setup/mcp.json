@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "meridian": {
+      "command": "python3",
+      "args": [
+        "/srv/bmad/projects/SynSci-Meridian/scripts/meridian-mcp.py",
+        "--mode",
+        "project"
+      ]
+    }
+  }
+}

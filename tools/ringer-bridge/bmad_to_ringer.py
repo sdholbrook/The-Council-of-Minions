@@ -23,6 +23,10 @@ Per-story overrides (optional HTML comments anywhere in the story .md)
   <!-- ringer-check: <shell command, exit 0 = PASS> -->   overrides --check-command
   <!-- ringer-owned: path/one;path/two -->                repo-relative owned paths
   <!-- ringer-expect: file/a;file/b -->                   files that must exist
+  <!-- ringer-origin: human|factory -->                   Story authorship (FR-8);
+                                                          absent = emitter default
+  <!-- ringer-coupon: true -->                            planted fault injection
+                                                          (FR-14); never merged
 
 Usage
 -----
@@ -81,7 +85,8 @@ def parse_development_status(path):
 
 
 def find_story_file(story_dir, key):
-    for cand in (f"{key}.md", f"story-{key}.md"):
+    # spec-<key>.md: Axon's convention; the bridge meets repos where they are.
+    for cand in (f"{key}.md", f"story-{key}.md", f"spec-{key}.md"):
         p = os.path.join(story_dir, cand)
         if os.path.isfile(p):
             return p
@@ -109,22 +114,53 @@ def build_spec(key, title, story_md):
         "requires them; keep the change boring and consistent with existing "
         "patterns; mark unknown product facts as assumptions, do not invent.\n\n"
         "OUTPUT CONTRACT: make the code change the story requires, then write "
-        "./notes.md in the worktree listing what you changed, what you read for "
-        "conventions, which command verifies it, and any assumptions/follow-ups.\n\n"
+        f"./{CONTRACT_ARTIFACTS[0]} in the worktree listing what you changed, what "
+        "you read for conventions, which command verifies it, and any "
+        "assumptions/follow-ups.\n\n"
         "=== FULL STORY SPEC (source of truth) ===\n"
         f"{story_md.strip()}\n"
         "=== END STORY SPEC ==="
     )
 
 
-def build_check(key, check_cmd, owned, expect, export_dir):
+# The Line's own OUTPUT CONTRACT. The prompt MANDATES these artifacts, so the
+# Gate must never punish a worker for producing them, and the export must never
+# ship them as deliverable code. Both behaviours derive from this one list —
+# the previous cut hardcoded "notes.md" in three unrelated places, so changing
+# the prompt to demand report.md would have reproduced both bugs verbatim: the
+# gate refusing the work it ordered, and every patch after the first colliding
+# on it. Fix the class, not the instance.
+CONTRACT_ARTIFACTS = ["notes.md"]
+
+
+def build_check(key, check_cmd, owned, expect, export_dir, run_id="unknown",
+                origin=None, coupon=False, tests_docs_roots=""):
     parts = ["python3", _q(CHECK), "--key", _q(key),
              "--check-command", _q(check_cmd),
-             "--export-dir", _q(export_dir)]
+             "--export-dir", _q(export_dir),
+             # Catch identity is (runId, key, gate, attempt); without the run id
+             # every run's Catches share an @id and the Ledger cannot tell two
+             # runs of the same story apart.
+             "--run-id", _q(run_id),
+             # The Bridge is the only component that knows what its own prompt
+             # demanded, so it tells the Gate rather than the Gate guessing.
+             "--contract-artifacts", _q(";".join(CONTRACT_ARTIFACTS))]
     if owned:
         parts += ["--owned", _q(owned)]
     if expect:
         parts += ["--expect", _q(expect)]
+    # Absence is omitted, never sent as a value: the emitter owns the default
+    # (FR-8/AD-20 — a missing marker is not a determination).
+    if origin is not None:
+        parts += ["--origin", _q(origin)]
+    # The Bridge is the only component that knows what it planted (AD-9); the
+    # Gate stamps every Catch for the key so no consumer ever infers coupon-ness.
+    if coupon:
+        parts += ["--coupon"]
+    # Repo-level, not story-level: which source roots the tests+docs gate
+    # governs (FR-10). Empty = omitted = the gate stays inert (AD-20).
+    if tests_docs_roots:
+        parts += ["--tests-docs-roots", _q(tests_docs_roots)]
     return " ".join(parts)
 
 
@@ -152,6 +188,10 @@ def main():
     ap.add_argument("--workdir", default="~/.ringer/work/bmad-hybrid")
     ap.add_argument("--export-dir", default="",
                     help="where verified patches land (default: <workdir>/patches)")
+    ap.add_argument("--tests-docs-roots", default="",
+                    help="path-list of product-source roots for the tests+docs "
+                         "gate (FR-10), e.g. 'meridian_control;scripts'. Empty "
+                         "= gate inert in this repo (AD-20).")
     ap.add_argument("--out", default="swarm.json")
     a = ap.parse_args()
 
@@ -191,6 +231,15 @@ def main():
                 f"a Ringer task MUST have an executable check.")
         owned = extract(text, "owned") or ""
         expect = extract(text, "expect") or "notes.md"
+        origin = extract(text, "origin")
+        if origin is not None and origin not in ("human", "factory"):
+            die(f"story {key}: invalid <!-- ringer-origin: {origin} --> — "
+                f"must be 'human' or 'factory' (FR-8 closed vocabulary)")
+        coupon_raw = extract(text, "coupon")
+        if coupon_raw is not None and coupon_raw not in ("true", "false"):
+            die(f"story {key}: invalid <!-- ringer-coupon: {coupon_raw} --> — "
+                f"must be 'true' or 'false' (FR-14)")
+        coupon = coupon_raw == "true"
         task = {
             "key": key,
             "task_type": "code-feature",
@@ -202,7 +251,10 @@ def main():
             # the worktree and exports the durable patch outside it.
             "expect_files": [],
             "spec": build_spec(key, title_of(text, key), text),
-            "check": build_check(key, check_cmd, owned, expect, export_dir),
+            "check": build_check(key, check_cmd, owned, expect, export_dir,
+                                 run_id=a.run_name, origin=origin,
+                                 coupon=coupon,
+                                 tests_docs_roots=a.tests_docs_roots),
             "verified": (f"story {key}: acceptance check passed in an isolated "
                          f"worktree, changes stayed within owned paths, and a "
                          f"non-empty patch was exported for review"),

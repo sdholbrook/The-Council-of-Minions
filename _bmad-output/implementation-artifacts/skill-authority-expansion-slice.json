@@ -1,0 +1,344 @@
+{
+  "artifactVersion": "2026-07-14",
+  "storyKey": "5-2-approve-skill-authority-expansion",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove Skill authority expansion approval and denial locally: one new skill install (CSK-LOCAL-MEETING-DIGEST-001) proposes a before authority set (manual_only, no data/tool/external access) and an after authority set adding data access (outlook.calendar.read, dataverse.com_councilworkitem.read) and tool use (email.send) plus an external action, which FR25/FR13 require to be approval-gated; a human (Doug) approval receipt CR-LOCAL-SKILL-APPROVE-001 carries authority basis, rationale, before/after authority sets, and evidence refs, and activation is gated to that receipt (temporal + receipt-chain, not a flag) with the live skill row mutation deferred to Epic 2. A second new skill install (CSK-LOCAL-FABRIC-PUBLISHER-001) proposes a broader expansion (Dataverse write, two Fabric external actions, approved_automatic authority) and is denied by receipt CR-LOCAL-SKILL-DENY-001 (verb policy_denied, result rejected); the skill stays inactive (candidate) constrained to its before authority set with the denial rationale visible for future review. Before/after authority sets differ exactly by the declared delta; receipts here are local contract evidence only and every live mutation stays receipt-gated to Epic 2.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true,
+    "authorityExpansionRequiresExplicitApprovalReceipt": true,
+    "activationStrictlyFollowsApprovalReceipt": true,
+    "denialConstrainsSkillToBeforeAuthority": true,
+    "denialRationaleRemainsVisibleForFutureReview": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "authoritySetVocabulary": {
+    "basis": "Manifest com_councilskill has no explicit authority-set column: com_authority_class is a single choice (manual_only/ask_before_use/approved_automatic) and com_allowed_context/com_required_inputs are free multiline text. This slice models an authority set as a Story 5.2 local extension comprising authorityClass, dataScopes, tools, and externalActions, projecting onto com_authority_class plus com_allowed_context. Authority-set members are reproducible local-contract identifiers (for example dataverse.com_councilworkitem.read, email.send), not tenant enum values; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2. This is a documented local extension, NOT a claim that the meaning graph owns skill workflow state; guards.meaningGraphDoesNotOwnWorkflowState and guards.noWorkItemStateChangeInThisSlice remain true.",
+    "expansionTriggersApproval": [
+      "add_data_scope",
+      "add_tool_use",
+      "add_external_action",
+      "broaden_authority_class"
+    ],
+    "nonExpandingChanges": [
+      "clarify_trigger",
+      "fix_proof_owed_text",
+      "narrow_authority_class"
+    ]
+  },
+  "failureCodeVocabulary": {
+    "basis": "Manifest com_councilreceipt.com_failure_code is a free-text column with no enumerated choice set, so this slice declares a Story 5.2 local extension naming the denial code used here together with its kind, retry allowance, and human-review semantics. Codes are reproducible local-contract identifiers, not tenant enums; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2.",
+    "codes": [
+      {
+        "code": "skill_authority_expansion_denied",
+        "kind": "policy_denial",
+        "retryAllowed": false,
+        "humanReviewRequired": true,
+        "definition": "A proposed Skill authority expansion that adds data access, tool use, external action, or a broader authority class was denied because it failed the human-approval or scope-breadth gate (FR25/FR13). The skill remains inactive or constrained to its before authority set; the denial is non-retryable without a policy change or a re-scoped proposal, and the rationale stays visible for future review."
+      }
+    ]
+  },
+  "expansionRun": {
+    "runId": "SKILL-LOCAL-2026-07-14-001",
+    "actorType": "human",
+    "actorId": "Doug",
+    "authorityBasis": "local non-tenant Story 5.2 contract validation; skill authority expansion is receipt-gated and any live write stays deferred to Epic 2",
+    "semanticContractVersion": "2026-07-07",
+    "inputSlicesFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json"
+    ],
+    "decisionPolicy": {
+      "authorityExpansionRequiresExplicitHumanApprovalReceipt": true,
+      "activationStrictlyFollowsAnApprovalReceiptNotAFlag": true,
+      "denialConstrainsTheSkillToItsBeforeAuthoritySet": true,
+      "denialRationaleRemainsVisibleForFutureReview": true,
+      "beforeAndAfterAuthoritySetsDifferExactlyByTheDeclaredDelta": true,
+      "liveSkillMutationReceiptGatedToEpic2": true,
+      "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "skills": [
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "skillRecord": {
+          "com_name": "Daily meeting digest skill (proposed, candidate)",
+          "com_council_skill_id": "CSK-LOCAL-MEETING-DIGEST-001",
+          "com_trigger": "Each weekday morning, summarize the prior day's Council meeting-action notes into a digest for the weekly brief.",
+          "com_allowed_context": "Project: Council of Minions MVP; scope: meeting-action Work Items captured from the prior day.",
+          "com_required_inputs": "Prior-day meeting-action Work Items and their linked Source Records.",
+          "com_authority_class": "manual_only",
+          "com_approval_requirements": "Requires human (Doug) approval before activation because the install adds Dataverse read access and the email.send tool plus an external action (FR25/FR13).",
+          "com_proof_owed": "Each digest cites the Work Items and Source Records it summarized; no external send occurs without a prior approval receipt.",
+          "com_update_policy": "Any authority expansion (added data scope, tool, external action, or broadened authority class) requires a NEW approval receipt; corrections are new receipts, never edits.",
+          "com_status": "candidate"
+        },
+        "expansionKind": "installation",
+        "sourceRecord": "CSR-MANUAL-MEETING-001",
+        "proposedExpansion": {
+          "beforeAuthoritySet": {
+            "authorityClass": "manual_only",
+            "dataScopes": [],
+            "tools": [],
+            "externalActions": []
+          },
+          "proposedAfterAuthoritySet": {
+            "authorityClass": "ask_before_use",
+            "dataScopes": [
+              "outlook.calendar.read",
+              "dataverse.com_councilworkitem.read"
+            ],
+            "tools": [
+              "email.send"
+            ],
+            "externalActions": [
+              "send_email_on_behalf"
+            ]
+          },
+          "declaredDelta": {
+            "authorityClassChangedFrom": "manual_only",
+            "authorityClassChangedTo": "ask_before_use",
+            "addedDataScopes": [
+              "outlook.calendar.read",
+              "dataverse.com_councilworkitem.read"
+            ],
+            "addedTools": [
+              "email.send"
+            ],
+            "addedExternalActions": [
+              "send_email_on_behalf"
+            ]
+          },
+          "approvalRequiredReason": "FR25: the install adds data access (outlook.calendar.read, dataverse.com_councilworkitem.read) and tool use (email.send) plus an external action (send_email_on_behalf), so activation requires human approval before the skill may run with this authority (FR13)."
+        },
+        "decision": "approved",
+        "decisionReceipt": "CR-LOCAL-SKILL-APPROVE-001",
+        "activation": {
+          "activatedSkill": "CSK-LOCAL-MEETING-DIGEST-001",
+          "gateReceipt": "CR-LOCAL-SKILL-APPROVE-001",
+          "effectiveAt": "2026-07-14T10:30:00-04:00",
+          "activatedAuthoritySet": {
+            "authorityClass": "ask_before_use",
+            "dataScopes": [
+              "outlook.calendar.read",
+              "dataverse.com_councilworkitem.read"
+            ],
+            "tools": [
+              "email.send"
+            ],
+            "externalActions": [
+              "send_email_on_behalf"
+            ]
+          },
+          "activationNote": "Activation is gated to approval receipt CR-LOCAL-SKILL-APPROVE-001; the live skill row mutation (com_status candidate->active, com_authority_class manual_only->ask_before_use, applying the granted dataScopes/tools/externalActions) is a receipt-backed deferred update to Epic 2. No live tenant write was performed in this slice."
+        }
+      },
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "skillRecord": {
+          "com_name": "Completed decision Fabric publisher skill (proposed, candidate, denied)",
+          "com_council_skill_id": "CSK-LOCAL-FABRIC-PUBLISHER-001",
+          "com_trigger": "When a decision Work Item is completed, publish its summary to a Fabric lakehouse and trigger a Fabric dataflow.",
+          "com_allowed_context": "Project: Council of Minions MVP; scope: completed decision Work Items.",
+          "com_required_inputs": "Completed decision Work Items and their linked Source Records.",
+          "com_authority_class": "manual_only",
+          "com_approval_requirements": "Requires human (Doug) approval before activation because the install adds a Dataverse write scope and two Fabric external actions and seeks approved_automatic authority (FR25/FR13).",
+          "com_proof_owed": "Each publish cites the completed decision and the Fabric target; no write occurs without a prior approval receipt.",
+          "com_update_policy": "Any authority expansion requires a NEW approval receipt; corrections are new receipts, never edits.",
+          "com_status": "candidate"
+        },
+        "expansionKind": "installation",
+        "sourceRecord": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "proposedExpansion": {
+          "beforeAuthoritySet": {
+            "authorityClass": "manual_only",
+            "dataScopes": [],
+            "tools": [],
+            "externalActions": []
+          },
+          "proposedAfterAuthoritySet": {
+            "authorityClass": "approved_automatic",
+            "dataScopes": [
+              "dataverse.com_councilworkitem.read",
+              "dataverse.com_councilworkitem.write"
+            ],
+            "tools": [],
+            "externalActions": [
+              "fabric.publish",
+              "fabric.dataflow.write"
+            ]
+          },
+          "declaredDelta": {
+            "authorityClassChangedFrom": "manual_only",
+            "authorityClassChangedTo": "approved_automatic",
+            "addedDataScopes": [
+              "dataverse.com_councilworkitem.read",
+              "dataverse.com_councilworkitem.write"
+            ],
+            "addedTools": [],
+            "addedExternalActions": [
+              "fabric.publish",
+              "fabric.dataflow.write"
+            ]
+          },
+          "approvalRequiredReason": "FR25: the install adds a data write scope (dataverse.com_councilworkitem.write) and external actions (fabric.publish, fabric.dataflow.write) and seeks approved_automatic authority, so activation requires human approval before the skill may run with this authority (FR13)."
+        },
+        "decision": "denied",
+        "decisionReceipt": "CR-LOCAL-SKILL-DENY-001",
+        "denial": {
+          "deniedSkill": "CSK-LOCAL-FABRIC-PUBLISHER-001",
+          "denialRationale": "Doug denied the expansion because it combines a Dataverse write scope, two Fabric external actions, and an approved_automatic authority class for a brand-new skill with no prior use history: that bypasses the human-approval gate for tenant-affecting writes and external actions (FR13). The skill remains inactive (candidate, manual_only, empty authority) and the denial rationale stays visible on the record for a re-scoped proposal.",
+          "effectiveAuthoritySet": {
+            "authorityClass": "manual_only",
+            "dataScopes": [],
+            "tools": [],
+            "externalActions": []
+          },
+          "denialReceipt": "CR-LOCAL-SKILL-DENY-001",
+          "policyFlagsTraced": [
+            "authority_expansion_requires_human_approval",
+            "write_scope_not_auto_approved",
+            "external_action_requires_human_approval",
+            "approved_automatic_not_granted_without_prior_use_history"
+          ],
+          "evidenceRefsTraced": [
+            "CSR-OUTLOOK-MESSAGE-MOCK-001",
+            "CSK-LOCAL-FABRIC-PUBLISHER-001"
+          ]
+        }
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-SKILL-APPROVE-001",
+        "com_work_item": null,
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 5.2 contract validation; skill authority expansion approval is receipt-gated and any live activation write stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-14T10:15:00-04:00",
+        "com_idempotency_key": "skill:approve:CSK-LOCAL-MEETING-DIGEST-001:2026-07-14T10:15",
+        "com_before_state": "candidate; manual_only; dataScopes=[]; tools=[]; externalActions=[]",
+        "com_after_state": "active; ask_before_use; dataScopes=[outlook.calendar.read, dataverse.com_councilworkitem.read]; tools=[email.send]; externalActions=[send_email_on_behalf]",
+        "com_evidence_refs": "CSK-LOCAL-MEETING-DIGEST-001; CSR-MANUAL-MEETING-001",
+        "com_decision_rationale": "Doug approved installing CSK-LOCAL-MEETING-DIGEST-001 with read-only Outlook/Dataverse access and an email.send tool because the daily meeting digest need was observed in CSR-MANUAL-MEETING-001 and the expansion is bounded to ask_before_use (not approved_automatic), so each run still asks before acting. No live tenant write was performed; activation is a receipt-gated deferred update.",
+        "com_confidence": 0.85,
+        "com_result": "accepted",
+        "com_failure_code": null,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; human_approval_required; authority_expansion_approved",
+        "com_append_only_locked": true,
+        "beforeAuthoritySet": {
+          "authorityClass": "manual_only",
+          "dataScopes": [],
+          "tools": [],
+          "externalActions": []
+        },
+        "afterAuthoritySet": {
+          "authorityClass": "ask_before_use",
+          "dataScopes": [
+            "outlook.calendar.read",
+            "dataverse.com_councilworkitem.read"
+          ],
+          "tools": [
+            "email.send"
+          ],
+          "externalActions": [
+            "send_email_on_behalf"
+          ]
+        }
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SKILL-DENY-001",
+        "com_work_item": null,
+        "com_verb": "policy_denied",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 5.2 contract validation; skill authority expansion denial is receipt-gated and the skill stays constrained to its before authority set",
+        "com_occurred_at": "2026-07-14T11:00:00-04:00",
+        "com_idempotency_key": "skill:deny:CSK-LOCAL-FABRIC-PUBLISHER-001:2026-07-14T11:00",
+        "com_before_state": "candidate; manual_only; dataScopes=[]; tools=[]; externalActions=[]",
+        "com_after_state": "candidate; manual_only; dataScopes=[]; tools=[]; externalActions=[] (expansion denied; skill constrained to before authority)",
+        "com_evidence_refs": "CSK-LOCAL-FABRIC-PUBLISHER-001; CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_decision_rationale": "Doug denied installing CSK-LOCAL-FABRIC-PUBLISHER-001 with a Dataverse write scope, two Fabric external actions, and an approved_automatic authority class because that bypasses the human-approval gate for tenant-affecting writes and external actions (FR13) and the skill has no prior use history. The skill remains candidate (inactive) at its before authority set; the denial rationale stays visible for a re-scoped proposal. No live tenant write was performed.",
+        "com_confidence": 0.9,
+        "com_result": "rejected",
+        "com_failure_code": "skill_authority_expansion_denied",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; authority_expansion_requires_human_approval; human_approval_required; write_scope_not_auto_approved; external_action_requires_human_approval; approved_automatic_not_granted_without_prior_use_history",
+        "com_append_only_locked": true,
+        "beforeAuthoritySet": {
+          "authorityClass": "manual_only",
+          "dataScopes": [],
+          "tools": [],
+          "externalActions": []
+        },
+        "proposedAfterAuthoritySet": {
+          "authorityClass": "approved_automatic",
+          "dataScopes": [
+            "dataverse.com_councilworkitem.read",
+            "dataverse.com_councilworkitem.write"
+          ],
+          "tools": [],
+          "externalActions": [
+            "fabric.publish",
+            "fabric.dataflow.write"
+          ]
+        },
+        "denialRationale": "Doug denied the expansion because it combines a Dataverse write scope, two Fabric external actions, and an approved_automatic authority class for a brand-new skill with no prior use history: that bypasses the human-approval gate for tenant-affecting writes and external actions (FR13). The skill remains inactive (candidate, manual_only, empty authority) and the denial rationale stays visible on the record for a re-scoped proposal."
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-SKILL-APPROVE-001 approval evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-SKILL-APPROVE-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "approval"
+      },
+      {
+        "com_name": "CR-LOCAL-SKILL-DENY-001 denial evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-SKILL-DENY-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "failure_evidence"
+      }
+    ],
+    "skillUpdatesDeferred": [
+      {
+        "skill": "CSK-LOCAL-MEETING-DIGEST-001",
+        "gateReceipt": "CR-LOCAL-SKILL-APPROVE-001",
+        "deferredUpdate": "Activating the live skill row (com_status candidate->active, com_authority_class manual_only->ask_before_use, applying the granted dataScopes/tools/externalActions) is a receipt-backed mutation gated to approval receipt CR-LOCAL-SKILL-APPROVE-001 and to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "skill": "CSK-LOCAL-FABRIC-PUBLISHER-001",
+        "gateReceipt": "CR-LOCAL-SKILL-DENY-001",
+        "deferredUpdate": "The denied expansion is recorded for future review only; the live skill row stays candidate/manual_only with empty authority. Any re-scoped proposal requires a NEW approval receipt; no live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "expansionRun.skills CSK-LOCAL-MEETING-DIGEST-001 with skillRecord candidate/manual_only and proposedExpansion beforeAuthoritySet (manual_only, empty scopes) and proposedAfterAuthoritySet (ask_before_use, dataScopes outlook.calendar.read + dataverse.com_councilworkitem.read, tools email.send, externalActions send_email_on_behalf) plus declaredDelta naming exactly the added scopes/tools/actions and the authority class change",
+        "expansionRun.receipts CR-LOCAL-SKILL-APPROVE-001 (verb approved, actor_type human, actor_id Doug, com_authority_basis, com_decision_rationale, com_evidence_refs CSK-LOCAL-MEETING-DIGEST-001; CSR-MANUAL-MEETING-001, result accepted) carries beforeAuthoritySet and afterAuthoritySet matching the proposedExpansion before/after authority sets",
+        "expansionRun.skills CSK-LOCAL-MEETING-DIGEST-001 activation.gateReceipt=CR-LOCAL-SKILL-APPROVE-001 (a real slice receipt with verb approved/result accepted), activation.effectiveAt 2026-07-14T10:30:00-04:00 is on or after the approval receipt com_occurred_at 2026-07-14T10:15:00-04:00 (temporal + receipt-chain, not a self-asserted flag), and activation.activatedAuthoritySet equals proposedAfterAuthoritySet",
+        "guards.authorityExpansionRequiresExplicitApprovalReceipt=true and guards.activationStrictlyFollowsApprovalReceipt=true"
+      ],
+      "tenantEvidenceRequired": "Writing the live Skill row, applying the approved authority set, and recording the approval receipt to tenant Dataverse tables are receipt-gated to Epic 2; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "expansionRun.skills CSK-LOCAL-FABRIC-PUBLISHER-001 with decision=denied, skillRecord com_status candidate (non-active) and com_authority_class manual_only, and denial.effectiveAuthoritySet equal to proposedExpansion.beforeAuthoritySet (manual_only, empty scopes) proving the skill is constrained to its before authority and not activated",
+        "expansionRun.receipts CR-LOCAL-SKILL-DENY-001 (verb policy_denied, result rejected, com_failure_code skill_authority_expansion_denied declared in failureCodeVocabulary, policy_flags carrying policy_denied + human_approval_required + write_scope_not_auto_approved + external_action_requires_human_approval + approved_automatic_not_granted_without_prior_use_history) and denial.denialRationale non-empty so the rationale is visible for future review",
+        "expansionRun.skills CSK-LOCAL-FABRIC-PUBLISHER-001 has no activation block (denied expansions do not activate) and skillUpdatesDeferred records that the live skill row stays candidate/manual_only with empty authority",
+        "guards.denialConstrainsSkillToBeforeAuthority=true and guards.denialRationaleRemainsVisibleForFutureReview=true"
+      ],
+      "tenantEvidenceRequired": "Surfacing the policy denial and the constrained Skill record on the live Council Queue is a receipt-backed mutation gated to Epic 2; no tenant Skill row was modified for this slice."
+    }
+  ]
+}

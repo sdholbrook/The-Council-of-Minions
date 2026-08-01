@@ -1,0 +1,204 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "5-1-maintain-the-minion-skill-registry",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove the Minion Skill Registry contract locally: three Council Skill records (CSK-LOCAL-*) declare trigger, allowed context, required inputs, authority class, approval requirements, proof owed, update policy, and status (one active, one deprecated, one suspended). Two recommendation scenarios exercise status-governed use: recommending the deprecated skill is FLAGGED for human review, and recommending the suspended skill is PREVENTED. Each outcome is receipt-backed and the outcome is DERIVED from the skill record's status and authority class, not read from a self-asserted boolean. Receipts here are local contract evidence only, and every live mutation stays receipt-gated to Epic 2.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "sourceRecordsRemainSeparate": true,
+    "meaningGraphDoesNotOwnWorkflowState": true,
+    "dataverseRowsNotUsedAsCouncilIdentity": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true,
+    "statusGovernsSkillUse": true,
+    "outcomesDerivedFromSkillRecordsNotBooleans": true,
+    "noWorkItemStateChangeInThisSlice": true
+  },
+  "skillRegistryRun": {
+    "runId": "SKILL-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 5.1 contract validation; skill registry use is status-governed and any live write stays deferred to Epic 2",
+    "semanticContractVersion": "2026-07-07",
+    "inputSlicesFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "zero-multi-item-extraction-slice.json"
+    ],
+    "decisionPolicy": {
+      "skillUseIsGovernedByRecordStatus": true,
+      "deprecatedSkillRecommendedIsFlaggedForHumanReview": true,
+      "suspendedSkillRecommendedIsPrevented": true,
+      "activeSkillMayBeRecommended": true,
+      "outcomesDerivedFromSkillRecordStatusAndAuthorityClass": true,
+      "recommendationOutcomesAreReceiptBacked": true,
+      "liveSkillMutationReceiptGatedToEpic2": true,
+      "receiptsAreAppendOnlyCorrectionsAreNewReceipts": true
+    },
+    "receiptVerbPolicy": {
+      "flagOutcomeVerb": "held",
+      "preventOutcomeVerb": "policy_denied",
+      "localExtensionNote": "The manifest com_receiptverb vocabulary has no skill-scoped flag or prevent verb. The FLAG outcome reuses the manifest verb 'held' (the recommendation is held for human review) and the PREVENT outcome reuses the manifest verb 'policy_denied' (the recommendation is denied by policy). com_result and com_before_state/com_after_state disambiguate the recommendation outcome from a Work Item state move. This is a documented local extension, NOT a claim that the skill registry owns Work Item workflow state; guards.noWorkItemStateChangeInThisSlice remains true."
+    },
+    "skills": [
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Drift scan - flag affected Work Items for review",
+        "com_council_skill_id": "CSK-LOCAL-DRIFT-SCAN-001",
+        "com_trigger": "A source record that already produced Work Items or rationale in Story 1.3/1.4 is observed to have drifted (new com_source_version_ref or a superseding capture); the skill fires to flag only the affected Work Items for review.",
+        "com_allowed_context": "Source drift runs over Story 1.1/1.2/1.4 source records; the skill must not run over zero-item sources or sources that produced no rationale.",
+        "com_required_inputs": "A drifted source record id, the observed com_source_version_ref and com_content_hash, and the set of Work Items linked to that source in any source role.",
+        "com_authority_class": "approved_automatic",
+        "com_approval_requirements": "No per-use human approval required; the skill is pre-approved to flag affected Work Items for review only. Any com_state_group move driven by the flag still requires a separate receipt-gated mutation (Epic 2 Story 2.3).",
+        "com_proof_owed": "A source_drifted receipt naming the drifted source, the new version ref, and each flagged Work Item; the flag must be surfaced as a review-needed indicator, not a state change.",
+        "com_update_policy": "Trigger and proof obligation changes require a new Council Skill record with a new CSK id superseding this one via com_status=superseded; the prior record and its receipts are never edited (append-only).",
+        "com_status": "active",
+        "provenanceSourceRecord": "CSR-MANUAL-MEETING-001",
+        "provenanceNote": "Trigger observed in the manual meeting note CSR-MANUAL-MEETING-001 where Doug moved the checklist deadline; referenced as provenance only, the skill itself is minted in this slice."
+      },
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Legacy summary - single-line work item titles (deprecated)",
+        "com_council_skill_id": "CSK-LOCAL-LEGACY-SUMMARIZE-001",
+        "com_trigger": "A proposed Work Item has an empty or single-line com_title and the source summary is short enough to summarize without authoring new rationale.",
+        "com_allowed_context": "Single-message source records only; must not run over threads, meetings, or multi-item extractions.",
+        "com_required_inputs": "A proposed Work Item id and its primary source record id.",
+        "com_authority_class": "manual_only",
+        "com_approval_requirements": "Every use requires explicit human (Doug) approval before the summary is applied; the skill may not auto-execute.",
+        "com_proof_owed": "An approved receipt recording the human approver, the Work Item, and the summarized title; a recommendation made while this skill is deprecated must be flagged for review rather than executed.",
+        "com_update_policy": "Deprecated in favor of a richer multi-line summarization skill; status may move to retired only through a new receipt-backed mutation (Epic 2). The prior trigger and proof obligation stay unchanged.",
+        "com_status": "deprecated",
+        "provenanceSourceRecord": null,
+        "provenanceNote": "Legacy registry entry predating the Story 1.1-1.4 captures; no single source record is cited as provenance."
+      },
+      {
+        "evidenceStatus": "mock_manual_not_tenant_verified",
+        "com_name": "Outbound send - draft and send a reply on behalf of a Minion (suspended)",
+        "com_council_skill_id": "CSK-LOCAL-OUTBOUND-SEND-001",
+        "com_trigger": "A Work Item resolves to an outbound reply or message that a Minion could draft and send on a human's behalf.",
+        "com_allowed_context": "Outlook/Teams message sources only; must not run over internal-only or sensitive-labeled sources.",
+        "com_required_inputs": "A resolved Work Item id, the target conversation ref, and an explicit human approval to send.",
+        "com_authority_class": "ask_before_use",
+        "com_approval_requirements": "Every use requires explicit human approval BEFORE the skill drafts or sends; the skill must ask before use and may never auto-send.",
+        "com_proof_owed": "An external_action_requested receipt naming the outbound target and the human approver; while suspended the skill may not be recommended at all and any recommendation must be prevented.",
+        "com_update_policy": "Suspended pending tenant outbound-action guardrails; status may move back to active only through a new receipt-backed mutation (Epic 2) after the guardrails are verified. The prior trigger and proof obligation stay unchanged.",
+        "com_status": "suspended",
+        "provenanceSourceRecord": null,
+        "provenanceNote": "Suspended registry entry; provenance is the outbound-action guardrail gap, not a single source record."
+      }
+    ],
+    "recommendationScenarios": [
+      {
+        "scenarioId": "REC-LOCAL-FLAG-001",
+        "recommendedSkill": "CSK-LOCAL-LEGACY-SUMMARIZE-001",
+        "recommendingActorType": "minion",
+        "recommendingActorId": "local-minion-recommender",
+        "recommendationRationale": "A Minion recommended the legacy single-line summarization skill for a short Work Item title; the registry evaluates the recommendation against the skill record's status and authority class before any use.",
+        "expectedOutcome": "flagged",
+        "outcomeReceipt": "CR-LOCAL-SKILL-FLAG-001",
+        "outcomeRationale": "The recommended skill CSK-LOCAL-LEGACY-SUMMARIZE-001 is deprecated (com_status=deprecated) and manual_only, so the recommendation is FLAGGED for human review rather than executed; the deprecated status governs use and the flag is receipt-backed."
+      },
+      {
+        "scenarioId": "REC-LOCAL-PREVENT-001",
+        "recommendedSkill": "CSK-LOCAL-OUTBOUND-SEND-001",
+        "recommendingActorType": "minion",
+        "recommendingActorId": "local-minion-recommender",
+        "recommendationRationale": "A Minion recommended the outbound send skill to draft and send a reply; the registry evaluates the recommendation against the skill record's status and authority class before any use.",
+        "expectedOutcome": "prevented",
+        "outcomeReceipt": "CR-LOCAL-SKILL-PREVENT-001",
+        "outcomeRationale": "The recommended skill CSK-LOCAL-OUTBOUND-SEND-001 is suspended (com_status=suspended), so the recommendation is PREVENTED entirely; the suspended status governs use and the prevent is receipt-backed, consistent with the ask_before_use authority class which already forbids auto-execution."
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-SKILL-FLAG-001",
+        "com_work_item": null,
+        "com_verb": "held",
+        "com_actor_type": "system",
+        "com_actor_id": "local-skill-policy-evaluator",
+        "com_authority_basis": "local non-tenant Story 5.1 contract validation; deprecated skill recommendation is flagged for human review and any live write stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-13T16:30:00-04:00",
+        "com_idempotency_key": "skill:flag:REC-LOCAL-FLAG-001:CSK-LOCAL-LEGACY-SUMMARIZE-001:2026-07-13T16:30",
+        "com_before_state": "recommended",
+        "com_after_state": "flagged_for_review",
+        "com_evidence_refs": "CSK-LOCAL-LEGACY-SUMMARIZE-001; REC-LOCAL-FLAG-001",
+        "com_decision_rationale": "The registry evaluated a recommendation to use CSK-LOCAL-LEGACY-SUMMARIZE-001. The skill record's com_status is deprecated and com_authority_class is manual_only, so the recommendation is held for human review (FLAGGED) rather than executed. The outcome is derived from the skill record, not a self-asserted boolean. No live tenant write was performed; any live skill-use mutation is a receipt-gated deferred update.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_failure_code": null,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; deprecated_skill_flagged; human_review_required",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-SKILL-PREVENT-001",
+        "com_work_item": null,
+        "com_verb": "policy_denied",
+        "com_actor_type": "system",
+        "com_actor_id": "local-skill-policy-evaluator",
+        "com_authority_basis": "local non-tenant Story 5.1 contract validation; suspended skill recommendation is prevented by policy and any live write stays deferred to Epic 2",
+        "com_occurred_at": "2026-07-13T16:35:00-04:00",
+        "com_idempotency_key": "skill:prevent:REC-LOCAL-PREVENT-001:CSK-LOCAL-OUTBOUND-SEND-001:2026-07-13T16:35",
+        "com_before_state": "recommended",
+        "com_after_state": "prevented",
+        "com_evidence_refs": "CSK-LOCAL-OUTBOUND-SEND-001; REC-LOCAL-PREVENT-001",
+        "com_decision_rationale": "The registry evaluated a recommendation to use CSK-LOCAL-OUTBOUND-SEND-001. The skill record's com_status is suspended, so the recommendation is denied by policy (PREVENTED) entirely; no use is permitted while the skill is suspended. The outcome is derived from the skill record, not a self-asserted boolean, and is consistent with the ask_before_use authority class which already forbids auto-execution. No live tenant write was performed.",
+        "com_confidence": 0.95,
+        "com_result": "rejected",
+        "com_failure_code": "suspended_skill_use_prevented",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; suspended_skill_prevented",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-SKILL-FLAG-001 provenance evidence - CSR-MANUAL-MEETING-001",
+        "com_receipt": "CR-LOCAL-SKILL-FLAG-001",
+        "com_source_record": "CSR-MANUAL-MEETING-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-SKILL-PREVENT-001 provenance evidence - CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_receipt": "CR-LOCAL-SKILL-PREVENT-001",
+        "com_source_record": "CSR-OUTLOOK-MESSAGE-MOCK-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "skillUpdatesDeferred": [
+      {
+        "skill": "CSK-LOCAL-DRIFT-SCAN-001",
+        "deferredUpdate": "Creating the live Council Skill row for CSK-LOCAL-DRIFT-SCAN-001 with com_status active is a receipt-backed mutation gated to Epic 2; no live tenant write was performed in this slice."
+      },
+      {
+        "skill": "CSK-LOCAL-LEGACY-SUMMARIZE-001",
+        "deferredUpdate": "Creating the live Council Skill row for CSK-LOCAL-LEGACY-SUMMARIZE-001 with com_status deprecated is a receipt-backed mutation gated to Epic 2; any later move to retired is a separate receipt-backed mutation. No live tenant write was performed in this slice."
+      },
+      {
+        "skill": "CSK-LOCAL-OUTBOUND-SEND-001",
+        "deferredUpdate": "Creating the live Council Skill row for CSK-LOCAL-OUTBOUND-SEND-001 with com_status suspended is a receipt-backed mutation gated to Epic 2; any later move back to active after guardrail verification is a separate receipt-backed mutation. No live tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "skillRegistryRun.skills CSK-LOCAL-DRIFT-SCAN-001 (com_status active, com_authority_class approved_automatic), CSK-LOCAL-LEGACY-SUMMARIZE-001 (com_status deprecated, com_authority_class manual_only), CSK-LOCAL-OUTBOUND-SEND-001 (com_status suspended, com_authority_class ask_before_use); each declares com_trigger, com_allowed_context, com_required_inputs, com_approval_requirements, com_proof_owed, com_update_policy, com_status, and provenance evidence/receipt links where applicable",
+        "skillRegistryRun.skills CSK-LOCAL-DRIFT-SCAN-001 provenanceSourceRecord CSR-MANUAL-MEETING-001 (a known sibling-slice Source Record) is referenced as provenance; CSK-LOCAL-LEGACY-SUMMARIZE-001 and CSK-LOCAL-OUTBOUND-SEND-001 carry explicit null provenanceSourceRecord with a provenanceNote",
+        "guards.statusGovernsSkillUse=true and guards.receiptsAreLocalContractEvidenceOnly=true; live Council Skill row creation is recorded only in skillUpdatesDeferred as receipt-gated to Epic 2"
+      ],
+      "tenantEvidenceRequired": "Writing the live Council Skill rows to the tenant Dataverse table is receipt-gated to Epic 2; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "skillRegistryRun.recommendationScenarios REC-LOCAL-FLAG-001 recommends CSK-LOCAL-LEGACY-SUMMARIZE-001; the skill record's com_status is deprecated so expectedOutcome is flagged and outcomeReceipt CR-LOCAL-SKILL-FLAG-001 (verb held, result accepted, before recommended, after flagged_for_review) backs the flag",
+        "skillRegistryRun.recommendationScenarios REC-LOCAL-PREVENT-001 recommends CSK-LOCAL-OUTBOUND-SEND-001; the skill record's com_status is suspended so expectedOutcome is prevented and outcomeReceipt CR-LOCAL-SKILL-PREVENT-001 (verb policy_denied, result rejected, before recommended, after prevented) backs the prevent",
+        "Outcomes are derived from the skill records' com_status and com_authority_class (guards.outcomesDerivedFromSkillRecordsNotBooleans=true), not read from a self-asserted boolean; the deprecated+manual_only skill is flagged, the suspended+ask_before_use skill is prevented"
+      ],
+      "tenantEvidenceRequired": "Enforcing the flag/prevent outcomes in a live recommendation path is receipt-gated to Epic 2 Story 2.3; no tenant Work Item or Skill row was modified for this slice."
+    }
+  ]
+}

@@ -37,10 +37,40 @@ filesystem, not the logic), and emits a Ringer `swarm.json` where each task:
 <!-- ringer-check: pytest tests/test_cfg.py -q -->   # exit 0 = PASS (overrides --check-command)
 <!-- ringer-owned: src/cfg.py;tests/test_cfg.py -->  # paths this worker may touch
 <!-- ringer-expect: notes.md;src/cfg.py -->          # files that must exist post-run
+<!-- ringer-origin: human -->                        # story authorship: human|factory (FR-8)
+<!-- ringer-coupon: true -->                         # planted fault injection (FR-14)
 ```
 
 Adding a `ringer-check` per story is the single highest-value habit — it makes
 "done" executable. Without it the bridge falls back to `--check-command`.
+
+**Tests+Docs Gate (FR-10):** pass `--tests-docs-roots 'pkg;scripts'` to the
+bridge (repo-level, not per-story) and the Gate refuses a patch that changes
+`<root>/<m>.py` without touching `tests/test_<m>.py`, or adds a NEW module
+(absent from HEAD) under a root without a `docs/` change. Tests-only and
+docs-only patches are always legal; contract artifacts, deletions,
+underscore-prefixed modules, `conftest.py`/`setup.py`, and nested files are
+exempt; with no roots declared the gate is inert (absence never refuses).
+
+Deliberate limits, so nobody re-litigates them per refusal: the supported
+layout is FLAT modules directly under a root pairing with repo-root
+`tests/test_<m>.py` and repo-root `docs/` — a repo with colocated tests
+should not declare that root. ANY docs change satisfies the docs leg (the
+gate proves concurrence, not documentation quality — that is review's job).
+Comment-only source edits still require the pair (FR-10 is deliberately
+mechanical: decidable beats clever). AND: a story whose `ringer-owned`
+includes a governed module MUST also own `tests/test_<m>.py` (and `docs/` if
+the module is new) — otherwise the ownership and tests+docs gates are
+jointly unsatisfiable by construction.
+
+`ringer-origin` records Story authorship on every Catch the Gates emit
+(`meridian:origin`). Absent marker = the emitter's default (`factory`) — the
+producer owns the default; the Bridge and Gate never duplicate it. An invalid
+value refuses the whole dispatch (exit 2, naming the story): FR-8 is a closed
+vocabulary. `ringer-coupon: true` marks the Story as planted fault injection:
+every Catch for the key carries `meridian:coupon: true`, so recognition,
+apply-refusal, and gate-liveness all key on a typed field the Bridge alone can
+assert (the Bridge is the only component that knows what it planted).
 
 ### Usage
 
@@ -97,3 +127,52 @@ The honest expectation going in: **#2/#3 win on cost and wall-clock for
 mechanical, independently-checkable stories; #1 wins on anything needing the
 spine, tight coupling, or human escalation.** The comparison tells you *where*
 your real backlog falls on that line — which is the actual decision.
+
+## Story-review watcher (verdicts.jsonl receipts)
+
+`story_review_watcher.py` is the productized form of the Shape-A event loop: it
+tails a bmad-loop run journal and, on each `story-done` event, builds review
+materials + a multi-lens ringer manifest, dispatches the swarm, then harvests
+each lens's `report.md` into a **structured receipt** appended to
+`<run-dir>/verdicts.jsonl`. Other journal events (`run-paused`,
+`story-deferred`, `escalation`) become receipts too. It is stdlib-only
+(Python 3.11+), append-only, and crash-safe — a failure on one story writes a
+`review-skip` receipt and never kills the `--follow` loop.
+
+`checks/review_check.py` is the per-lens report validator (substance +
+anchoring): a report must exist, name its model, end with a `VERDICT:` line,
+have ≥ `--min-findings` finding-shaped entries, and anchor to at least one real
+materials file.
+
+### Receipt schema
+
+One JSON object per line, appended to `<run-dir>/verdicts.jsonl`. Common
+fields: `ts` (UTC ISO-8601), `kind`, `run_dir`, and `story_key` (when known).
+
+| kind             | extra fields                                                                                  |
+|------------------|-----------------------------------------------------------------------------------------------|
+| `review-dispatch`| `sha`, `manifest`, `lenses` (list), `dry_run` (bool)                                          |
+| `review-verdict` | `lens`, `model`, `verdict` (`APPROVE`\|`FINDINGS`\|`NO-REPORT`), `findings_count` (int; `-1` for `NO-REPORT`, `0` for `APPROVE`), `report_path`, `sha` |
+| `review-skip`    | `reason` (`no-commit` / `build-failed` / `ringer-failed` / `ringer-error` / `handler-exception` / `no-story-key`), plus `detail`/`exit`/`sha` where relevant |
+| `run-paused`     | `pause_class` (`usage-limit` / `epic-boundary` / `crash` / `escalation`), `reason` (raw text) |
+| `story-deferred` | `source_kind` (original journal kind), plus all raw fields passed through                     |
+
+### Daemon invocation
+
+```bash
+python3 tools/ringer-bridge/story_review_watcher.py \
+  --repo /srv/bmad/projects/SynSci-Atlas \
+  --follow
+```
+
+Useful flags: `--replay` (process the journal's existing lines once, then exit
+— for tests/backfill), `--dry-run` (build materials+manifest and write
+dispatch receipts without invoking ringer), `--harvest STORY_KEY` (re-parse
+existing per-lens reports into verdict receipts), `--lenses NAME=SLUG,...`,
+`--contracts PATH`, `--check PATH`, `--identity NAME`, `--ringer PATH`,
+`--run-dir PATH`, `--base PATH`.
+
+> **Meridian Compass** reads `<run-dir>/verdicts.jsonl` to populate the
+> fleet economics panel — each `review-verdict` line is one lens verdict the
+> panel rolls up into per-story, per-lens, and per-model cost/quality curves.
+

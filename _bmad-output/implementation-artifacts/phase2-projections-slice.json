@@ -1,0 +1,216 @@
+{
+  "artifactVersion": "2026-07-13",
+  "storyKey": "5-6-manage-phase-2-knowledge-and-analytics-projections",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove that Phase-2 knowledge and analytics projections (Fabric knowledge, Copilot Studio surface, analytics) stay DEFERRED until the MVP contracts stabilize, and that graph/ontology expansion never owns workflow state. Three Phase-2 projection plans are catalogued with their triggering stability criteria, each marked phase:2, deferredUntil:'mvp-contracts-stable', and ownsWorkflowState:false. A premature-activation attempt yields a policy-denial receipt and the projection remains deferred. The 4-5 semantic-contract projection slice is cross-referenced (planes are projections only) — referenced, not duplicated. Local contract evidence only; every would-be live plane write appears as a deferred entry naming its receipt gate.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "phase2ProjectionsDeferredUntilMvpContractsStable": true,
+    "projectionsNeverOwnWorkflowState": true,
+    "prematureActivationPolicyDenied": true,
+    "planesAreProjectionsOnly": true,
+    "noCanonicalAuthoringInPlanes": true,
+    "semanticContractProjectionCrossReferencedNotDuplicated": true,
+    "noPhase2PlaneWriteInThisSlice": true
+  },
+  "phase2ProjectionRun": {
+    "runId": "PHASE2PROJ-LOCAL-2026-07-13-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 5.6 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "canonicalSource": "council-semantic-contract",
+    "deferredUntil": "mvp-contracts-stable",
+    "inputVocabularyFrom": [
+      "dataverse-mvp-schema-manifest.json",
+      "semantic-contract-projection-slice.json"
+    ],
+    "decisionPolicy": {
+      "phase2ProjectionsDeferredUntilMvpContractsStable": true,
+      "projectionPlansNeverOwnWorkflowState": true,
+      "prematureActivationYieldsPolicyDenial": true,
+      "stabilityCriteriaMustBeNamedPerPlan": true,
+      "planesAreProjectionsOnly": true,
+      "semanticContractProjectionSliceReferencedNotDuplicated": true,
+      "livePhase2PlaneWritesReceiptGated": true
+    },
+    "projectionPlans": [
+      {
+        "planId": "PHASE2-PLAN-LOCAL-001",
+        "planName": "Fabric knowledge projection (Phase 2)",
+        "phase": 2,
+        "targetSurface": "fabric-iq-ontology",
+        "deferredUntil": "mvp-contracts-stable",
+        "triggeringStabilityCriteria": [
+          "Epic 2 receipt-backed Work Item state changes (Story 2.3) are tenant-verified and stable",
+          "Epic 4 Council Semantic Contract vocabulary (com_graphedgetype / com_graphentitytype) is tenant-verified and frozen for re-projection",
+          "Story 4.5 semantic-contract projection slice projectionManifest has been tenant-verified against the live Dataverse semantic model and Fabric IQ ontology without unresolved drift"
+        ],
+        "ownsWorkflowState": false,
+        "planRationale": "Fabric IQ ontology becomes a projection surface for Council knowledge once the MVP contracts that define Work Item state, source-record capture, and semantic-contract vocabulary are stable. Until then this plan stays deferred; ontology expansion may only propose terms back to the Council Semantic Contract and never owns workflow state.",
+        "referencedSemanticContractProjectionSlice": "semantic-contract-projection-slice.json",
+        "referencedProjectionIds": [
+          "PROJ-LOCAL-SCP-003",
+          "PROJ-LOCAL-SCP-004",
+          "PROJ-LOCAL-SCP-005"
+        ],
+        "plannedProjectionSurface": "Fabric IQ ontology entities/edges projected from council-semantic-contract; no Work Item execution authority",
+        "liveWriteDeferredTo": "receipt-gated post mvp-contracts-stable; no tenant write in this slice"
+      },
+      {
+        "planId": "PHASE2-PLAN-LOCAL-002",
+        "planName": "Copilot Studio surface projection (Phase 2)",
+        "phase": 2,
+        "targetSurface": "copilot-studio-surface",
+        "deferredUntil": "mvp-contracts-stable",
+        "triggeringStabilityCriteria": [
+          "Epic 2 approval boundaries (Story 2.2) are tenant-verified so Copilot surface actions never bypass human approval",
+          "Epic 3 handoff/reply drafts (Story 3.3) are tenant-verified for the outbound-action contract the Copilot surface would invoke",
+          "Story 4.4 approved-instruction receipts are tenant-verified so the Copilot surface only acts on receipt-backed approved instructions"
+        ],
+        "ownsWorkflowState": false,
+        "planRationale": "A Copilot Studio surface becomes the conversational projection of Council Work Items only once the approval-boundary, handoff, and approved-instruction MVP contracts are stable. The surface projects Council state read-only and routes any action through the receipt-gated MVP contracts; it never owns workflow state and never writes directly to Dataverse.",
+        "referencedSemanticContractProjectionSlice": "semantic-contract-projection-slice.json",
+        "referencedProjectionIds": [
+          "PROJ-LOCAL-SCP-001",
+          "PROJ-LOCAL-SCP-002",
+          "PROJ-LOCAL-SCP-006"
+        ],
+        "plannedProjectionSurface": "Copilot Studio topic/action projecting Council Work Items and Receipts read-only; outbound actions route through Epic 2/3 receipt gates",
+        "liveWriteDeferredTo": "receipt-gated post mvp-contracts-stable; no tenant write in this slice"
+      },
+      {
+        "planId": "PHASE2-PLAN-LOCAL-003",
+        "planName": "Analytics projection (Phase 2)",
+        "phase": 2,
+        "targetSurface": "analytics-warehouse",
+        "deferredUntil": "mvp-contracts-stable",
+        "triggeringStabilityCriteria": [
+          "Epic 2 idempotent-mutation receipts (Story 2.4) are tenant-verified so analytics can replay receipt-backed state deterministically",
+          "Epic 1 source-record and Work Item schemas (Stories 1.1-1.5) are tenant-verified and frozen for analytics modeling",
+          "Story 2.6 failure/policy-denial receipts are tenant-verified so analytics can classify denials without inferring state"
+        ],
+        "ownsWorkflowState": false,
+        "planRationale": "Analytics over Council receipts and Work Items becomes a Phase-2 projection once the MVP receipt and schema contracts are stable. Analytics is a read-only projection of receipt-backed state; it never owns workflow state and never writes back into Dataverse without a new receipt.",
+        "referencedSemanticContractProjectionSlice": "semantic-contract-projection-slice.json",
+        "referencedProjectionIds": [
+          "PROJ-LOCAL-SCP-001",
+          "PROJ-LOCAL-SCP-002"
+        ],
+        "plannedProjectionSurface": "Analytics warehouse projected from receipt-backed Council state; read-only, no write-back authority",
+        "liveWriteDeferredTo": "receipt-gated post mvp-contracts-stable; no tenant write in this slice"
+      }
+    ],
+    "prematureActivationAttempts": [
+      {
+        "attemptId": "PHASE2-PREACT-LOCAL-001",
+        "targetPlanId": "PHASE2-PLAN-LOCAL-002",
+        "attemptedSurface": "copilot-studio-surface",
+        "attemptedAction": "Activate the Copilot Studio surface projection before the approval-boundary, handoff, and approved-instruction MVP contracts are tenant-verified.",
+        "deniedByReceipt": "CR-LOCAL-PHASE2-PREACT-DENIED-001",
+        "denialRationale": "The Copilot Studio surface projection is gated by deferredUntil:'mvp-contracts-stable'. The triggering stability criteria for PHASE2-PLAN-LOCAL-002 are not yet tenant-verified, so activating the surface now would let a projection bypass the receipt-gated MVP approval boundaries. A policy_denied receipt is appended and the projection remains deferred; no plane write occurs in this slice.",
+        "projectionRemainsDeferred": true,
+        "attemptedAt": "2026-07-13T18:05:00+00:00"
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-PHASE2-DEFER-001",
+        "com_verb": "reviewed",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 5.6 contract validation",
+        "com_occurred_at": "2026-07-13T17:55:00+00:00",
+        "com_idempotency_key": "phase2proj:defer-catalog:PHASE2PROJ-LOCAL-2026-07-13-001",
+        "com_before_state": "no Phase-2 projection plan catalog recorded for Fabric knowledge, Copilot Studio surface, or analytics",
+        "com_after_state": "three Phase-2 projection plans catalogued (PHASE2-PLAN-LOCAL-001/002/003) each marked phase:2, deferredUntil:mvp-contracts-stable, ownsWorkflowState:false; semantic-contract-projection-slice.json referenced, not duplicated",
+        "com_evidence_refs": "projectionPlans[PHASE2-PLAN-LOCAL-001..003]; semantic-contract-projection-slice.json projectionManifest; dataverse-mvp-schema-manifest.json",
+        "com_decision_rationale": "Phase-2 Fabric knowledge, Copilot Studio surface, and analytics projections are catalogued as deferred plans. Each plan names its triggering stability criteria and references the 4.5 semantic-contract projection slice; none owns workflow state. The catalog is local contract evidence only; no live plane write occurred in this slice.",
+        "com_confidence": 0.9,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; phase2_plans_deferred_until_mvp_contracts_stable; projections_never_own_workflow_state; planes_are_projections_only",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-PHASE2-PREACT-DENIED-001",
+        "com_verb": "policy_denied",
+        "com_actor_type": "system",
+        "com_actor_id": "local-bmad-validator",
+        "com_authority_basis": "local non-tenant Story 5.6 contract validation",
+        "com_occurred_at": "2026-07-13T18:06:00+00:00",
+        "com_idempotency_key": "phase2proj:preact-deny:PHASE2-PREACT-LOCAL-001:PHASE2-PLAN-LOCAL-002",
+        "com_before_state": "PHASE2-PLAN-LOCAL-002 deferred until mvp-contracts-stable with three triggering stability criteria unmet",
+        "com_after_state": "premature activation of PHASE2-PLAN-LOCAL-002 denied; the Copilot Studio surface projection remains deferred; no plane write occurred in this slice",
+        "com_evidence_refs": "prematureActivationAttempts[PHASE2-PREACT-LOCAL-001]; projectionPlans[PHASE2-PLAN-LOCAL-002]; denialRationale names unmet stability criteria",
+        "com_decision_rationale": "A premature-activation attempt against the Copilot Studio surface projection was denied because the projection is deferred until mvp-contracts-stable and the approval-boundary, handoff, and approved-instruction MVP contracts are not yet tenant-verified. The denial is append-only; the projection remains deferred and owns no workflow state. No live plane write was performed.",
+        "com_confidence": 0.92,
+        "com_result": "rejected",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; premature_activation_policy_denied; projections_never_own_workflow_state; phase2_plans_deferred_until_mvp_contracts_stable",
+        "com_append_only_locked": true
+      }
+    ],
+    "receiptSourceLinks": [
+      {
+        "com_name": "CR-LOCAL-PHASE2-DEFER-001 defer evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-PHASE2-DEFER-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      },
+      {
+        "com_name": "CR-LOCAL-PHASE2-PREACT-DENIED-001 denial evidence - CSR-MANUAL-SUMMARY-001",
+        "com_receipt": "CR-LOCAL-PHASE2-PREACT-DENIED-001",
+        "com_source_record": "CSR-MANUAL-SUMMARY-001",
+        "com_evidence_role": "supporting"
+      }
+    ],
+    "livePhase2PlaneWritesDeferred": [
+      {
+        "targetSurface": "fabric-iq-ontology",
+        "planId": "PHASE2-PLAN-LOCAL-001",
+        "deferredUpdate": "Applying the Fabric knowledge projection to the live Fabric IQ ontology is receipt-gated until mvp-contracts-stable; no tenant write was performed in this slice."
+      },
+      {
+        "targetSurface": "copilot-studio-surface",
+        "planId": "PHASE2-PLAN-LOCAL-002",
+        "deferredUpdate": "Publishing the Copilot Studio surface projection is receipt-gated until mvp-contracts-stable and remains denied after CR-LOCAL-PHASE2-PREACT-DENIED-001; no tenant write was performed in this slice."
+      },
+      {
+        "targetSurface": "analytics-warehouse",
+        "planId": "PHASE2-PLAN-LOCAL-003",
+        "deferredUpdate": "Provisioning the analytics warehouse projection is receipt-gated until mvp-contracts-stable; no tenant write was performed in this slice."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "phase2ProjectionRun.projectionPlans carries three plans (PHASE2-PLAN-LOCAL-001/002/003) for Fabric knowledge, Copilot Studio surface, and analytics",
+        "every plan carries phase:2 (strict integer), deferredUntil:'mvp-contracts-stable', a non-empty triggeringStabilityCriteria list, and ownsWorkflowState:false (strict boolean)",
+        "receipt CR-LOCAL-PHASE2-DEFER-001 (verb reviewed) backs the deferred-plan catalog with policy flags phase2_plans_deferred_until_mvp_contracts_stable and projections_never_own_workflow_state"
+      ],
+      "tenantEvidenceRequired": "Tenant-verification of each plan's triggering stability criteria and any live Phase-2 plane write are receipt-gated post mvp-contracts-stable and remain VERIFY IN TENANT; this slice is local contract evidence only."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "phase2ProjectionRun.prematureActivationAttempts records PHASE2-PREACT-LOCAL-001 targeting PHASE2-PLAN-LOCAL-002 with projectionRemainsDeferred:true (strict boolean)",
+        "receipt CR-LOCAL-PHASE2-PREACT-DENIED-001 (verb policy_denied, result rejected) denies the premature activation and binds to plan PHASE2-PLAN-LOCAL-002 via prematureActivationAttempts.targetPlanId",
+        "guards.prematureActivationPolicyDenied=true and the deferred Copilot Studio surface write appears only in livePhase2PlaneWritesDeferred; no plane write occurred in this slice"
+      ],
+      "tenantEvidenceRequired": "Live premature-activation enforcement at the plane boundary remains VERIFY IN TENANT; this slice records the local contract denial only."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "every plan references semantic-contract-projection-slice.json via referencedSemanticContractProjectionSlice and lists referencedProjectionIds that resolve in that slice's projectionManifest (PROJ-LOCAL-SCP-001..006)",
+        "guards.semanticContractProjectionCrossReferencedNotDuplicated=true and decisionPolicy.semanticContractProjectionSliceReferencedNotDuplicated=true; the 4.5 slice is referenced, not duplicated"
+      ],
+      "tenantEvidenceRequired": "Tenant-verification that the 4.5 projection manifest backs these Phase-2 surfaces remains VERIFY IN TENANT; this slice cross-references local contract evidence only."
+    }
+  ]
+}

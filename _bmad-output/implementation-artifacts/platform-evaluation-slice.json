@@ -1,0 +1,278 @@
+{
+  "artifactVersion": "2026-07-14",
+  "storyKey": "5-3-record-microsoft-platform-evaluation-evidence",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove that Microsoft-native planes are evaluated before any custom substrate is approved, and that every custom-service proposal cites the specific Microsoft-native gap or tenant constraint it fills. Two capability evaluations each weigh at least four named Microsoft candidates against tenant gates, permission/DLP impact, licensing/cost, ALM path, contract gaps, decision, and a review reference. One custom-service proposal cites a recorded gap in an evaluation row, and its decision is recorded as an append-only receipt BEFORE any implementation; no implementation artifacts are referenced and no live Dataverse write is performed. Every would-be live write appears only as a deferred, receipt-gated entry.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "microsoftNativeEvaluatedBeforeCustomSubstrate": true,
+    "customServicesMustCiteMicrosoftGap": true,
+    "decisionsRecordedBeforeImplementation": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "noImplementationArtifactsReferenced": true
+  },
+  "assumptions": [
+    "Microsoft product capability statements reflect public documentation as of 2026-07-07 (microsoft-platform-fit-matrix-2026-07-07.md contract date); tenant-specific gates, license SKUs, and DLP classifications are recorded as pending tenant verification, not as verified tenant facts.",
+    "The named candidate universe (Work IQ, Dataverse intelligence/MCP, Power Apps MCP agent feed, Copilot Studio, Power Automate, Fabric IQ/Graph, Fabric data agents) is the set the story spec enumerates; no candidate outside that set is admitted.",
+    "Doug is the human approval owner per tenant-decision-packet.json decisions.humanApprovalOwner."
+  ],
+  "platformEvaluationRun": {
+    "runId": "PE-LOCAL-2026-07-14-001",
+    "actorType": "human",
+    "actorId": "Doug",
+    "authorityBasis": "local non-tenant Story 5.3 platform-fit authority; Doug is the human approval owner per tenant-decision-packet.json",
+    "semanticContractVersion": "2026-07-07",
+    "inputDecisionsFrom": [
+      "tenant-decision-packet.json"
+    ],
+    "decisionPolicy": {
+      "microsoftNativePlanesEvaluatedBeforeCustomSubstrate": true,
+      "customServiceMustCiteSpecificMicrosoftGapOrTenantConstraint": true,
+      "decisionsRecordedAsReceiptsBeforeAnyImplementation": true,
+      "receiptsAreLocalContractEvidenceOnly": true,
+      "noLiveDataverseMutationInThisSlice": true,
+      "evaluationRowsMapToManifestComCouncilplatformevaluation": true
+    },
+    "candidateUniverse": [
+      "Work IQ",
+      "Dataverse intelligence/MCP",
+      "Power Apps MCP agent feed",
+      "Copilot Studio",
+      "Power Automate",
+      "Fabric IQ/Graph",
+      "Fabric data agents"
+    ],
+    "evaluations": [
+      {
+        "capabilityEvaluationId": "PE-LOCAL-EVAL-001",
+        "com_council_capability": "memory-and-graph-grounding",
+        "capabilityQuestion": "Can a Microsoft-native plane ground Council memory candidates and the lightweight meaning graph without a custom substrate, given the link_only/hash_only source-body policy and the tenant decision to defer Fabric IQ/Graph to phase 2?",
+        "candidateRows": [
+          {
+            "rowId": "PE-LOCAL-EVAL-001-ROW-01",
+            "com_name": "Platform evaluation - memory/graph grounding - Work IQ",
+            "com_council_capability": "memory-and-graph-grounding",
+            "com_microsoft_candidate": "Work IQ",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Work IQ is not provisioned in the sdhdev tenant as of 2026-07-07; onboarding requires a tenant admin to enable the Work IQ service plan and confirm data residency. Pending tenant verification.",
+            "com_permission_dlp_impact": "Work IQ would index source-derived content; under the link_only/hash_only source-body policy the tenant DLP classification for Council sources must be confirmed before Work IQ indexing is allowed. Not yet tenant-verified.",
+            "com_licensing_cost_gate": "Work IQ licensing SKU and per-user licensing cost are not confirmed for this tenant; assumed to require a premium SK series. Pending tenant verification.",
+            "com_lifecycle_alm_path": "Work IQ artifacts do not have a confirmed Dataverse-solution-aware ALM path aligned with the CouncilOfMinionsMVP solution; ALM story is assumed unverified.",
+            "com_contract_gaps": "Gap: Work IQ has no documented append-only receipt ledger projection with idempotency-key alternate key and before/after state lineage matching the com_councilreceipt contract; it is not solution-aware in the CouncilOfMinionsMVP solution today.",
+            "com_decision": "defer",
+            "com_review_reference": "Defer until Work IQ is provisioned in the tenant and its receipt-ledger alignment is tested; revisit after Epic 2 receipt semantics land."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-001-ROW-02",
+            "com_name": "Platform evaluation - memory/graph grounding - Dataverse intelligence/MCP",
+            "com_council_capability": "memory-and-graph-grounding",
+            "com_microsoft_candidate": "Dataverse intelligence/MCP",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Dataverse MCP exposes table-row semantics over the existing sdhdev environment; the tenant environment and organization IDs are confirmed read-only in tenant-decision-packet.json. No new tenant gating beyond the existing Dataverse write gate.",
+            "com_permission_dlp_impact": "Dataverse MCP reads inherit the existing Council table permissions and DLP policies; no new connector boundary is introduced. DLP classification stays with the Dataverse environment, already approved for sandbox writes after read-only preflight.",
+            "com_licensing_cost_gate": "Dataverse intelligence/MCP is assumed to be covered by the existing Dataverse licensing already approved for the MVP operational store; no incremental SKU is assumed. Pending tenant verification of MCP entitlement.",
+            "com_lifecycle_alm_path": "Dataverse MCP is solution-aware within the CouncilOfMinionsMVP solution and follows the existing Dataverse ALM path (pac solution export/import); no new ALM rail is required.",
+            "com_contract_gaps": "Gap: Dataverse MCP exposes generic table-row CRUD semantics but projects no append-only receipt ledger view keyed by com_idempotency_key with com_before_state/com_after_state lineage, and no meaning-graph entity/edge projection matching the com_councilgraphentity/com_councilgraphedge contracts. The Council receipt contract and semantic contract require these projections; Dataverse MCP does not surface them natively, so a custom projection is required to fill this gap.",
+            "com_decision": "custom_gap_build",
+            "com_review_reference": "Custom service proposal CSP-LOCAL-001 cites this row's contract gap as the Microsoft-native gap it fills; decision recorded in receipt CR-LOCAL-PE-001 before any implementation."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-001-ROW-03",
+            "com_name": "Platform evaluation - memory/graph grounding - Fabric IQ/Graph",
+            "com_council_capability": "memory-and-graph-grounding",
+            "com_microsoft_candidate": "Fabric IQ/Graph",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Fabric IQ/Graph is explicitly deferred to phase 2 by tenant-decision-packet.json decisions.fabricIqGraphPhase2 (value: defer_to_phase_2); no Fabric capacity is provisioned for the MVP tenant.",
+            "com_permission_dlp_impact": "Fabric IQ/Graph would require a separate Fabric capacity and DLP boundary distinct from the Dataverse environment; not assessed for the MVP per the tenant decision to defer.",
+            "com_licensing_cost_gate": "Fabric capacity licensing is out of scope for the MVP per the tenant deferral decision; no cost gate is evaluated in this slice.",
+            "com_lifecycle_alm_path": "Fabric artifacts are not Dataverse-solution-aware in the CouncilOfMinionsMVP solution; ALM path is unverified and deferred.",
+            "com_contract_gaps": "Gap: Fabric IQ/Graph could host the meaning graph projection but is tenant-deferred to phase 2, so it cannot ground Council memory/graph semantics in the MVP without violating the recorded tenant decision.",
+            "com_decision": "defer",
+            "com_review_reference": "Defer per tenant-decision-packet.json fabricIqGraphPhase2=defer_to_phase_2; revisit in phase 2 graph and analytics projection."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-001-ROW-04",
+            "com_name": "Platform evaluation - memory/graph grounding - Fabric data agents",
+            "com_council_capability": "memory-and-graph-grounding",
+            "com_microsoft_candidate": "Fabric data agents",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Fabric data agents depend on Fabric capacity, which is deferred to phase 2 by the tenant decision; not provisioned in the MVP tenant.",
+            "com_permission_dlp_impact": "Fabric data agents operate on Fabric-resident data and introduce a boundary outside the Dataverse environment; not assessed for the MVP.",
+            "com_licensing_cost_gate": "Fabric data agents licensing is bundled with Fabric capacity and is out of scope for the MVP per the tenant deferral.",
+            "com_lifecycle_alm_path": "Fabric data agents are not Dataverse-solution-aware; ALM path is unverified and deferred.",
+            "com_contract_gaps": "Gap: Fabric data agents do not project the append-only receipt ledger or the com_councilgraphentity/com_councilgraphedge semantic contract and are blocked by the tenant Fabric deferral, so they cannot ground Council memory/graph semantics in the MVP.",
+            "com_decision": "reject",
+            "com_review_reference": "Reject for MVP because it depends on the tenant-deferred Fabric capacity; reconsider in phase 2."
+          }
+        ]
+      },
+      {
+        "capabilityEvaluationId": "PE-LOCAL-EVAL-002",
+        "com_council_capability": "workflow-automation",
+        "capabilityQuestion": "Can a Microsoft-native plane drive receipt-backed Council Queue state changes and outbound-action requests without a custom automation substrate, respecting the no-flow-publish / no-agent-publish tenant guards?",
+        "candidateRows": [
+          {
+            "rowId": "PE-LOCAL-EVAL-002-ROW-01",
+            "com_name": "Platform evaluation - workflow automation - Power Automate",
+            "com_council_capability": "workflow-automation",
+            "com_microsoft_candidate": "Power Automate",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Power Automate flows run in the existing sdhdev tenant; the tenant guard noFlowPublish=true in dataverse-mvp-schema-manifest.json blocks publishing flows until Doug approves. No new tenant gating beyond the existing publish guard.",
+            "com_permission_dlp_impact": "Power Automate flows inherit the tenant DLP policy for connectors; Council flows must use Dataverse-only connectors under the link_only/hash_only source-body policy. DLP classification is pending tenant verification.",
+            "com_licensing_cost_gate": "Power Automate per-flow or per-user licensing is assumed to be covered by existing tenant entitlements; no incremental SKU is assumed. Pending tenant verification.",
+            "com_lifecycle_alm_path": "Power Automate flows are solution-aware within the CouncilOfMinionsMVP solution and follow the existing Dataverse ALM path; no new ALM rail is required, but flow publish stays guarded by noFlowPublish.",
+            "com_contract_gaps": "Gap: Power Automate can execute receipt-backed queue state changes but cannot itself define the receipt append-only ledger or idempotency semantics; it consumes the com_councilreceipt contract rather than projecting it. This is a consumption fit, not a contract gap requiring a custom build.",
+            "com_decision": "adopt",
+            "com_review_reference": "Adopt as the execution surface for receipt-backed queue state changes gated by noFlowPublish; aligns with Epic 2 Story 2.3 receipt semantics."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-002-ROW-02",
+            "com_name": "Platform evaluation - workflow automation - Copilot Studio",
+            "com_council_capability": "workflow-automation",
+            "com_microsoft_candidate": "Copilot Studio",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Copilot Studio agents are not published in the MVP tenant per the noAgentPublish=true guard; onboarding a Copilot agent requires Doug approval and a tenant admin to publish.",
+            "com_permission_dlp_impact": "Copilot Studio agents introduce a generative AI boundary over Council sources; under the link_only/hash_only source-body policy the DLP classification for generative grounding must be confirmed. Not yet tenant-verified.",
+            "com_licensing_cost_gate": "Copilot Studio licensing SKU is not confirmed for this tenant; assumed to require a Copilot Studio entitlement. Pending tenant verification.",
+            "com_lifecycle_alm_path": "Copilot Studio agents are solution-aware but the noAgentPublish guard blocks publication in the MVP; ALM path is verified but publication is gated.",
+            "com_contract_gaps": "Gap: Copilot Studio does not project the append-only receipt ledger or enforce idempotency keys; it can surface Council context but cannot own receipt-backed state transitions without violating noAgentPublish for the MVP.",
+            "com_decision": "defer",
+            "com_review_reference": "Defer until noAgentPublish is lifted by Doug and the generative-grounding DLP classification is tenant-verified."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-002-ROW-03",
+            "com_name": "Platform evaluation - workflow automation - Power Apps MCP agent feed",
+            "com_council_capability": "workflow-automation",
+            "com_microsoft_candidate": "Power Apps MCP agent feed",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "The Power Apps MCP agent feed is explicitly deferred by tenant-decision-packet.json decisions.powerAppsMcpAgentFeedEvaluation (value: defer); the agent feed is not enabled in the MVP tenant.",
+            "com_permission_dlp_impact": "The MCP agent feed would expose app metadata to model-driven agents; DLP classification is not assessed for the MVP per the tenant deferral.",
+            "com_licensing_cost_gate": "Power Apps MCP agent feed licensing is out of scope for the MVP per the tenant deferral; no cost gate is evaluated in this slice.",
+            "com_lifecycle_alm_path": "The MCP agent feed is not Dataverse-solution-aware in the CouncilOfMinionsMVP solution; ALM path is unverified and deferred.",
+            "com_contract_gaps": "Gap: The Power Apps MCP agent feed could surface Council Queue actions to agents but is tenant-deferred, so it cannot drive receipt-backed workflow automation in the MVP without violating the recorded tenant decision.",
+            "com_decision": "defer",
+            "com_review_reference": "Defer per tenant-decision-packet.json powerAppsMcpAgentFeedEvaluation=defer; revisit after the model-driven app surface is accepted."
+          },
+          {
+            "rowId": "PE-LOCAL-EVAL-002-ROW-04",
+            "com_name": "Platform evaluation - workflow automation - Work IQ",
+            "com_council_capability": "workflow-automation",
+            "com_microsoft_candidate": "Work IQ",
+            "com_official_source_date_checked": "2026-07-07",
+            "com_tenant_gate": "Work IQ is not provisioned in the sdhdev tenant as of 2026-07-07; onboarding requires a tenant admin to enable the Work IQ service plan. Pending tenant verification.",
+            "com_permission_dlp_impact": "Work IQ workflow automation would act on source-derived content; under the link_only/hash_only source-body policy the DLP classification must be confirmed before Work IQ automation is allowed. Not yet tenant-verified.",
+            "com_licensing_cost_gate": "Work IQ licensing SKU is not confirmed for this tenant; assumed to require a premium SK series. Pending tenant verification.",
+            "com_lifecycle_alm_path": "Work IQ automation artifacts do not have a confirmed Dataverse-solution-aware ALM path aligned with the CouncilOfMinionsMVP solution; ALM story is assumed unverified.",
+            "com_contract_gaps": "Gap: Work IQ is not provisioned in the tenant and projects no append-only receipt ledger semantics, so it cannot drive receipt-backed Council workflow automation in the MVP.",
+            "com_decision": "defer",
+            "com_review_reference": "Defer until Work IQ is provisioned in the tenant and its receipt-ledger alignment is tested."
+          }
+        ]
+      }
+    ],
+    "customServiceProposals": [
+      {
+        "proposalId": "CSP-LOCAL-001",
+        "com_name": "Custom service proposal - Council Receipt Ledger projection",
+        "com_council_capability": "memory-and-graph-grounding",
+        "addressesGapInRow": "PE-LOCAL-EVAL-001-ROW-02",
+        "gapCitation": "Cites the recorded contract gap in evaluation row PE-LOCAL-EVAL-001-ROW-02 (Dataverse intelligence/MCP, decision custom_gap_build): Dataverse MCP exposes generic table-row CRUD semantics but projects no append-only receipt ledger view keyed by com_idempotency_key with com_before_state/com_after_state lineage, and no meaning-graph entity/edge projection matching the com_councilgraphentity/com_councilgraphedge contracts. The custom Council Receipt Ledger projection fills exactly this Microsoft-native gap.",
+        "tenantConstraintCited": "Respects the tenant decision in tenant-decision-packet.json to defer Fabric IQ/Graph to phase 2 (fabricIqGraphPhase2=defer_to_phase_2), so the projection must be Dataverse-native rather than Fabric-resident for the MVP.",
+        "decisionReceipt": "CR-LOCAL-PE-001",
+        "implementationArtifactsReferenced": [],
+        "proposalRationale": "Because Dataverse intelligence/MCP does not natively project an append-only receipt ledger or the semantic graph, and Fabric is tenant-deferred, a Dataverse-native custom projection of the com_councilreceipt and com_councilgraphentity/com_councilgraphedge contracts is required. The decision to propose this custom service is recorded as receipt CR-LOCAL-PE-001 before any implementation; no implementation artifacts are referenced in this slice. Any implementation is receipt-gated and deferred to a later epic."
+      }
+    ],
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-PE-001",
+        "com_verb": "proposed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 5.3 platform-fit authority; Doug is the human approval owner per tenant-decision-packet.json",
+        "com_occurred_at": "2026-07-14T10:00:00-04:00",
+        "com_idempotency_key": "platform-eval:custom-proposal:CSP-LOCAL-001:2026-07-14",
+        "com_before_state": "no custom-service proposal recorded for the memory-and-graph-grounding capability gap",
+        "com_after_state": "custom-service proposal CSP-LOCAL-001 recorded citing Microsoft-native gap PE-LOCAL-EVAL-001-ROW-02 (Dataverse intelligence/MCP custom_gap_build); implementation deferred and receipt-gated",
+        "com_evidence_refs": "customServiceProposals[CSP-LOCAL-001]; evaluations[PE-LOCAL-EVAL-001].candidateRows[PE-LOCAL-EVAL-001-ROW-02]",
+        "com_decision_rationale": "Microsoft-native planes were evaluated first; Dataverse intelligence/MCP was the strongest native fit but projects no append-only receipt ledger or meaning-graph view, so a custom Dataverse-native projection is proposed to fill that gap. The decision is recorded before any implementation; no implementation artifacts are referenced.",
+        "com_confidence": 0.8,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; decision_recorded_before_implementation",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-PE-002",
+        "com_verb": "reviewed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 5.3 platform-fit authority; Doug is the human approval owner per tenant-decision-packet.json",
+        "com_occurred_at": "2026-07-14T09:00:00-04:00",
+        "com_idempotency_key": "platform-eval:capability:memory-and-graph-grounding:2026-07-14",
+        "com_before_state": "memory-and-graph-grounding capability not yet evaluated against the Microsoft candidate universe",
+        "com_after_state": "memory-and-graph-grounding evaluated against Work IQ (defer), Dataverse intelligence/MCP (custom_gap_build), Fabric IQ/Graph (defer), Fabric data agents (reject); custom proposal CSP-LOCAL-001 cites the Dataverse MCP gap",
+        "com_evidence_refs": "evaluations[PE-LOCAL-EVAL-001]; customServiceProposals[CSP-LOCAL-001]",
+        "com_decision_rationale": "Four Microsoft candidates were reviewed for memory-and-graph grounding; none fully projects the receipt ledger or semantic graph natively, so Dataverse intelligence/MCP is the strongest partial fit and a custom gap build is recorded for the missing projection.",
+        "com_confidence": 0.8,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-PE-003",
+        "com_verb": "reviewed",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "local non-tenant Story 5.3 platform-fit authority; Doug is the human approval owner per tenant-decision-packet.json",
+        "com_occurred_at": "2026-07-14T09:30:00-04:00",
+        "com_idempotency_key": "platform-eval:capability:workflow-automation:2026-07-14",
+        "com_before_state": "workflow-automation capability not yet evaluated against the Microsoft candidate universe",
+        "com_after_state": "workflow-automation evaluated against Power Automate (adopt), Copilot Studio (defer), Power Apps MCP agent feed (defer), Work IQ (defer); Power Automate adopted as the execution surface under noFlowPublish",
+        "com_evidence_refs": "evaluations[PE-LOCAL-EVAL-002]",
+        "com_decision_rationale": "Four Microsoft candidates were reviewed for workflow automation; Power Automate is adopted as the receipt-backed execution surface, while the generative-agent and Work IQ paths are deferred under the existing tenant guards.",
+        "com_confidence": 0.8,
+        "com_result": "accepted",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action",
+        "com_append_only_locked": true
+      }
+    ],
+    "deferredWrites": [
+      {
+        "record": "com_councilplatformevaluation rows for PE-LOCAL-EVAL-001",
+        "deferredUpdate": "Persisting the four evaluation rows for the memory-and-graph-grounding capability to the live com_councilplatformevaluation table is a receipt-backed mutation gated to a later epic; no live tenant write was performed in this slice."
+      },
+      {
+        "record": "com_councilplatformevaluation rows for PE-LOCAL-EVAL-002",
+        "deferredUpdate": "Persisting the four evaluation rows for the workflow-automation capability to the live com_councilplatformevaluation table is a receipt-backed mutation gated to a later epic; no live tenant write was performed in this slice."
+      },
+      {
+        "record": "custom service proposal CSP-LOCAL-001 implementation",
+        "deferredUpdate": "Implementing the Council Receipt Ledger projection proposed by CSP-LOCAL-001 is gated to a later epic and requires a separate implementation receipt before any code or Dataverse artifact is created; no implementation artifacts are referenced in this slice and no live tenant write was performed."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "platformEvaluationRun.evaluations contains two capability evaluations (PE-LOCAL-EVAL-001 memory-and-graph-grounding, PE-LOCAL-EVAL-002 workflow-automation), each with four candidate rows drawn from the named candidateUniverse",
+        "Each candidate row carries the manifest com_councilplatformevaluation fields: com_name, com_council_capability, com_microsoft_candidate, com_official_source_date_checked, com_tenant_gate, com_permission_dlp_impact, com_licensing_cost_gate, com_lifecycle_alm_path, com_contract_gaps, com_decision, com_review_reference",
+        "Candidate coverage is >=4 per evaluation and every candidate is a member of candidateUniverse; no candidate outside the named set is admitted"
+      ],
+      "tenantEvidenceRequired": "Tenant gates, DLP classifications, and licensing SKUs recorded in each row are pending tenant verification; live confirmation of Work IQ / Copilot Studio / Power Apps MCP agent feed provisioning and entitlements remains VERIFY IN TENANT."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "platformEvaluationRun.customServiceProposals contains exactly one proposal (CSP-LOCAL-001) whose addressesGapInRow points to a recorded gap in evaluation row PE-LOCAL-EVAL-001-ROW-02 (Dataverse intelligence/MCP, com_decision custom_gap_build)",
+        "The proposal cites both a specific Microsoft-native contract gap (gapCitation quoting the row's com_contract_gaps) and a tenant constraint (tenantConstraintCited quoting tenant-decision-packet.json fabricIqGraphPhase2=defer_to_phase_2)",
+        "The proposal's decision is recorded as append-only receipt CR-LOCAL-PE-001 (verb proposed) BEFORE any implementation; implementationArtifactsReferenced is empty and no implementation marker appears in the slice",
+        "guards.noImplementationArtifactsReferenced=true and guards.decisionsRecordedBeforeImplementation=true; all would-be live writes appear only in deferredWrites as receipt-gated entries"
+      ],
+      "tenantEvidenceRequired": "Building the custom Council Receipt Ledger projection and persisting evaluation rows to the live com_councilplatformevaluation table are receipt-gated to a later epic and remain VERIFY IN TENANT; this slice is local contract evidence only."
+    }
+  ]
+}
