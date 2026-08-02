@@ -16,13 +16,13 @@
       "lane": "native",
       "story_key": "5-4b-validator-proven-to-fail",
       "status": "pending",
-      "reason": "armed since 07-14 probe disproved the 5-4 validator; native loop per policy"
+      "reason": "MUST land first: 5-4-enforce is HELD in sprint, gated on 5-4b landing (probe 07-14 disproved validator)"
     },
     {
       "lane": "native",
       "story_key": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
       "status": "pending",
-      "reason": "gated on 5-4b landing; re-drive with the proven-failing validator"
+      "reason": "only after 5-4b lands; previous attempt out of order timed out at 2h"
     }
   ]
 }
