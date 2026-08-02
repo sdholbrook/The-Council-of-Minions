@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "request_id": "20260802-235527-the-council-of-minions-b42d",
+  "project": "/srv/bmad/projects/The-Council-of-Minions",
+  "target_branch": "main",
+  "verify_commands": [
+    "bash .bmad-loop/verify.sh"
+  ],
+  "steps": [
+    {
+      "lane": "native",
+      "story_key": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
+      "status": "pending",
+      "reason": "re-drive with 180min cap (two 2h timeouts: 7.0M and 8.1M tokens); gate 5-7 landed 3e87a88"
+    }
+  ]
+}
