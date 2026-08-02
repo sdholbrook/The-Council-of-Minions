@@ -8,11 +8,21 @@
     "_bmad-output/implementation-artifacts/stories/5-4b-validator-proven-to-fail.md",
     "_bmad-output/implementation-artifacts/tenant-readiness-gates-slice.json"
   ],
-  "verify_commands": ["bash .bmad-loop/verify.sh"],
+  "verify_commands": [
+    "bash .bmad-loop/verify.sh"
+  ],
   "steps": [
-    {"lane": "native", "story_key": "5-4b-validator-proven-to-fail", "status": "pending",
-     "reason": "armed since 07-14 probe disproved the 5-4 validator; native loop per policy"},
-    {"lane": "native", "story_key": "5-4-tenant-readiness-gates", "status": "pending",
-     "reason": "gated on 5-4b landing; re-drive with the proven-failing validator"}
+    {
+      "lane": "native",
+      "story_key": "5-4b-validator-proven-to-fail",
+      "status": "pending",
+      "reason": "armed since 07-14 probe disproved the 5-4 validator; native loop per policy"
+    },
+    {
+      "lane": "native",
+      "story_key": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
+      "status": "pending",
+      "reason": "gated on 5-4b landing; re-drive with the proven-failing validator"
+    }
   ]
 }
