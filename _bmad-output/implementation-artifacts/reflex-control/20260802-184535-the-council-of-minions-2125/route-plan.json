@@ -5,7 +5,7 @@
   "steps": [
     {
       "lane": "native",
-      "story_key": "5-4b-validator-proven-to-fail",
+      "story_key": "5-7-validator-proven-to-fail",
       "status": "pending",
       "reason": "sprint gate: 5-4-enforce is HELD until 5-4b lands (validator disproven by probe 07-14)"
     },
@@ -13,7 +13,7 @@
       "lane": "native",
       "story_key": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
       "status": "pending",
-      "reason": "after 5-4b lands; ab59 attempt ran out of order and timed out at 2h"
+      "reason": "after 5-4b lands; renamed from 5-4b (STORY_RE); ab59 ran out of order and timed out at 2h"
     }
   ],
   "verify_commands": [

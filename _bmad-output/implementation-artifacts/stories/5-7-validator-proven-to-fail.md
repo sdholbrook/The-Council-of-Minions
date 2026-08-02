@@ -1,4 +1,4 @@
-# Story 5-4b: the tenant-readiness validator must be proven to fail
+# Story 5-7: the tenant-readiness validator must be proven to fail
 
 <!-- ringer-check: export DOTNET_ROOT=$HOME/.dotnet; export PATH=$HOME/.dotnet:$HOME/.dotnet/tools:$HOME/.local/bin:$PATH; pwsh -File _bmad-output/implementation-artifacts/tenant-readiness-gates-slice-validate.ps1 -->
 <!-- ringer-owned: _bmad-output/implementation-artifacts/tenant-readiness-gates-slice-validate.ps1;_bmad-output/implementation-artifacts/tenant-readiness-probe-fixtures/ -->
