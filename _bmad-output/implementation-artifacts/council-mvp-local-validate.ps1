@@ -531,14 +531,14 @@ try {
     $retrospectives = $statusLines | Where-Object { $_ -match '^  epic-[0-9]+-retrospective: (optional|done)$' }
     $invalid = $lines | Where-Object { $_ -match '^  [a-z0-9-]+: ' -and $_ -notmatch '^  [a-z0-9-]+: (backlog|ready-for-dev|in-progress|review|done|optional)$' }
 
-    if ($epics.Count -ne 5) {
-      throw "Expected 5 epics in sprint status, found $($epics.Count)."
+    if ($epics.Count -ne 6) {
+      throw "Expected 6 epics in sprint status, found $($epics.Count)."
     }
-    if ($stories.Count -ne 25) {
-      throw "Expected 25 stories in sprint status, found $($stories.Count)."
+    if ($stories.Count -ne 32) {
+      throw "Expected 32 stories in sprint status, found $($stories.Count)."
     }
-    if ($retrospectives.Count -ne 5) {
-      throw "Expected 5 retrospectives in sprint status, found $($retrospectives.Count)."
+    if ($retrospectives.Count -ne 6) {
+      throw "Expected 6 retrospectives in sprint status, found $($retrospectives.Count)."
     }
     if ($invalid) {
       $invalid | ForEach-Object { Write-Host $_ }

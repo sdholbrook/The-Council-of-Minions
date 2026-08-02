@@ -48,7 +48,7 @@ tracking_system: "file-system"
 story_location: "C:/repo/The-Council-of-Minions/_bmad-output/implementation-artifacts"
 
 development_status:
-  5-7-validator-proven-to-fail: ready-for-dev
+  5-7-validator-proven-to-fail: done
   epic-1: done
   1-1-capture-manual-source-records: done
   1-2-capture-outlook-source-references: done
@@ -80,7 +80,8 @@ development_status:
   5-1-maintain-the-minion-skill-registry: done
   5-2-approve-skill-authority-expansion: done
   5-3-record-microsoft-platform-evaluation-evidence: done
-  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog  # HELD: validator disproven by probe 07-14; gated on 5-7 landing (renamed from 5-4b: letter-suffix keys are invisible to bmad-loop STORY_RE)
+  # HELD: validator disproven by probe 07-14; gated on 5-7 landing (renamed from 5-4b: letter-suffix keys are invisible to bmad-loop STORY_RE)
+  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog
   5-5-validate-dataverse-mvp-operational-store-readiness: done
   5-6-manage-phase-2-knowledge-and-analytics-projections: done
   epic-5-retrospective: optional
