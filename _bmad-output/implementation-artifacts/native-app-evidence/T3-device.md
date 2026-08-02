@@ -18,3 +18,16 @@ runtime). Completes alongside T2/T4 in the Council-rooted scaffold session
 
 Gate state: T1 ✅ · **T3 partial (identity+env proven; Developer app pending)**
 · T2/T4 queued on the scaffold session.
+
+## T3 GREEN — 2026-08-02 ~23:45 (device local)
+
+Second screenshot `t3-iphone-preview-ready.png`: **Power Apps Mobile Preview**
+(the QR-scan native runtime; App Store lists it under this name, docs call it
+the Developer app) installed, authenticated, status **Ready** — "Launch a
+native app session / Scan QR / Enter URL", no sessions yet. Combined with the
+first screenshot (same device+account, sdhdev environment reachable), T3's
+substance is proven: device, identity, runtime ready, environment access.
+The environment name renders in-app at first session launch — captured as
+part of T4's evidence when the scaffold's QR is scanned.
+
+**Gate state: T1 ✅ · T3 ✅ · T2/T4 → the Council-rooted scaffold session.**
