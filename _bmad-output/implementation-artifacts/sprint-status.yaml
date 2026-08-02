@@ -81,7 +81,7 @@ development_status:
   5-2-approve-skill-authority-expansion: done
   5-3-record-microsoft-platform-evaluation-evidence: done
   # HELD: validator disproven by probe 07-14; gated on 5-7 landing (renamed from 5-4b: letter-suffix keys are invisible to bmad-loop STORY_RE)
-  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: backlog
+  5-4-enforce-tenant-readiness-and-verify-in-tenant-gates: ready-for-dev  # gate satisfied: 5-7 validator-proven-to-fail landed 3e87a88 (2026-08-02)
   5-5-validate-dataverse-mvp-operational-store-readiness: done
   5-6-manage-phase-2-knowledge-and-analytics-projections: done
   epic-5-retrospective: optional
