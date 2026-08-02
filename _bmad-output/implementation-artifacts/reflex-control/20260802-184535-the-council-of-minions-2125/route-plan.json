@@ -18,5 +18,6 @@
   ],
   "verify_commands": [
     "bash .bmad-loop/verify.sh"
-  ]
+  ],
+  "project": "/srv/bmad/projects/The-Council-of-Minions"
 }
