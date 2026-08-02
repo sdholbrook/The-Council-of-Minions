@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "request_id": "20260802-184535-the-council-of-minions-2125",
+  "target_branch": "main",
+  "steps": [
+    {
+      "lane": "native",
+      "story_key": "5-4b-validator-proven-to-fail",
+      "status": "pending",
+      "reason": "sprint gate: 5-4-enforce is HELD until 5-4b lands (validator disproven by probe 07-14)"
+    },
+    {
+      "lane": "native",
+      "story_key": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
+      "status": "pending",
+      "reason": "after 5-4b lands; ab59 attempt ran out of order and timed out at 2h"
+    }
+  ],
+  "verify_commands": [
+    "bash .bmad-loop/verify.sh"
+  ]
+}
