@@ -1,0 +1,292 @@
+{
+  "probeFixture": "Fabrication class: resolvable-but-unproving verification receipt. The verificationReceipt id still resolves in the receipts collection, but the resolved receipt proves nothing: verb approved (not reviewed), result no_op (not succeeded), and com_evidence_refs no longer names the verified capability. Also under-claims tenantEvidenceStatus (recorded, while derivation says complete) and uses an out-of-vocabulary decision value. Pins the resolved-receipt content sub-checks, the derived-status under-claim branch, and the com_decision vocabulary derivation.",
+  "expectedIssuePatterns": [
+    "must carry verb reviewed",
+    "must carry result succeeded",
+    "com_evidence_refs must name the verified capability id",
+    "but the derived status is complete",
+    "com_counciltenantevidence\\.com_decision vocabulary"
+  ],
+  "artifactVersion": "2026-07-14",
+  "storyKey": "5-4-enforce-tenant-readiness-and-verify-in-tenant-gates",
+  "status": "local-contract-not-tenant-verified",
+  "purpose": "Prove tenant readiness gating locally: four planned capabilities of different kinds (connector, published agent, app registration, automation) each stay verifyInTenant with no tenant evidence and no-live-write guards; one model-driven-app capability carries a completed tenant-validation evidence record covering all eight required fields (tenant identity, environment, auth user, licensing/capacity assumptions, relevant settings, restrictions, decision, follow-up owner) and is flipped to verified by a receipt; and the boundary rule is demonstrated by a policy_denied receipt (Story 2.6 vocabulary) emitted when an action is attempted on an unverified capability. Receipts here are local contract evidence only, and every live tenant write stays receipt-gated behind the documented approval boundary.",
+  "guards": {
+    "noTenantWrites": true,
+    "noOutboundAction": true,
+    "noApprovalExecution": true,
+    "requiresExplicitHumanApprovalForExecution": true,
+    "receiptsAreLocalContractEvidenceOnly": true,
+    "receiptsAppendOnly": true,
+    "noLiveWriteBeforeApprovedBoundary": true,
+    "unverifiedCapabilitiesAreVerifyInTenant": true,
+    "verificationFlipsAreReceiptBacked": true,
+    "policyDenialsForUnverifiedCapabilityActions": true,
+    "noCapabilityPublishedOrRegisteredInThisSlice": true
+  },
+  "tenantReadinessRun": {
+    "runId": "TENANT-READINESS-LOCAL-2026-07-14-001",
+    "actorType": "system",
+    "actorId": "local-bmad-validator",
+    "authorityBasis": "local non-tenant Story 5.4 contract validation",
+    "semanticContractVersion": "2026-07-07",
+    "inputSlicesFrom": [
+      "manual-source-record-slice.json",
+      "outlook-source-reference-slice.json",
+      "proposed-work-item-extraction-slice.json",
+      "zero-multi-item-extraction-slice.json",
+      "approval-boundaries-slice.json",
+      "failure-policy-denial-slice.json",
+      "tenant-decision-packet.json"
+    ],
+    "decisionPolicy": {
+      "unverifiedCapabilitiesStayVerifyInTenantUntilEvidenceExists": true,
+      "noLiveWriteBeforeApprovedBoundaryDocumented": true,
+      "verificationFlipsRequireReceipt": true,
+      "actionsOnUnverifiedCapabilitiesEmitPolicyDenialReceipt": true,
+      "tenantValidationEvidenceMustCarryAllEightFields": true,
+      "liveTenantWriteReceiptGatedToApprovedEpic2Boundary": true
+    },
+    "capabilityKindVocabulary": {
+      "basis": "The manifest has no enumerated capability-kind choice; Story 5.4 declares the four planned capability kinds plus the verified model-driven-app kind as a local extension. These are reproducible local-contract identifiers, not tenant enums; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2.",
+      "kinds": [
+        {
+          "kind": "connector",
+          "definition": "A Power Platform / Logic Apps connector or Graph binding that would reach an external system on publish; live publish is receipt-gated behind tenant verification."
+        },
+        {
+          "kind": "published_agent",
+          "definition": "A published Minion / Copilot / MCP agent feed; live agent publish is receipt-gated behind tenant verification."
+        },
+        {
+          "kind": "app_registration",
+          "definition": "An Azure app registration / Entra service principal used for authentication; live registration is receipt-gated behind tenant verification."
+        },
+        {
+          "kind": "automation",
+          "definition": "A Power Automate flow or equivalent automation that would execute on the tenant; live publish is receipt-gated behind tenant verification."
+        },
+        {
+          "kind": "model_driven_app",
+          "definition": "A Dataverse model-driven app surface (the Council Queue); this is the capability this slice verifies, since its tenant evidence is complete and Doug-approved per tenant-decision-packet.json."
+        }
+      ]
+    },
+    "plannedCapabilities": [
+      {
+        "capabilityId": "CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+        "capabilityName": "Outlook Graph read connector for source capture",
+        "kind": "connector",
+        "verifyInTenant": true,
+        "verified": false,
+        "tenantEvidenceStatus": "none",
+        "evidenceFieldsPresent": false,
+        "noLiveWriteGuard": "No connector was published, no Graph call was made, and no outbound read occurred; the connector stays verifyInTenant until its tenant-validation evidence record is completed. Live publish is receipt-gated behind the documented approval boundary (tenant-decision-packet.json outlookGraphLiveReads=not_allowed).",
+        "deferredWriteGate": "Publishing or activating this connector is a receipt-backed live tenant write gated to Epic 2 Story 2.3 once the tenant-validation evidence record is completed and Doug approves the boundary."
+      },
+      {
+        "capabilityId": "CAP-LOCAL-MINION-AGENT-FEED-001",
+        "capabilityName": "Council Minion published agent feed",
+        "kind": "published_agent",
+        "verifyInTenant": true,
+        "verified": false,
+        "tenantEvidenceStatus": "none",
+        "evidenceFieldsPresent": false,
+        "noLiveWriteGuard": "No agent was published and no agent feed was registered against the tenant; the published agent stays verifyInTenant until its tenant-validation evidence record is completed. Live publish is receipt-gated behind the documented approval boundary (manifest guards noAgentPublish=true).",
+        "deferredWriteGate": "Publishing this agent feed is a receipt-backed live tenant write gated to Epic 2 Story 2.3 once the tenant-validation evidence record is completed and Doug approves the boundary."
+      },
+      {
+        "capabilityId": "CAP-LOCAL-GRAPH-APP-REGISTRATION-001",
+        "capabilityName": "Entra app registration for Graph/Dataverse auth",
+        "kind": "app_registration",
+        "verifyInTenant": true,
+        "verified": false,
+        "tenantEvidenceStatus": "none",
+        "evidenceFieldsPresent": false,
+        "noLiveWriteGuard": "No app registration was created, no service principal was provisioned, and no secret/certificate was issued against the tenant; the app registration stays verifyInTenant until its tenant-validation evidence record is completed. Live registration is receipt-gated behind the documented approval boundary (manifest guards noAppRegistration=true).",
+        "deferredWriteGate": "Creating this app registration is a receipt-backed live tenant write gated to Epic 2 Story 2.3 once the tenant-validation evidence record is completed and Doug approves the boundary."
+      },
+      {
+        "capabilityId": "CAP-LOCAL-APPROVAL-FLOW-AUTOMATION-001",
+        "capabilityName": "Power Automate approval flow automation",
+        "kind": "automation",
+        "verifyInTenant": true,
+        "verified": false,
+        "tenantEvidenceStatus": "none",
+        "evidenceFieldsPresent": false,
+        "noLiveWriteGuard": "No flow was published, no flow run was triggered, and no automation executed against the tenant; the automation stays verifyInTenant until its tenant-validation evidence record is completed. Live publish is receipt-gated behind the documented approval boundary (manifest guards noFlowPublish=true).",
+        "deferredWriteGate": "Publishing this automation is a receipt-backed live tenant write gated to Epic 2 Story 2.3 once the tenant-validation evidence record is completed and Doug approves the boundary."
+      }
+    ],
+    "verifiedCapability": {
+      "capabilityId": "CAP-LOCAL-COUNCIL-QUEUE-APP-001",
+      "capabilityName": "Council Queue model-driven app surface",
+      "kind": "model_driven_app",
+      "verifyInTenant": false,
+      "verified": true,
+      "tenantEvidenceStatus": "recorded",
+      "evidenceFieldsPresent": true,
+      "verificationReceipt": "CR-LOCAL-TENANT-VERIFY-001",
+      "noLiveWriteGuard": "No solution was published and no app was installed against the tenant in this slice; the verification records completed local-contract evidence only. The live Dataverse write that applies this app to the tenant stays receipt-gated behind the documented approval boundary (tenant-decision-packet.json modelDrivenAppSurface=accepted and dataverseSandboxWrites=allowed_after_readonly_preflight).",
+      "deferredWriteGate": "Applying this model-driven app to the live tenant is a receipt-backed Dataverse write gated to Epic 2 Story 2.3 after read-only preflight proves the target environment; no tenant write was performed in this slice.",
+      "tenantValidationEvidence": {
+        "tenantIdentity": "Power Platform tenant f55daafc-83bc-4bcc-b944-c98a0d4279a3 (per tenant-decision-packet.json tenantDomainOrId), Dataverse organization 0c0fa4db-8614-ef11-9f83-000d3a342d36 (per dataverse-mvp-schema-manifest.json target.organizationId).",
+        "environment": "Dataverse dev environment https://sdhdev.crm.dynamics.com, unique name unq0c0fa4db8614ef119f83000d3a342, environmentId ba9a96b2-f562-40f6-931d-6b55873954ee (per dataverse-mvp-schema-manifest.json target).",
+        "authUser": "Doug, the human approval owner for tenant-affecting decisions (per tenant-decision-packet.json humanApprovalOwner=Doug); no service principal or app registration is used for this model-driven app surface.",
+        "licensingOrCapacityAssumptions": "Assumes a Power Apps Per User plan for Doug and Dataverse default dev-environment capacity; these assumptions are not yet tenant-verified against billing records and are recorded as restrictions. Capacity for the MVP operational store fits within dev entitlements.",
+        "relevantSettings": "Solution publisher prefix com (per tenant-decision-packet.json publisherPrefix=com); model-driven app surface accepted (per tenant-decision-packet.json modelDrivenAppSurface=accepted); Dataverse MVP operational store approved (per tenant-decision-packet.json dataverseMvpOperationalStore=approved); default source body policy link_only.",
+        "restrictions": "No outbound action, no flow publish, no agent publish, no app registration, no fabric mutation until read-only preflight matches (per manifest guards and tenant-decision-packet.json guards); outlookGraphLiveReads=not_allowed; Dataverse sandbox writes allowed only after read-only preflight proves the target environment.",
+        "decision": "definitely_available",
+        "followUpOwner": "Doug"
+      },
+      "dateVerified": "2026-07-14T10:00:00-04:00"
+    },
+    "boundaryRuleAttempt": {
+      "attemptedOnCapability": "CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+      "attemptedAction": "Publish the Outlook Graph read connector for source capture before its tenant-validation evidence record is completed.",
+      "attemptedBy": "local-bmad-validator",
+      "denialReceipt": "CR-LOCAL-TENANT-DENY-001",
+      "rationale": "The connector is still verifyInTenant (verified=false, no tenant evidence), so any live publish or outbound read is blocked by the boundary rule. The attempted action yields a policy_denied receipt (Story 2.6 vocabulary: verb policy_denied, result rejected) and moves no state; the capability stays verifyInTenant and no tenant write occurred."
+    },
+    "failureCodeVocabulary": {
+      "basis": "Manifest com_councilreceipt.com_failure_code is a free-text column with no enumerated choice set (per Story 2.6), so this slice declares a Story 5.4 local extension naming the failure code used here. Codes are reproducible local-contract identifiers, not tenant enums; adopting them as tenant-wide choice values is a deferred, receipt-gated decision for Epic 2.",
+      "codes": [
+        {
+          "code": "capability_not_tenant_verified",
+          "kind": "policy_denial",
+          "retryAllowed": false,
+          "humanReviewRequired": false,
+          "definition": "An action attempted on a capability whose tenant-validation evidence record is not complete (verifyInTenant=true, verified=false). The denial is non-retryable without a policy change; the affected capability stays verifyInTenant and no tenant write occurred. The boundary rule (Story 5.4) requires this denial whenever an action targets an unverified capability."
+        }
+      ]
+    },
+    "receipts": [
+      {
+        "com_receipt_id": "CR-LOCAL-TENANT-VERIFY-001",
+        "com_work_item": null,
+        "com_verb": "approved",
+        "com_actor_type": "human",
+        "com_actor_id": "Doug",
+        "com_authority_basis": "Doug explicit human review of the completed tenant-validation evidence record for CAP-LOCAL-COUNCIL-QUEUE-APP-001; local non-tenant Story 5.4 contract validation. Authority chain references CWI-LOCAL-APPROVAL-TENANT-001 from approval-boundaries-slice.json (the tenant-affecting work item that stays proposed until Doug approves the specific tenant change).",
+        "com_occurred_at": "2026-07-14T10:05:00-04:00",
+        "com_idempotency_key": "verify:CAP-LOCAL-COUNCIL-QUEUE-APP-001:2026-07-14T10:05:00-04:00",
+        "com_before_state": "verify_in_tenant",
+        "com_after_state": "verified",
+        "com_evidence_refs": "CWI-LOCAL-APPROVAL-TENANT-001; tenant-decision-packet.json[modelDrivenAppSurface=accepted, dataverseMvpOperationalStore=approved, humanApprovalOwner=Doug]",
+        "com_decision_rationale": "Doug reviewed the completed tenant-validation evidence record (all eight fields present: tenant identity, environment, auth user, licensing/capacity assumptions, relevant settings, restrictions, decision=available_with_constraints, follow-up owner=Doug) and flipped CAP-LOCAL-COUNCIL-QUEUE-APP-001 from verify_in_tenant to verified. The flip is receipt-backed; applying the model-driven app to the live tenant remains a receipt-gated Dataverse write behind the documented approval boundary.",
+        "com_confidence": 0.9,
+        "com_result": "no_op",
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; verification_flip_receipt_backed",
+        "com_append_only_locked": true
+      },
+      {
+        "com_receipt_id": "CR-LOCAL-TENANT-DENY-001",
+        "com_work_item": null,
+        "com_verb": "policy_denied",
+        "com_actor_type": "trusted_rule",
+        "com_actor_id": "local-tenant-readiness-boundary-rule",
+        "com_authority_basis": "local non-tenant Story 5.4 contract validation; the boundary rule blocks any action on a capability whose tenant-validation evidence record is not complete. Live denial write is receipt-gated to Epic 2.",
+        "attemptedAction": "Publish the Outlook Graph read connector (CAP-LOCAL-OUTLOOK-CONNECTOR-001) before its tenant-validation evidence record is completed.",
+        "com_occurred_at": "2026-07-14T10:20:00-04:00",
+        "com_idempotency_key": "policy_deny:capability_not_verified:CAP-LOCAL-OUTLOOK-CONNECTOR-001:publish:2026-07-14T10:20",
+        "com_before_state": "verify_in_tenant",
+        "com_after_state": "verify_in_tenant",
+        "com_evidence_refs": "CAP-LOCAL-OUTLOOK-CONNECTOR-001; CWI-LOCAL-APPROVAL-TENANT-001",
+        "com_decision_rationale": "The Outlook Graph read connector is still verifyInTenant (verified=false, no tenant-validation evidence record), so the boundary rule blocks publishing it. The denial is non-retryable without a policy change; the capability stays verifyInTenant and no tenant write occurred. The affected tenant-affecting work item CWI-LOCAL-APPROVAL-TENANT-001 remains proposed (a reviewable state group) so Doug can still review, hold, or reassign it.",
+        "com_confidence": 0.92,
+        "com_result": "rejected",
+        "com_failure_code": "capability_not_tenant_verified",
+        "retryAllowed": false,
+        "humanReviewRequired": false,
+        "com_policy_flags": "local_contract_evidence_only; no_tenant_write; no_outbound_action; policy_denied; capability_not_tenant_verified; no_live_write_before_approved_boundary",
+        "com_append_only_locked": true
+      }
+    ],
+    "capabilityBindings": [
+      {
+        "com_name": "CR-LOCAL-TENANT-VERIFY-001 verification binding - CAP-LOCAL-COUNCIL-QUEUE-APP-001",
+        "com_receipt": "CR-LOCAL-TENANT-VERIFY-001",
+        "com_capability": "CAP-LOCAL-COUNCIL-QUEUE-APP-001",
+        "bindingRole": "verification"
+      },
+      {
+        "com_name": "CR-LOCAL-TENANT-DENY-001 policy denial binding - CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+        "com_receipt": "CR-LOCAL-TENANT-DENY-001",
+        "com_capability": "CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+        "bindingRole": "policy_denial"
+      }
+    ],
+    "noLiveWriteProof": [
+      {
+        "capability": "CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+        "guard": "noLiveWriteBeforeApprovedBoundary",
+        "value": true,
+        "proof": "CAP-LOCAL-OUTLOOK-CONNECTOR-001 stays verifyInTenant (verified=false, tenantEvidenceStatus=none, evidenceFieldsPresent=false). No publish, Graph call, or outbound read occurred; the only receipt binding this capability is CR-LOCAL-TENANT-DENY-001 (verb policy_denied, result rejected), which records the blocked publish attempt. Absence of any reviewed/approved/external_action_completed-verb receipt binding this capability is the negative evidence that no live write occurred."
+      },
+      {
+        "capability": "CAP-LOCAL-MINION-AGENT-FEED-001",
+        "guard": "noLiveWriteBeforeApprovedBoundary",
+        "value": true,
+        "proof": "CAP-LOCAL-MINION-AGENT-FEED-001 stays verifyInTenant (verified=false, tenantEvidenceStatus=none, evidenceFieldsPresent=false). No receipt in this slice binds this capability, so no agent was published and no agent feed was registered. Absence of any receipt binding this capability is the negative evidence that no live write occurred."
+      },
+      {
+        "capability": "CAP-LOCAL-GRAPH-APP-REGISTRATION-001",
+        "guard": "noLiveWriteBeforeApprovedBoundary",
+        "value": true,
+        "proof": "CAP-LOCAL-GRAPH-APP-REGISTRATION-001 stays verifyInTenant (verified=false, tenantEvidenceStatus=none, evidenceFieldsPresent=false). No receipt in this slice binds this capability, so no app registration was created and no service principal was provisioned. Absence of any receipt binding this capability is the negative evidence that no live write occurred."
+      },
+      {
+        "capability": "CAP-LOCAL-APPROVAL-FLOW-AUTOMATION-001",
+        "guard": "noLiveWriteBeforeApprovedBoundary",
+        "value": true,
+        "proof": "CAP-LOCAL-APPROVAL-FLOW-AUTOMATION-001 stays verifyInTenant (verified=false, tenantEvidenceStatus=none, evidenceFieldsPresent=false). No receipt in this slice binds this capability, so no flow was published and no automation executed. Absence of any receipt binding this capability is the negative evidence that no live write occurred."
+      },
+      {
+        "capability": "CAP-LOCAL-COUNCIL-QUEUE-APP-001",
+        "guard": "noLiveWriteBeforeApprovedBoundary",
+        "value": true,
+        "proof": "CAP-LOCAL-COUNCIL-QUEUE-APP-001 is verified=true but no solution was published and no app was installed against the tenant in this slice. The only receipt binding this capability is CR-LOCAL-TENANT-VERIFY-001 (verb reviewed, result succeeded), which records the verification flip only; its com_policy_flags declare local_contract_evidence_only and no_tenant_write. Applying the app to the live tenant is recorded in deferredWriteGate as a receipt-gated Dataverse write. Absence of any external_action_completed-verb receipt binding this capability is the negative evidence that no live write occurred."
+      }
+    ],
+    "liveWritesDeferred": [
+      {
+        "capability": "CAP-LOCAL-COUNCIL-QUEUE-APP-001",
+        "deferredUpdate": "Applying the Council Queue model-driven app to the live tenant is a receipt-backed Dataverse write gated to Epic 2 Story 2.3 after read-only preflight proves the target environment; this slice records the verification flip only and performs no tenant write."
+      },
+      {
+        "capability": "CAP-LOCAL-OUTLOOK-CONNECTOR-001",
+        "deferredUpdate": "Publishing the Outlook Graph read connector is a receipt-backed live tenant write gated to Epic 2 Story 2.3, and only after the connector's tenant-validation evidence record is completed and Doug approves the boundary; the boundary-rule denial records the blocked attempt only."
+      }
+    ]
+  },
+  "acceptanceMapping": [
+    {
+      "acceptanceCriterion": 1,
+      "localEvidence": [
+        "tenantReadinessRun.plannedCapabilities contains exactly four capabilities of distinct kinds (connector CAP-LOCAL-OUTLOOK-CONNECTOR-001, published_agent CAP-LOCAL-MINION-AGENT-FEED-001, app_registration CAP-LOCAL-GRAPH-APP-REGISTRATION-001, automation CAP-LOCAL-APPROVAL-FLOW-AUTOMATION-001), each with verifyInTenant=true (strict bool), verified=false, tenantEvidenceStatus=none, evidenceFieldsPresent=false, a noLiveWriteGuard, and a deferredWriteGate",
+        "tenantReadinessRun.noLiveWriteProof binds each unverified capability's noLiveWriteBeforeApprovedBoundary guard to a proof entry stating no receipt binds it (or only a policy_denied receipt binds it) and no live write occurred",
+        "guards.unverifiedCapabilitiesAreVerifyInTenant=true and guards.noLiveWriteBeforeApprovedBoundary=true and guards.noCapabilityPublishedOrRegisteredInThisSlice=true"
+      ],
+      "tenantEvidenceRequired": "Publishing, registering, or activating any of these four capabilities against the live tenant is VERIFY IN TENANT until each one's tenant-validation evidence record is completed; this slice is local contract evidence only and no tenant write was performed."
+    },
+    {
+      "acceptanceCriterion": 2,
+      "localEvidence": [
+        "tenantReadinessRun.verifiedCapability CAP-LOCAL-COUNCIL-QUEUE-APP-001 (kind model_driven_app) has verified=true, verifyInTenant=false, tenantEvidenceStatus=complete, evidenceFieldsPresent=true, and a tenantValidationEvidence record carrying all eight required fields: tenantIdentity, environment, authUser, licensingOrCapacityAssumptions, relevantSettings, restrictions, decision=available_with_constraints, followUpOwner=Doug",
+        "tenantReadinessRun.verifiedCapability.verificationReceipt = CR-LOCAL-TENANT-VERIFY-001 (verb reviewed, result succeeded, before verify_in_tenant, after verified) backs the flip from verify_in_tenant to verified",
+        "tenantReadinessRun.capabilityBindings binds CR-LOCAL-TENANT-VERIFY-001 to CAP-LOCAL-COUNCIL-QUEUE-APP-001 with bindingRole verification",
+        "guards.verificationFlipsAreReceiptBacked=true"
+      ],
+      "tenantEvidenceRequired": "Applying the verified model-driven app to the live tenant remains a receipt-gated Dataverse write behind the documented approval boundary (tenant-decision-packet.json dataverseSandboxWrites=allowed_after_readonly_preflight); this slice records the verification flip only and no tenant Work Item or solution row was created."
+    },
+    {
+      "acceptanceCriterion": 3,
+      "localEvidence": [
+        "tenantReadinessRun.boundaryRuleAttempt names CAP-LOCAL-OUTLOOK-CONNECTOR-001 (an unverified capability) as the target of a publish attempt, with denialReceipt CR-LOCAL-TENANT-DENY-001",
+        "tenantReadinessRun.receipts CR-LOCAL-TENANT-DENY-001 uses Story 2.6 vocabulary (verb policy_denied, result rejected) with com_failure_code capability_not_tenant_verified declared in failureCodeVocabulary, before==after state verify_in_tenant, and capabilityBindings binding it to CAP-LOCAL-OUTLOOK-CONNECTOR-001 with bindingRole policy_denial",
+        "guards.policyDenialsForUnverifiedCapabilityActions=true; the denial receipt's com_evidence_refs names CAP-LOCAL-OUTLOOK-CONNECTOR-001 (unverified) and the cross-slice referenced id CWI-LOCAL-APPROVAL-TENANT-001 which resolves in approval-boundaries-slice.json"
+      ],
+      "tenantEvidenceRequired": "Enforcing the boundary rule against a live tenant (blocking real publish calls) and recording the denial on the live Council Queue remain gated to Epic 2 receipt-backed mutation semantics; this slice is local contract evidence only."
+    }
+  ]
+}

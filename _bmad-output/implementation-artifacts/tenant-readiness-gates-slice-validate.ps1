@@ -4,7 +4,9 @@ param(
   [string]$ApprovalBoundariesSlicePath = "$PSScriptRoot\approval-boundaries-slice.json",
   [string]$FailurePolicyDenialSlicePath = "$PSScriptRoot\failure-policy-denial-slice.json",
   [string]$TenantDecisionPacketPath = "$PSScriptRoot\tenant-decision-packet.json",
-  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json"
+  [string]$DemoEvidencePath = "$PSScriptRoot\state-transition-demo-evidence.json",
+  [string]$FixturesDirPath = "$PSScriptRoot\tenant-readiness-probe-fixtures",
+  [switch]$ShowFixtureIssues
 )
 
 $ErrorActionPreference = "Stop"
@@ -134,9 +136,9 @@ function Read-JsonInput {
     Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
   }
   catch {
-    Write-Host "Tenant readiness gates slice validation failed:"
-    Write-Host "- Input file is not valid JSON: $Path"
-    exit 1
+    # Throw (never exit): the proven-to-fail battery runs the check set repeatedly in-process,
+    # and a fixture that fails to parse must count as a produced failure, not kill the process.
+    throw "Input file is not valid JSON: $Path"
   }
 }
 
@@ -248,30 +250,31 @@ function Get-SliceIdentifiers {
   , $ids
 }
 
-# Required inputs: must all be present (a missing sibling would silently no-op a cross-slice tripwire).
-$requiredInputs = @(
-  $ManifestPath, $TenantSlicePath, $ApprovalBoundariesSlicePath,
-  $FailurePolicyDenialSlicePath, $TenantDecisionPacketPath, $DemoEvidencePath
-)
-foreach ($path in $requiredInputs) {
-  if (-not (Test-Path -LiteralPath $path)) {
-    throw "Required tenant readiness gates validation input not found: $path"
-  }
-}
+# =================================================================================================
+# The FULL check set, wrapped so the proven-to-fail battery can run it repeatedly in-process:
+# once per committed mutation fixture (tenant-slice path substituted, everything else identical),
+# then once for the real slice. It returns the issues list; it never exits, and never prints the
+# final report or the OK token.
+# =================================================================================================
+function Invoke-TenantReadinessCheckSet {
+  param(
+    [Parameter(Mandatory = $true)][string]$ManifestPath,
+    [Parameter(Mandatory = $true)][string]$TenantSlicePath,
+    [Parameter(Mandatory = $true)][string]$ApprovalBoundariesSlicePath,
+    [Parameter(Mandatory = $true)][string]$FailurePolicyDenialSlicePath,
+    [Parameter(Mandatory = $true)][string]$TenantDecisionPacketPath,
+    [Parameter(Mandatory = $true)][string]$DemoEvidencePath,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$SiblingSliceFiles,
+    [hashtable]$SummaryCollector
+  )
 
-# LIVE cross-slice id harvest from $PSScriptRoot: every *-slice.json sibling on disk is scanned so
-# a new sibling cannot silently escape the minted-vs-referenced tripwire by being added later.
-$siblingSliceFiles = @(
-  Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File |
-    Where-Object { $_.FullName -ne (Resolve-Path -LiteralPath $TenantSlicePath).Path }
-)
-$manifest = Read-JsonInput -Path $ManifestPath
-$tenant = Read-JsonInput -Path $TenantSlicePath
-$approvalBoundariesSlice = Read-JsonInput -Path $ApprovalBoundariesSlicePath
-$failurePolicyDenialSlice = Read-JsonInput -Path $FailurePolicyDenialSlicePath
-$tenantDecisionPacket = Read-JsonInput -Path $TenantDecisionPacketPath
-$demoEvidence = Read-JsonInput -Path $DemoEvidencePath
-$issues = [System.Collections.Generic.List[string]]::new()
+  $manifest = Read-JsonInput -Path $ManifestPath
+  $tenant = Read-JsonInput -Path $TenantSlicePath
+  $approvalBoundariesSlice = Read-JsonInput -Path $ApprovalBoundariesSlicePath
+  $failurePolicyDenialSlice = Read-JsonInput -Path $FailurePolicyDenialSlicePath
+  $tenantDecisionPacket = Read-JsonInput -Path $TenantDecisionPacketPath
+  $demoEvidence = Read-JsonInput -Path $DemoEvidencePath
+  $issues = [System.Collections.Generic.List[string]]::new()
 
 $receiptVerbs = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_receiptverb"
 $actorTypes = Get-ChoiceValues -Manifest $manifest -ChoiceName "com_actortype"
@@ -374,10 +377,9 @@ if ($siblingIdUniverse.WorkItemIds.Count -eq 0) {
 # --- Run block ---------------------------------------------------------------------------------
 $run = $tenant.tenantReadinessRun
 if ($null -eq $run) {
+  # No exit: return the issues accumulated so far so fixture runs can continue in-process.
   Add-Issue $issues "Tenant readiness slice must carry a tenantReadinessRun block."
-  Write-Host "Tenant readiness gates slice validation failed:"
-  foreach ($issue in $issues) { Write-Host "- $issue" }
-  exit 1
+  return $issues
 }
 if (-not (Test-HasNonEmptyField -Record $run -Field "runId")) {
   Add-Issue $issues "Tenant readiness run must declare a runId."
@@ -896,6 +898,125 @@ if ($null -ne $verifyReceipt -and $null -ne $verifiedCap) {
   }
 }
 
+# --- Derivation checks: evidence claims must bind to independently checkable facts ------------
+# (a) The verificationReceipt must RESOLVE by membership in this slice's receipts collection, and
+# the resolved receipt's own content must prove the flip: verb reviewed, result succeeded, and
+# com_evidence_refs naming the verified capability id. A well-formed receipt id is not proof.
+$resolvedVerificationReceipt = $null
+if ($null -ne $verifiedCap -and (Test-HasNonEmptyField -Record $verifiedCap -Field "verificationReceipt")) {
+  $verificationReceiptId = [string]$verifiedCap.verificationReceipt
+  $vCapSubject = "Verified capability $([string]$verifiedCap.capabilityId)"
+  $resolvedVerificationReceipt = $receipts | Where-Object { [string]$_.com_receipt_id -eq $verificationReceiptId } | Select-Object -First 1
+  if ($null -eq $resolvedVerificationReceipt) {
+    Add-Issue $issues "$vCapSubject verificationReceipt '$verificationReceiptId' does not resolve to any receipt in this slice's receipts collection; verification flips must be backed by a resolvable receipt."
+  }
+  else {
+    if ([string]$resolvedVerificationReceipt.com_verb -ne "reviewed") {
+      Add-Issue $issues "Resolved verification receipt $verificationReceiptId must carry verb reviewed, found: $($resolvedVerificationReceipt.com_verb)."
+    }
+    if ([string]$resolvedVerificationReceipt.com_result -ne "succeeded") {
+      Add-Issue $issues "Resolved verification receipt $verificationReceiptId must carry result succeeded, found: $($resolvedVerificationReceipt.com_result)."
+    }
+    $verificationReceiptRefs = Split-EvidenceRefs -Raw ([string]$resolvedVerificationReceipt.com_evidence_refs)
+    if (@($verificationReceiptRefs) -notcontains [string]$verifiedCap.capabilityId) {
+      Add-Issue $issues "Resolved verification receipt $verificationReceiptId com_evidence_refs must name the verified capability id $([string]$verifiedCap.capabilityId); the receipt's own evidence must bind the flip to the capability."
+    }
+  }
+}
+
+# (b) Eight-field coverage is DERIVED from the tenantValidationEvidence block itself; the asserted
+# evidenceFieldsPresent boolean and tenantEvidenceStatus must match the derived value
+# (complete <=> all eight fields non-empty AND the verification receipt resolves). The asserted
+# boolean is never trusted.
+if ($null -ne $verifiedCap) {
+  $vCapSubject = "Verified capability $([string]$verifiedCap.capabilityId)"
+  $evidenceBlock = $verifiedCap.tenantValidationEvidence
+  $derivedEightFields = @(
+    "tenantIdentity",
+    "environment",
+    "authUser",
+    "licensingOrCapacityAssumptions",
+    "relevantSettings",
+    "restrictions",
+    "decision",
+    "followUpOwner"
+  )
+  $derivedEvidenceFieldsPresent = ($null -ne $evidenceBlock)
+  if ($derivedEvidenceFieldsPresent) {
+    foreach ($field in $derivedEightFields) {
+      if (-not (Test-HasNonEmptyField -Record $evidenceBlock -Field $field)) {
+        $derivedEvidenceFieldsPresent = $false
+      }
+    }
+  }
+  $derivedComplete = $derivedEvidenceFieldsPresent -and ($null -ne $resolvedVerificationReceipt)
+  if ((Test-StrictBoolean $verifiedCap.evidenceFieldsPresent) -and ([bool]$verifiedCap.evidenceFieldsPresent -ne $derivedEvidenceFieldsPresent)) {
+    Add-Issue $issues "$vCapSubject asserted evidenceFieldsPresent=$($verifiedCap.evidenceFieldsPresent) does not match the coverage derived from the tenantValidationEvidence block itself ($derivedEvidenceFieldsPresent); coverage is derived, never trusted."
+  }
+  $assertedEvidenceStatus = [string]$verifiedCap.tenantEvidenceStatus
+  if ($assertedEvidenceStatus -eq "complete" -and -not $derivedComplete) {
+    Add-Issue $issues "$vCapSubject asserted tenantEvidenceStatus=complete but the derived status is incomplete (all eight fields non-empty: $derivedEvidenceFieldsPresent; verification receipt resolves: $($null -ne $resolvedVerificationReceipt)); status is derived, never trusted."
+  }
+  elseif ($assertedEvidenceStatus -ne "complete" -and $derivedComplete) {
+    Add-Issue $issues "$vCapSubject asserted tenantEvidenceStatus='$assertedEvidenceStatus' but the derived status is complete (all eight fields non-empty and the verification receipt resolves); status is derived, never trusted."
+  }
+}
+
+# (c) Evidence content must bind to independent facts read from already-loaded inputs (never
+# literals): the manifest target block and the tenant decision packet are authorities this slice
+# cannot mint, so fabricated well-formed strings are caught by content, not presence.
+$manifestTarget = $manifest.target
+$packetDecisions = $tenantDecisionPacket.decisions
+$factEnvironmentId = [string]$manifestTarget.environmentId
+$factEnvironmentUrl = [string]$manifestTarget.environmentUrl
+$factOrganizationId = [string]$manifestTarget.organizationId
+$factTenantDomainOrId = [string]$packetDecisions.tenantDomainOrId.value
+$factHumanApprovalOwner = [string]$packetDecisions.humanApprovalOwner.value
+foreach ($fact in @(
+    @{ Name = "manifest target.environmentId"; Value = $factEnvironmentId },
+    @{ Name = "manifest target.environmentUrl"; Value = $factEnvironmentUrl },
+    @{ Name = "manifest target.organizationId"; Value = $factOrganizationId },
+    @{ Name = "tenant-decision-packet decisions.tenantDomainOrId.value"; Value = $factTenantDomainOrId },
+    @{ Name = "tenant-decision-packet decisions.humanApprovalOwner.value"; Value = $factHumanApprovalOwner }
+  )) {
+  if ([string]::IsNullOrWhiteSpace($fact.Value)) {
+    Add-Issue $issues "Independent fact $($fact.Name) is missing or empty; evidence content-binding checks would silently no-op."
+  }
+}
+if ($null -ne $verifiedCap -and $null -ne $verifiedCap.tenantValidationEvidence) {
+  $vCapSubject = "Verified capability $([string]$verifiedCap.capabilityId)"
+  $evidenceBlock = $verifiedCap.tenantValidationEvidence
+  if (Test-HasNonEmptyField -Record $evidenceBlock -Field "environment") {
+    $environmentText = [string]$evidenceBlock.environment
+    if (-not [string]::IsNullOrWhiteSpace($factEnvironmentId) -and $environmentText -notmatch [regex]::Escape($factEnvironmentId)) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.environment must contain the manifest target.environmentId ($factEnvironmentId); the evidence does not bind to the independently declared environment."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($factEnvironmentUrl) -and $environmentText -notmatch [regex]::Escape($factEnvironmentUrl)) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.environment must contain the manifest target.environmentUrl ($factEnvironmentUrl); the evidence does not bind to the independently declared environment."
+    }
+  }
+  if (Test-HasNonEmptyField -Record $evidenceBlock -Field "tenantIdentity") {
+    $tenantIdentityText = [string]$evidenceBlock.tenantIdentity
+    if (-not [string]::IsNullOrWhiteSpace($factOrganizationId) -and $tenantIdentityText -notmatch [regex]::Escape($factOrganizationId)) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.tenantIdentity must contain the manifest target.organizationId ($factOrganizationId); the evidence does not bind to the independently declared organization."
+    }
+    if (-not [string]::IsNullOrWhiteSpace($factTenantDomainOrId) -and $tenantIdentityText -notmatch [regex]::Escape($factTenantDomainOrId)) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.tenantIdentity must contain the tenant-decision-packet decisions.tenantDomainOrId.value ($factTenantDomainOrId); the evidence does not bind to the Doug-approved tenant identity."
+    }
+  }
+  if (Test-HasNonEmptyField -Record $evidenceBlock -Field "followUpOwner") {
+    if (-not [string]::IsNullOrWhiteSpace($factHumanApprovalOwner) -and [string]$evidenceBlock.followUpOwner -ne $factHumanApprovalOwner) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.followUpOwner must equal the tenant-decision-packet decisions.humanApprovalOwner.value ($factHumanApprovalOwner), found: $($evidenceBlock.followUpOwner)."
+    }
+  }
+  if (Test-HasNonEmptyField -Record $evidenceBlock -Field "authUser") {
+    $authUserText = [string]$evidenceBlock.authUser
+    if (-not [string]::IsNullOrWhiteSpace($factHumanApprovalOwner) -and $authUserText -notmatch [regex]::Escape($factHumanApprovalOwner)) {
+      Add-Issue $issues "$vCapSubject tenantValidationEvidence.authUser must contain the tenant-decision-packet decisions.humanApprovalOwner.value ($factHumanApprovalOwner); the evidence does not bind the auth user to the independently declared approval owner, found: $($evidenceBlock.authUser)."
+    }
+  }
+}
+
 # --- Capability bindings (receipt -> capability) ----------------------------------------------
 $bindings = @($run.capabilityBindings | Where-Object { $null -ne $_ })
 if ($bindings.Count -lt 2) {
@@ -1141,6 +1262,227 @@ foreach ($capId in @($seenCapabilityIds.Keys)) {
   }
 }
 
+  # Summary counts come from data parsed inside this validated run — never a post-validation
+  # re-read of the slice file (an unvalidated re-read could drift from what was checked).
+  if ($null -ne $SummaryCollector) {
+    $SummaryCollector["PlannedCapabilities"] = $plannedCapabilities.Count
+    $SummaryCollector["VerifiedCapabilities"] = @($run.verifiedCapability | Where-Object { $null -ne $_ }).Count
+    $SummaryCollector["Receipts"] = $receipts.Count
+    $SummaryCollector["CapabilityBindings"] = $bindings.Count
+    $SummaryCollector["NoLiveWriteProofEntries"] = $noLiveWriteProof.Count
+  }
+  return $issues
+}
+
+# =================================================================================================
+# Main flow: (1) required inputs, (2) proven-to-fail mutation battery over the committed fixtures,
+# (3) only then the real slice. The OK token is unreachable on any path that skips the battery.
+# =================================================================================================
+
+# Required inputs: must all be present (a missing sibling would silently no-op a cross-slice tripwire).
+$requiredInputs = @(
+  $ManifestPath, $TenantSlicePath, $ApprovalBoundariesSlicePath,
+  $FailurePolicyDenialSlicePath, $TenantDecisionPacketPath, $DemoEvidencePath
+)
+foreach ($path in $requiredInputs) {
+  if (-not (Test-Path -LiteralPath $path)) {
+    throw "Required tenant readiness gates validation input not found: $path"
+  }
+}
+
+# LIVE cross-slice id harvest from $PSScriptRoot: every *-slice.json sibling on disk is scanned so
+# a new sibling cannot silently escape the minted-vs-referenced tripwire by being added later.
+# Harvested ONCE here and passed into every check-set call so fixture runs see the identical
+# referenced-id universe as the real run (fixtures live in a subdirectory and never match this
+# non-recursive *-slice.json harvest).
+$siblingSliceFiles = @(
+  Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*-slice.json" -File |
+    Where-Object { $_.FullName -ne (Resolve-Path -LiteralPath $TenantSlicePath).Path }
+)
+
+# --- Proven-to-fail mutation battery ----------------------------------------------------------
+# A gate that cannot fail proves nothing. Every run must first prove each committed fixture FAILS
+# the exact same check set (same manifest/packet/sibling universe; only the tenant-slice path is
+# substituted) before the real slice may be validated. Each fabrication class is machine-pinned
+# to the check that catches it by the fixture's own top-level expectedIssuePatterns: a fixture
+# passes the battery only if it produced >=1 issue AND every declared pattern matches at least
+# one produced issue string — so deleting or neutering any fixture-pinnable check turns the
+# battery red instead of leaving it vacuously green. Precisely: every check reachable by
+# mutating the tenant slice is pinned by a committed fixture pattern; the input-decay tripwires
+# over the manifest/packet facts (e.g. "Independent fact ... is missing or empty") cannot be
+# reached by slice substitution and are runtime fail-closed guards instead, not battery-proven.
+# A fixture producing zero issues is fatal; a fixture run that throws still counts as a produced
+# failure (the gate refused it), but the synthetic throw issue is excluded from pattern matching
+# outright (and patterns matching the fixed throw prefix are additionally rejected as too broad
+# below), so decayed or malformed fixtures fail the battery loudly instead of vacuously passing it.
+if (-not (Test-Path -LiteralPath $FixturesDirPath)) {
+  Write-Host "Tenant readiness gates slice validation failed:"
+  Write-Host "- Mutation battery missing: fixtures directory not found: $FixturesDirPath. The validator must prove it can fail before it may bless the real slice."
+  exit 1
+}
+$fixtureFiles = @(Get-ChildItem -LiteralPath $FixturesDirPath -Filter "*.json" -File | Sort-Object -Property Name)
+# Every canonical fabrication-class fixture must be present by name (six: the five intent-named
+# classes plus the post-loopback fixture-06); a count alone could be satisfied by junk files
+# while a named class (e.g. the 07-14 probe) silently disappears.
+$canonicalFixtureNames = @(
+  "fixture-01-evidence-field-dropped.json",
+  "fixture-02-flip-without-receipt.json",
+  "fixture-03-fabricated-evidence.json",
+  "fixture-04-denial-rebound.json",
+  "fixture-05-minted-id-collision.json",
+  "fixture-06-resolvable-receipt-unproving.json"
+)
+$batterySetupProblems = [System.Collections.Generic.List[string]]::new()
+if ($fixtureFiles.Count -lt 5) {
+  $batterySetupProblems.Add("Mutation battery incomplete: found $($fixtureFiles.Count) fixture(s) in $FixturesDirPath; at least 5 committed fabrication-class fixtures are required before the real slice may be blessed.") | Out-Null
+}
+$fixtureFileNames = @($fixtureFiles | ForEach-Object { $_.Name })
+foreach ($canonicalName in $canonicalFixtureNames) {
+  if ($fixtureFileNames -notcontains $canonicalName) {
+    $batterySetupProblems.Add("Mutation battery incomplete: canonical fixture $canonicalName is missing from $FixturesDirPath; every canonical fabrication-class fixture must be present before the real slice may be blessed.") | Out-Null
+  }
+}
+if ($batterySetupProblems.Count -gt 0) {
+  Write-Host "Tenant readiness gates slice validation failed:"
+  foreach ($problem in $batterySetupProblems) { Write-Host "- $problem" }
+  exit 1
+}
+
+$batteryFailures = [System.Collections.Generic.List[string]]::new()
+# Single source of truth for the synthetic-throw sentinel: the catch that mints it, the
+# pattern-matching skip, and the over-broad-pattern probe must always agree on this exact
+# prefix — a reworded copy in any one place would let a throwing fixture's text become
+# pattern-eligible again (the vacuous-satisfaction hole the pattern rules exist to close).
+$fixtureThrowPrefix = "Fixture run threw (counted as a produced failure):"
+foreach ($fixtureFile in $fixtureFiles) {
+  # Every *.json in the fixtures dir must declare a non-empty top-level expectedIssuePatterns
+  # array of regex strings — the machine-pinned proof of WHICH check catches its fabrication
+  # class. A stray, clean, or malformed file thereby fails the battery loudly.
+  $expectedPatterns = @()
+  $metadataProblem = $null
+  try {
+    $fixtureMetadata = Read-JsonInput -Path $fixtureFile.FullName
+    $rawPatterns = $null
+    if ($null -ne $fixtureMetadata -and $fixtureMetadata -is [psobject] -and @($fixtureMetadata.PSObject.Properties.Name) -contains "expectedIssuePatterns") {
+      $rawPatterns = $fixtureMetadata.expectedIssuePatterns
+    }
+    if ($null -eq $rawPatterns -or -not ($rawPatterns -is [Array] -or $rawPatterns -is [System.Collections.IList])) {
+      $metadataProblem = "Fixture $($fixtureFile.Name) declares no top-level expectedIssuePatterns array; every committed fixture must machine-pin its fabrication class to the check that catches it. The real slice is not blessed."
+    }
+    else {
+      $expectedPatterns = @($rawPatterns | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
+      if ($expectedPatterns.Count -eq 0) {
+        $metadataProblem = "Fixture $($fixtureFile.Name) expectedIssuePatterns array is empty; every committed fixture must machine-pin its fabrication class to the check that catches it. The real slice is not blessed."
+      }
+      else {
+        $invalidPatterns = @()
+        $overbroadPatterns = @()
+        $syntheticThrowProbe = "$fixtureThrowPrefix probe"
+        foreach ($pattern in $expectedPatterns) {
+          try {
+            [void][regex]::new($pattern)
+            # A pattern the synthetic throw text can satisfy is too broad to pin a fabrication
+            # class: a decayed fixture that merely throws would then pass the battery.
+            if ($syntheticThrowProbe -match $pattern) { $overbroadPatterns += $pattern }
+          }
+          catch { $invalidPatterns += $pattern }
+        }
+        if ($invalidPatterns.Count -gt 0) {
+          $metadataProblem = "Fixture $($fixtureFile.Name) expectedIssuePatterns entry is not a valid regex: $($invalidPatterns -join '; '). The real slice is not blessed."
+          $expectedPatterns = @($expectedPatterns | Where-Object { $invalidPatterns -notcontains $_ })
+        }
+        elseif ($overbroadPatterns.Count -gt 0) {
+          $metadataProblem = "Fixture $($fixtureFile.Name) expectedIssuePatterns entry is too broad (it matches the synthetic throw text, so it cannot pin a fabrication class): $($overbroadPatterns -join '; '). The real slice is not blessed."
+        }
+      }
+    }
+  }
+  catch {
+    $metadataProblem = "Fixture $($fixtureFile.Name) could not be read for its expectedIssuePatterns ($($_.Exception.Message)); every committed fixture must declare a non-empty expectedIssuePatterns array. The real slice is not blessed."
+  }
+
+  $fixtureIssues = $null
+  try {
+    $fixtureIssues = @(Invoke-TenantReadinessCheckSet `
+        -ManifestPath $ManifestPath `
+        -TenantSlicePath $fixtureFile.FullName `
+        -ApprovalBoundariesSlicePath $ApprovalBoundariesSlicePath `
+        -FailurePolicyDenialSlicePath $FailurePolicyDenialSlicePath `
+        -TenantDecisionPacketPath $TenantDecisionPacketPath `
+        -DemoEvidencePath $DemoEvidencePath `
+        -SiblingSliceFiles $siblingSliceFiles)
+  }
+  catch {
+    # A fixture that cannot even be parsed/processed was still refused by the gate; this
+    # synthetic message is the only produced issue and cannot satisfy class-distinctive
+    # patterns, so a throw never substitutes for the check the fixture exists to prove.
+    $fixtureIssues = @("$fixtureThrowPrefix $($_.Exception.Message)")
+  }
+
+  $unmatchedPatterns = [System.Collections.Generic.List[string]]::new()
+  $matchedPatternCount = 0
+  foreach ($pattern in $expectedPatterns) {
+    $patternMatched = $false
+    foreach ($fixtureIssue in $fixtureIssues) {
+      # The synthetic throw issue is never eligible to satisfy a class-distinctive pattern:
+      # matching is restricted to real check-set output, so a throwing fixture always fails
+      # its declared patterns regardless of what the exception message happens to contain.
+      if (([string]$fixtureIssue).StartsWith($fixtureThrowPrefix)) { continue }
+      if ($fixtureIssue -match $pattern) { $patternMatched = $true; break }
+    }
+    if ($patternMatched) { $matchedPatternCount++ } else { $unmatchedPatterns.Add($pattern) | Out-Null }
+  }
+
+  Write-Host "Self-test: $($fixtureFile.Name) produced $($fixtureIssues.Count) issue(s); $matchedPatternCount/$($expectedPatterns.Count) expected pattern(s) matched."
+  if ($ShowFixtureIssues) {
+    foreach ($fixtureIssue in $fixtureIssues) { Write-Host "  - $fixtureIssue" }
+  }
+  elseif ($fixtureIssues.Count -eq 1 -and ([string]$fixtureIssues[0]).StartsWith($fixtureThrowPrefix)) {
+    # Always surface a throw's root cause: without this, a corrupt shared input or decayed
+    # fixture appears only as unmatched-pattern noise in unattended logs.
+    Write-Host "  - $($fixtureIssues[0])"
+  }
+
+  if ($null -ne $metadataProblem) {
+    $batteryFailures.Add($metadataProblem) | Out-Null
+  }
+  if ($fixtureIssues.Count -eq 0) {
+    $batteryFailures.Add("Self-test fixture $($fixtureFile.Name) passed the full check set with zero issues; a gate that cannot fail proves nothing. The real slice is not blessed.") | Out-Null
+  }
+  elseif ($unmatchedPatterns.Count -gt 0) {
+    foreach ($unmatched in $unmatchedPatterns) {
+      $batteryFailures.Add("Self-test fixture $($fixtureFile.Name) expected pattern went unmatched: '$unmatched'; the check that catches this fabrication class did not fire. The real slice is not blessed.") | Out-Null
+    }
+  }
+}
+if ($batteryFailures.Count -gt 0) {
+  Write-Host "Tenant readiness gates slice validation failed:"
+  foreach ($batteryFailure in $batteryFailures) {
+    Write-Host "- $batteryFailure"
+  }
+  exit 1
+}
+
+# --- Real slice (reachable only after the battery proved the gate can fail) --------------------
+$issues = $null
+$realRunSummary = @{}
+try {
+  $issues = @(Invoke-TenantReadinessCheckSet `
+      -ManifestPath $ManifestPath `
+      -TenantSlicePath $TenantSlicePath `
+      -ApprovalBoundariesSlicePath $ApprovalBoundariesSlicePath `
+      -FailurePolicyDenialSlicePath $FailurePolicyDenialSlicePath `
+      -TenantDecisionPacketPath $TenantDecisionPacketPath `
+      -DemoEvidencePath $DemoEvidencePath `
+      -SiblingSliceFiles $siblingSliceFiles `
+      -SummaryCollector $realRunSummary)
+}
+catch {
+  Write-Host "Tenant readiness gates slice validation failed:"
+  Write-Host "- $($_.Exception.Message)"
+  exit 1
+}
+
 if ($issues.Count -gt 0) {
   Write-Host "Tenant readiness gates slice validation failed:"
   foreach ($issue in $issues) {
@@ -1149,10 +1491,12 @@ if ($issues.Count -gt 0) {
   exit 1
 }
 
+# Summary counts come from the data parsed inside the validated run above — never a
+# post-validation re-read of the slice file.
 Write-Host "Tenant readiness gates slice validation succeeded."
-Write-Host "Planned (unverified) capabilities: $($plannedCapabilities.Count)"
-Write-Host "Verified capabilities: 1"
-Write-Host "Receipts: $($receipts.Count)"
-Write-Host "Capability bindings: $($bindings.Count)"
-Write-Host "No-live-write proof entries: $($noLiveWriteProof.Count)"
+Write-Host "Planned (unverified) capabilities: $($realRunSummary["PlannedCapabilities"])"
+Write-Host "Verified capabilities: $($realRunSummary["VerifiedCapabilities"])"
+Write-Host "Receipts: $($realRunSummary["Receipts"])"
+Write-Host "Capability bindings: $($realRunSummary["CapabilityBindings"])"
+Write-Host "No-live-write proof entries: $($realRunSummary["NoLiveWriteProofEntries"])"
 Write-Host "TENANT_READINESS_GATES_SLICE_VALIDATE_OK"
